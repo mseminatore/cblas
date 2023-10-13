@@ -7,13 +7,13 @@ ifeq ($(ARCH), x86_64)
 endif
 
 TARGET = cblas
-OBJS = swap.o test.o
-DEPS = cblas.h
+OBJS = swap.o
+DEPS = cblas.h test.h
 CFLAGS += -g -O3
 
 all: cblas
 
-$(TARGET):	$(OBJS) mnist.o
+$(TARGET):	$(OBJS) test.o
 	$(CC) $(LFLAGS) -o $@ $^
 
 test: $(OBJS) test.o
