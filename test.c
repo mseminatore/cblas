@@ -8,7 +8,7 @@
 
 //
 int test_number = 0;
-int test_errors = 0;
+int test_failures = 0;
 int test_suites = 0;
 
 static float sa[] = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
@@ -34,6 +34,8 @@ static void test_swap()
 	cblas_dswap(ARRAY_SIZE(da), da, 1, dc, 1);
 	TEST(EQUAL_ARRAY(da, dd));
 	TEST(EQUAL_ARRAY(db, dc));
+
+	TEST(NOT_EQUAL_ARRAY(da, dd));
 }
 
 //
@@ -44,5 +46,4 @@ int main(int argc, char *argv[])
 	test_swap();
 
 	END_TESTS();
-	return 0;
 }
