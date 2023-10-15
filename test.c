@@ -34,8 +34,6 @@ static void test_swap()
 	cblas_dswap(ARRAY_SIZE(da), da, 1, dc, 1);
 	TEST(EQUAL_ARRAY(da, dd));
 	TEST(EQUAL_ARRAY(db, dc));
-
-	TEST(NOT_EQUAL_ARRAY(da, dd));
 }
 
 //
