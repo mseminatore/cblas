@@ -1,4 +1,8 @@
+//--------------------------------------------------------
+// Simple C/C++ test framework
+// 
 // Copyright 2022 Mark Seminatore. All rights reserved.
+//--------------------------------------------------------
 #pragma once
 
 #ifndef __TEST_H

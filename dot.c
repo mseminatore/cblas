@@ -9,45 +9,43 @@
 //------------------------------------------------------
 //
 //------------------------------------------------------
-void cblas_sswap(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy)
+float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy)
 {
     if (!x || !y)
     {
-        return;
+        return 0.0f;
         assert(x && y);
     }
 
-    float temp;
+    float sum = 0.0f;
     for (CBLAS_INDEX i = 0; i < n; i++)
     {
-        temp = *y;
-        *y = *x;
-        *x = temp;
-
+        sum += *x * *y;
         x += incx;
         y += incy;
     }
+
+    return sum;
 }
 
 //------------------------------------------------------
 //
 //------------------------------------------------------
-void cblas_dswap(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy)
+double cblas_ddot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy)
 {
     if (!x || !y)
     {
-        return;
+        return 0.0;
         assert(x && y);
     }
 
-    double temp;
+    double sum = 0.0;
     for (CBLAS_INDEX i = 0; i < n; i++)
     {
-        temp = *y;
-        *y = *x;
-        *x = temp;
-
+        sum += *x * *y;
         x += incx;
         y += incy;
-    }    
+    }
+
+    return sum;
 }
