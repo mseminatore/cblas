@@ -5,12 +5,12 @@
 
 typedef size_t CBLAS_INDEX;
 
-// Level 1
+// Level 1 functions
 float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy);
 double cblas_ddot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy);
 
-void cblas_saxpy();
-void cblas_daxpy();
+void cblas_saxpy(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy);
+void cblas_daxpy(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy);
 
 void cblas_sswap(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy);
 void cblas_dswap(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy);
@@ -18,11 +18,11 @@ void cblas_dswap(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IN
 void cblas_sscal(CBLAS_INDEX n, const float a, float *y, CBLAS_INDEX incx);
 void cblas_dscal(CBLAS_INDEX n, const double a, double *y, CBLAS_INDEX incx);
 
-// Level 2
+// Level 2 functions
 
-// Level 3
+// Level 3 functions
 
-// Utility
+// Utility functions
 void cblas_set_num_threads(int threads);
 int cblas_get_num_threads(void);
 
