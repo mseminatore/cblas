@@ -7,7 +7,7 @@ ifeq ($(ARCH), x86_64)
 endif
 
 TARGET = cblas
-OBJS = swap.o dot.o
+OBJS = swap.o dot.o copy.o axpy.o
 DEPS = cblas.h test.h
 CFLAGS += -g -O3
 
