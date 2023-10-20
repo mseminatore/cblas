@@ -11,10 +11,10 @@
 //------------------------------------------------------
 void cblas_sswap(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy)
 {
-    if (!x || !y)
+    if (n < 0 || !x || !y)
     {
+        assert(n > 0 && x && y);
         return;
-        assert(x && y);
     }
 
     float temp;
@@ -34,10 +34,10 @@ void cblas_sswap(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
 //------------------------------------------------------
 void cblas_dswap(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy)
 {
-    if (!x || !y)
+    if (n < 0 || !x || !y)
     {
+        assert(n > 0 && x && y);
         return;
-        assert(x && y);
     }
 
     double temp;

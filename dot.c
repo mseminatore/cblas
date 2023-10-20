@@ -11,10 +11,10 @@
 //------------------------------------------------------
 float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy)
 {
-    if (!x || !y)
+    if (n < 0 || !x || !y)
     {
+        assert(n > 0 && x && y);
         return 0.0f;
-        assert(x && y);
     }
 
     float sum = 0.0f;
@@ -33,10 +33,10 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
 //------------------------------------------------------
 double cblas_ddot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy)
 {
-    if (!x || !y)
+    if (n < 0 || !x || !y)
     {
+        assert(n > 0 && x && y);
         return 0.0;
-        assert(x && y);
     }
 
     double sum = 0.0;
