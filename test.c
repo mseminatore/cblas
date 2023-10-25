@@ -26,6 +26,19 @@ static double db[] = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
 static double dc[] = {9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0};
 static double dd[] = {9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0};
 
+//
+static void print_sarray(int n, float *x)
+{
+	putchar('{');
+	
+	for (int i = 0; i < n; i++)
+	{
+		printf("%f, ", x[i]);
+	}
+
+	puts("}");
+}
+
 //------------------------------------------------------
 //
 //------------------------------------------------------
@@ -113,13 +126,19 @@ static void test_axpy()
 {
 	SUITE("cblas_saxpy");
 
-	// float sr[ARRAY_SIZE(sones)];
+	float sr[ARRAY_SIZE(sones)];
 
-	// cblas_scopy(ARRAY_SIZE(sones), sones, 1, sr, 1);
-	// cblas_saxpy(ARRAY_SIZE(sr), 1.0, sr, 1);
-	// TEST(EQUAL_ARRAY(sr, sones));
+	cblas_scopy(ARRAY_SIZE(szeros), sr, 1, szeros, 1);
+	cblas_saxpy(ARRAY_SIZE(sones), 1.0, sones, 1, sr, 1);
+	TEST(EQUAL_ARRAY(sr, sones));
 
 	SUITE("cblas_daxpy");
+
+	double dr[ARRAY_SIZE(dones)];
+
+	cblas_dcopy(ARRAY_SIZE(dzeros), dr, 1, dzeros, 1);
+	cblas_daxpy(ARRAY_SIZE(dones), 1.0, dones, 1, dr, 1);
+	TEST(EQUAL_ARRAY(dr, dones));
 }
 
 //------------------------------------------------------
