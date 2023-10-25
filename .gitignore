@@ -1,5 +1,6 @@
 # Project files
 cblas
+build/
 
 # Prerequisites
 *.d

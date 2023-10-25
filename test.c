@@ -111,7 +111,19 @@ static void test_copy()
 //------------------------------------------------------
 static void test_axpy()
 {
-	SUITE("cblas_axpy");
+	SUITE("cblas_saxpy");
+
+	SUITE("cblas_daxpy");
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+static void test_scal()
+{
+	SUITE("cblas_sscal");
+
+	SUITE("cblas_dscal");
 
 }
 
@@ -126,6 +138,7 @@ int main(int argc, char *argv[])
 	test_dot();
 	test_copy();
 	test_axpy();
+	test_scal();
 
 	END_TESTS();
 }
