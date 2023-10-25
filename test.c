@@ -129,7 +129,7 @@ static void test_axpy()
 	float sr[ARRAY_SIZE(sones)];
 
 	cblas_scopy(ARRAY_SIZE(szeros), sr, 1, szeros, 1);
-	cblas_saxpy(ARRAY_SIZE(sones), 1.0, sones, 1, sr, 1);
+	cblas_saxpy(ARRAY_SIZE(sones), 1.0f, sones, 1, sr, 1);
 	TEST(EQUAL_ARRAY(sr, sones));
 
 	SUITE("cblas_daxpy");
@@ -138,6 +138,28 @@ static void test_axpy()
 
 	cblas_dcopy(ARRAY_SIZE(dzeros), dr, 1, dzeros, 1);
 	cblas_daxpy(ARRAY_SIZE(dones), 1.0, dones, 1, dr, 1);
+	TEST(EQUAL_ARRAY(dr, dones));
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+static void test_axpby()
+{
+	SUITE("cblas_saxpby");
+
+	float sr[ARRAY_SIZE(sones)];
+
+	cblas_scopy(ARRAY_SIZE(szeros), sr, 1, szeros, 1);
+	cblas_saxpby(ARRAY_SIZE(sones), 1.0f, sones, 1, 1.0f, sr, 1);
+	TEST(EQUAL_ARRAY(sr, sones));
+
+	SUITE("cblas_daxpby");
+
+	double dr[ARRAY_SIZE(dones)];
+
+	cblas_dcopy(ARRAY_SIZE(dzeros), dr, 1, dzeros, 1);
+	cblas_daxpby(ARRAY_SIZE(dones), 1.0, dones, 1, 1.0, dr, 1);
 	TEST(EQUAL_ARRAY(dr, dones));
 }
 
@@ -175,6 +197,7 @@ int main(int argc, char *argv[])
 	test_copy();
 	test_axpy();
 	test_scal();
+	test_axpby();
 
 	END_TESTS();
 }
