@@ -91,7 +91,19 @@ static void test_dot()
 //------------------------------------------------------
 static void test_copy()
 {
-	SUITE("cblas_copy");
+	SUITE("cblas_scopy");
+
+	float sr[ARRAY_SIZE(sones)];
+
+	cblas_scopy(ARRAY_SIZE(sones), sones, 1, sr, 1);
+	TEST(EQUAL_ARRAY(sones, sr));
+
+	SUITE("cblas_dcopy");
+
+	double dr[ARRAY_SIZE(dones)];
+
+	cblas_dcopy(ARRAY_SIZE(dones), dones, 1, dr, 1);
+	TEST(EQUAL_ARRAY(dones, dr));
 }
 
 //------------------------------------------------------
@@ -112,6 +124,8 @@ int main(int argc, char *argv[])
 
 	test_swap();
 	test_dot();
+	test_copy();
+	test_axpy();
 
 	END_TESTS();
 }
