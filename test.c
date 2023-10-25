@@ -76,10 +76,10 @@ static void test_dot()
 	SUITE("cblas_ddot");
 
 	double dr = cblas_ddot(ARRAY_SIZE(dzeros), dzeros, 1, dones, 1);
-	TEST(0.0f == dr);
+	TEST(0.0 == dr);
 
 	dr = cblas_ddot(ARRAY_SIZE(dzeros), dzeros, 1, dzeros, 1);
-	TEST(0.0f == dr);
+	TEST(0.0 == dr);
 
 	dr = cblas_ddot(ARRAY_SIZE(dones), dones, 1, dones, 1);
 	TEST(ARRAY_SIZE(dones) == dr);
@@ -113,6 +113,12 @@ static void test_axpy()
 {
 	SUITE("cblas_saxpy");
 
+	// float sr[ARRAY_SIZE(sones)];
+
+	// cblas_scopy(ARRAY_SIZE(sones), sones, 1, sr, 1);
+	// cblas_saxpy(ARRAY_SIZE(sr), 1.0, sr, 1);
+	// TEST(EQUAL_ARRAY(sr, sones));
+
 	SUITE("cblas_daxpy");
 }
 
@@ -123,8 +129,19 @@ static void test_scal()
 {
 	SUITE("cblas_sscal");
 
+	float sr[ARRAY_SIZE(sones)];
+
+	cblas_scopy(ARRAY_SIZE(sones), sones, 1, sr, 1);
+	cblas_sscal(ARRAY_SIZE(sr), 1.0, sr, 1);
+	TEST(EQUAL_ARRAY(sr, sones));
+
 	SUITE("cblas_dscal");
 
+	double dr[ARRAY_SIZE(dones)];
+
+	cblas_dcopy(ARRAY_SIZE(dones), dones, 1, dr, 1);
+	cblas_dscal(ARRAY_SIZE(dr), 1.0, dr, 1);
+	TEST(EQUAL_ARRAY(dr, dones));
 }
 
 //------------------------------------------------------

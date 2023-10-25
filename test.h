@@ -42,7 +42,7 @@
 // simple test harness
 #define BEGIN_TESTS()   puts("Beginning test cases...")
 #define TEST(s)         printf("\t%d test: " #s " ", ++test_number); TEST_ASSERT(s)
-#define SUITE(s)        puts("\nTesting suite " s "...\n"); test_suites++
+#define SUITE(s)        printf("\nTesting suite %s" s "%s...\n", TERM_YELLOW, TERM_RESET); test_suites++
 #define END_TESTS()     printf("\n...finished test cases.\nSuccessfully evaluated %s%d%s tests in %s%d%s suites, with %s%d%s failed test cases.\n\n", TERM_GREEN, test_number, TERM_RESET, TERM_GREEN, test_suites, TERM_RESET, test_failures ? TERM_RED : TERM_GREEN, test_failures, TERM_RESET); return test_failures
 
 #ifndef TRUE

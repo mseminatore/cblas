@@ -19,7 +19,7 @@ void cblas_saxpy(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, const f
 
     for (CBLAS_INDEX i = 0; i < n; i++)
     {
-        *x = *y;
+        *x = alpha * *x + *y;
         x += incx;
         y += incy;
     }
@@ -36,4 +36,10 @@ void cblas_daxpy(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, const
         return;
     }
 
+    for (CBLAS_INDEX i = 0; i < n; i++)
+    {
+        *x = alpha * *x + *y;
+        x += incx;
+        y += incy;
+    }
 }
