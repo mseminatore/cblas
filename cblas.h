@@ -2,6 +2,7 @@
 #define __CBLAS_H
 
 #include <stddef.h>
+#include <math.h>
 
 typedef size_t CBLAS_INDEX;
 
@@ -23,6 +24,12 @@ void cblas_daxpby(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, doub
 
 void cblas_sswap(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy);
 void cblas_dswap(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy);
+
+void cblas_srot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float c, float s);
+void cblas_drot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy, double c, double s);
+
+float cblas_sasum(CBLAS_INDEX n, float *x, CBLAS_INDEX incx);
+double cblas_dasum(CBLAS_INDEX n, double *x, CBLAS_INDEX incx);
 
 // Level 2 functions
 

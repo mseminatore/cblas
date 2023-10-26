@@ -108,14 +108,14 @@ static void test_copy()
 
 	float sr[ARRAY_SIZE(sones)];
 
-	cblas_scopy(ARRAY_SIZE(sones), sones, 1, sr, 1);
+	cblas_scopy(ARRAY_SIZE(sones), sr, 1, sones, 1);
 	TEST(EQUAL_ARRAY(sones, sr));
 
 	SUITE("cblas_dcopy");
 
 	double dr[ARRAY_SIZE(dones)];
 
-	cblas_dcopy(ARRAY_SIZE(dones), dones, 1, dr, 1);
+	cblas_dcopy(ARRAY_SIZE(dones), dr, 1, dones, 1);
 	TEST(EQUAL_ARRAY(dones, dr));
 }
 
@@ -172,7 +172,7 @@ static void test_scal()
 
 	float sr[ARRAY_SIZE(sones)];
 
-	cblas_scopy(ARRAY_SIZE(sones), sones, 1, sr, 1);
+	cblas_scopy(ARRAY_SIZE(sones), sr, 1, sones, 1);
 	cblas_sscal(ARRAY_SIZE(sr), 1.0, sr, 1);
 	TEST(EQUAL_ARRAY(sr, sones));
 
@@ -180,9 +180,51 @@ static void test_scal()
 
 	double dr[ARRAY_SIZE(dones)];
 
-	cblas_dcopy(ARRAY_SIZE(dones), dones, 1, dr, 1);
+	cblas_dcopy(ARRAY_SIZE(dones), dr, 1, dones, 1);
 	cblas_dscal(ARRAY_SIZE(dr), 1.0, dr, 1);
 	TEST(EQUAL_ARRAY(dr, dones));
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+static void test_rot()
+{
+	SUITE("cblas_srot");
+
+	SUITE("cblas_drot");
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+static void test_asum()
+{
+	SUITE("cblas_sasum");
+
+	// sum of zeros is zero
+	float sr = cblas_sasum(ARRAY_SIZE(szeros), szeros, 1);
+	TEST(sr == 0.0f);
+
+	// sum of ones is count(ones)
+	sr = cblas_sasum(ARRAY_SIZE(sones), sones, 1);
+	TEST(sr == ARRAY_SIZE(sones) * 1.0f);
+
+	sr = cblas_sasum(ARRAY_SIZE(sa), sa, 1);
+	TEST(sr == 45.0f);
+
+	SUITE("cblas_dasum");
+
+	// sum of zeros is zero
+	double dr = cblas_dasum(ARRAY_SIZE(dzeros), dzeros, 1);
+	TEST(dr == 0.0f);
+
+	// sum of ones is count(ones)
+	dr = cblas_dasum(ARRAY_SIZE(dones), dones, 1);
+	TEST(dr == ARRAY_SIZE(dones) * 1.0f);
+
+	dr = cblas_dasum(ARRAY_SIZE(da), da, 1);
+	TEST(sr == 45.0);
 }
 
 //------------------------------------------------------
@@ -198,6 +240,8 @@ int main(int argc, char *argv[])
 	test_axpy();
 	test_scal();
 	test_axpby();
+	test_rot();
+	test_asum();
 
 	END_TESTS();
 }
