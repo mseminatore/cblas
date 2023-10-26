@@ -24,6 +24,14 @@
 #define TERM_MAGENTA ESC "[35m"
 #define TERM_CYAN ESC "[36m"
 #define TERM_WHITE ESC "[37m"
+#define TERM_BRIGHT_BLACK ESC "[90m"
+#define TERM_BRIGHT_RED ESC "[91m"
+#define TERM_BRIGHT_GREEN ESC "[92m"
+#define TERM_BRIGHT_YELLOW ESC "[93m"
+#define TERM_BRIGHT_BLUE ESC "[94m"
+#define TERM_BRIGHT_MAGENTA ESC "[95m"
+#define TERM_BRIGHT_CYAN ESC "[96m"
+#define TERM_BRIGHT_WHITE ESC "[97m"
 
 #ifdef _WIN32
 #   define CHECK_MARK TERM_GREEN "\xFB" TERM_RESET
@@ -43,7 +51,7 @@
 #define BEGIN_TESTS()   puts("Beginning test pass...")
 #define TEST(s)         printf("\t%d test case: %s" #s "%s ", ++test_number, TERM_CYAN, TERM_RESET); TEST_ASSERT(s)
 #define SUITE(s)        printf("\nTesting suite %s" s "%s...\n", TERM_YELLOW, TERM_RESET); test_suites++
-#define MODULE(s)       printf("\nModule %s" s "%s...\n", TERM_MAGENTA, TERM_RESET); test_modules++
+#define MODULE(s)       printf("\nModule %s" s "%s...\n", TERM_BRIGHT_MAGENTA, TERM_RESET); test_modules++
 #define END_TESTS()     printf("\nTest pass completed.\nSuccessfully evaluated %s%d%s tests in %s%d%s suites, with %s%d%s failed test cases.\n\n", TERM_GREEN, test_number, TERM_RESET, TERM_GREEN, test_suites, TERM_RESET, test_failures ? TERM_RED : TERM_GREEN, test_failures, TERM_RESET); return test_failures
 
 #ifndef TRUE
