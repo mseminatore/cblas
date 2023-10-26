@@ -96,7 +96,6 @@ static void test_dot()
 
 	dr = cblas_ddot(ARRAY_SIZE(dones), dones, 1, dones, 1);
 	TEST(ARRAY_SIZE(dones) == dr);
-
 }
 
 //------------------------------------------------------
@@ -217,7 +216,7 @@ static void test_asum()
 
 	// sum of zeros is zero
 	double dr = cblas_dasum(ARRAY_SIZE(dzeros), dzeros, 1);
-	TEST(dr == 0.0f);
+	TEST(dr == 0.0);
 
 	// sum of ones is count(ones)
 	dr = cblas_dasum(ARRAY_SIZE(dones), dones, 1);
@@ -225,6 +224,37 @@ static void test_asum()
 
 	dr = cblas_dasum(ARRAY_SIZE(da), da, 1);
 	TEST(sr == 45.0);
+}
+
+#define EPSILON 1e-5
+#define EQUAL_EPSILON(a, b) fabs((a) - (b)) < EPSILON
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+static void test_nrm2()
+{
+	SUITE("cblas_snrm2");
+
+	float sr = cblas_snrm2(ARRAY_SIZE(szeros), szeros, 1);
+	TEST(sr == 0.0f);
+
+	sr = cblas_snrm2(ARRAY_SIZE(sones), sones, 1);
+	TEST(sr * sr == 10.0f);
+
+	sr = cblas_snrm2(ARRAY_SIZE(sa), sa, 1);
+	TEST(sr * sr == 285.0f);
+
+	SUITE("cblas_dnrm2");
+
+	double dr = cblas_dnrm2(ARRAY_SIZE(dzeros), dzeros, 1);
+	TEST(dr == 0.0);
+
+	dr = cblas_dnrm2(ARRAY_SIZE(dones), dones, 1);
+	TEST(EQUAL_EPSILON(dr * dr, 10.0));
+
+	dr = cblas_dnrm2(ARRAY_SIZE(da), da, 1);
+	TEST(EQUAL_EPSILON(dr * dr, 285.0));
 }
 
 //------------------------------------------------------
@@ -242,6 +272,7 @@ int main(int argc, char *argv[])
 	test_axpby();
 	test_rot();
 	test_asum();
+	test_nrm2();
 
 	END_TESTS();
 }

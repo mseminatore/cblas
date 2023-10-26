@@ -31,6 +31,9 @@ void cblas_drot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IND
 float cblas_sasum(CBLAS_INDEX n, float *x, CBLAS_INDEX incx);
 double cblas_dasum(CBLAS_INDEX n, double *x, CBLAS_INDEX incx);
 
+float cblas_snrm2(CBLAS_INDEX n, float *x, CBLAS_INDEX incx);
+double cblas_dnrm2(CBLAS_INDEX n, double *x, CBLAS_INDEX incx);
+
 // Level 2 functions
 
 // Level 3 functions
