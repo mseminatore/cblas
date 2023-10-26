@@ -40,10 +40,11 @@
 #endif
 
 // simple test harness
-#define BEGIN_TESTS()   puts("Beginning test cases...")
-#define TEST(s)         printf("\t%d test: " #s " ", ++test_number); TEST_ASSERT(s)
+#define BEGIN_TESTS()   puts("Beginning test pass...")
+#define TEST(s)         printf("\t%d test case: %s" #s "%s ", ++test_number, TERM_CYAN, TERM_RESET); TEST_ASSERT(s)
 #define SUITE(s)        printf("\nTesting suite %s" s "%s...\n", TERM_YELLOW, TERM_RESET); test_suites++
-#define END_TESTS()     printf("\n...finished test cases.\nSuccessfully evaluated %s%d%s tests in %s%d%s suites, with %s%d%s failed test cases.\n\n", TERM_GREEN, test_number, TERM_RESET, TERM_GREEN, test_suites, TERM_RESET, test_failures ? TERM_RED : TERM_GREEN, test_failures, TERM_RESET); return test_failures
+#define MODULE(s)       printf("\nModule %s" s "%s...\n", TERM_MAGENTA, TERM_RESET); test_modules++
+#define END_TESTS()     printf("\nTest pass completed.\nSuccessfully evaluated %s%d%s tests in %s%d%s suites, with %s%d%s failed test cases.\n\n", TERM_GREEN, test_number, TERM_RESET, TERM_GREEN, test_suites, TERM_RESET, test_failures ? TERM_RED : TERM_GREEN, test_failures, TERM_RESET); return test_failures
 
 #ifndef TRUE
 #	define TRUE 1
@@ -52,6 +53,12 @@
 #ifndef FALSE
 #	define FALSE 0
 #endif
+
+#ifndef EPSILON
+#   define EPSILON 1e-5
+#endif
+
+#define EQUAL_EPSILON(a, b)     fabs((a) - (b)) < EPSILON
 
 #define ARRAY_SIZE(a)           (sizeof(a)/sizeof(a[0]))
 

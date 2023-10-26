@@ -11,6 +11,7 @@
 int test_number = 0;
 int test_failures = 0;
 int test_suites = 0;
+int test_modules = 0;
 
 static float szeros[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 static float sones[] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
@@ -226,9 +227,6 @@ static void test_asum()
 	TEST(sr == 45.0);
 }
 
-#define EPSILON 1e-5
-#define EQUAL_EPSILON(a, b) fabs((a) - (b)) < EPSILON
-
 //------------------------------------------------------
 //
 //------------------------------------------------------
@@ -260,9 +258,9 @@ static void test_nrm2()
 //------------------------------------------------------
 //
 //------------------------------------------------------
-int main(int argc, char *argv[])
+static void test_level1()
 {
-	BEGIN_TESTS();
+	MODULE("BLAS Level1");
 
 	test_swap();
 	test_dot();
@@ -273,6 +271,16 @@ int main(int argc, char *argv[])
 	test_rot();
 	test_asum();
 	test_nrm2();
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+int main(int argc, char *argv[])
+{
+	BEGIN_TESTS();
+
+	test_level1();
 
 	END_TESTS();
 }
