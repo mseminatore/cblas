@@ -15,7 +15,7 @@ if ( LINUX )
 endif()
 
 # add the library
-add_library(cblas STATIC copy.c axpy.c dot.c swap.c sscal.c axpby.c)
+add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c)
 
 #
 # add the executables
