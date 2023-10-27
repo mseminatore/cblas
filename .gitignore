@@ -1,5 +1,5 @@
 # Project files
-cblas
+blas_test
 build/
 
 # Prerequisites

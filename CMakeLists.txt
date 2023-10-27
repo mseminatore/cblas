@@ -5,7 +5,7 @@ project(cblas VERSION 1.0 LANGUAGES C)
 
 # testing
 enable_testing()
-add_test(NAME test COMMAND test)
+add_test(NAME blas_test COMMAND blas_test)
 
 # add the includes
 include_directories(${PROJECT_SOURCE_DIR})
@@ -23,5 +23,5 @@ add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c rot.c asum.c 
 #
 # add the executables
 #
-add_executable(test test.c)
-target_link_libraries(test cblas ${MATH_LIB})
+add_executable(blas_test test.c)
+target_link_libraries(blas_test cblas ${MATH_LIB})
