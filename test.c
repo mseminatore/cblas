@@ -68,7 +68,6 @@ static void test_swap()
 	cblas_dswap(ARRAY_SIZE(da), da, 1, dc, 1);
 	TEST(EQUAL_ARRAY(da, db));
 	TEST(EQUAL_ARRAY(dc, dd));
-
 }
 
 //------------------------------------------------------
@@ -276,11 +275,30 @@ static void test_level1()
 //------------------------------------------------------
 //
 //------------------------------------------------------
+static void test_level2()
+{
+	MODULE("BLAS Level2");
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+static void test_level3()
+{
+	MODULE("BLAS Level3");
+
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
 int main(int argc, char *argv[])
 {
 	BEGIN_TESTS();
 
 	test_level1();
+	test_level2();
+	test_level3();
 
 	END_TESTS();
 }
