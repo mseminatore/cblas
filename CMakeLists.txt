@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.10)
 # set the project name and version
 project(cblas VERSION 1.0 LANGUAGES C)
 
+# testing
+enable_testing()
+add_test(NAME test COMMAND test)
 
 # add the includes
 include_directories(${PROJECT_SOURCE_DIR})
