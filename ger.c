@@ -11,6 +11,8 @@
 //------------------------------------------------------
 void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda)
 {
+    if (layout == CblasRowMajor)
+    {
 	// if (alpha == 1.0f)
 	// {
 	// 	for (int a_col = 0; a_col < a->cols; a_col++)
@@ -31,6 +33,10 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 	// 		}
 	// 	}
 	// }
+    } else
+    {
+        
+    }
 }
 
 //------------------------------------------------------
