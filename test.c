@@ -1,6 +1,6 @@
 //------------------------------------------------------
 //
-// Copyright 2022 Mark Seminatore. All rights reserved.
+// Copyright 2023 Mark Seminatore. All rights reserved.
 //------------------------------------------------------
 #include <stdio.h>
 #include <string.h>
@@ -27,7 +27,9 @@ static double db[] = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
 static double dc[] = {9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0};
 static double dd[] = {9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0};
 
+//------------------------------------------------------
 //
+//------------------------------------------------------
 static void print_sarray(int n, float *x)
 {
 	putchar('{');
