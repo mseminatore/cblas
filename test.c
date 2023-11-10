@@ -7,6 +7,10 @@
 #include "test.h"
 #include "cblas.h"
 
+#if defined(_WIN32) | defined(_WIN64)
+#	include <Windows.h>
+#endif
+
 //
 int test_number = 0;
 int test_failures = 0;
@@ -327,10 +331,41 @@ static void test_level3()
 }
 
 //------------------------------------------------------
+// enable VT100 support in pre Win11 console window
+//------------------------------------------------------
+int setupConsole()
+{
+#if defined(_WIN32) | defined(_WIN64)
+	// Set output mode to handle virtual terminal sequences
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (hOut == INVALID_HANDLE_VALUE)
+	{
+		return GetLastError();
+	}
+
+	DWORD dwMode = 0;
+	if (!GetConsoleMode(hOut, &dwMode))
+	{
+		return GetLastError();
+	}
+
+	dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+	if (!SetConsoleMode(hOut, dwMode))
+	{
+		return GetLastError();
+	}
+#endif
+
+	return 0;
+}
+
+//------------------------------------------------------
 //
 //------------------------------------------------------
 int main(int argc, char *argv[])
 {
+	setupConsole();
+
 	BEGIN_TESTS();
 
 	test_level1();
