@@ -1,3 +1,7 @@
+//------------------------------------------------------
+//
+// Copyright 2023 Mark Seminatore. All rights reserved.
+//------------------------------------------------------
 #include <stdio.h>
 #include <windows.h>
 #include "cblas.h"
@@ -10,11 +14,6 @@ static DWORD cblas_thread_ids[MAX_THREADS];
 static HANDLE kickoff_event = NULL;
 
 CRITICAL_SECTION queue_lock;
-
-typedef struct work_queue_t
-{
-    struct work_queue_t* next;
-} work_queue_t;
 
 static work_queue_t *work_queue = NULL;
 
@@ -69,9 +68,11 @@ void cblas_shutdown()
 //------------------------------------------------------
 // worker thread function
 //------------------------------------------------------
-static DWORD WINAPI cblas_worker_thread(void *pvoid)
+static DWORD WINAPI cblas_worker_thread(void *pvArg)
 {
-    int thread_num = (int)pvoid;
+    work_queue_t* work_item;
+
+    int thread_num = (int)pvArg;
 
     MT_TRACE("thread %d created.\n", thread_num);
 
@@ -85,9 +86,20 @@ static DWORD WINAPI cblas_worker_thread(void *pvoid)
         MT_TRACE("thread %d woke up.\n", thread_num);
 
         // check for work
-        // if no work, reset event and then go to sleep
-        if (!work_queue)
+        EnterCriticalSection(&queue_lock);
+        
+        work_item = work_queue;
+        if (work_item)
+            work_queue = work_queue->next;
+
+        LeaveCriticalSection(&queue_lock);
+
+        // if no work, reset event and then go to sleep to wait for more work
+        if (!work_item)
+        {
+            ResetEvent(kickoff_event);
             continue;
+        }
 
         // execute work
 

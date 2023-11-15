@@ -1,3 +1,7 @@
+//------------------------------------------------------
+//
+// Copyright 2023 Mark Seminatore. All rights reserved.
+//------------------------------------------------------
 #include <stdio.h>
 #include "cblas.h"
 

@@ -25,6 +25,18 @@ enum {
     CblasColMajor
 };
 
+enum {
+    CblasLevel1
+};
+
+typedef struct work_queue_t
+{
+    struct work_queue_t* next;
+
+    int type;
+    void* kernel;
+} work_queue_t;
+
 //------------------------------------------------------
 // Level 1 functions
 //------------------------------------------------------
