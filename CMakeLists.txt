@@ -17,8 +17,14 @@ if ( LINUX )
     set(MATH_LIB "m")
 endif()
 
+if ( WIN32 )
+    set(SERVER_FILE "server_win32.c")
+else()
+    set(SERVER_FILE "server.c")
+endif()
+
 # add the library
-add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c rot.c asum.c nrm2.c ger.c gemv.c rotg.c)
+add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c rot.c asum.c nrm2.c ger.c gemv.c rotg.c util.c ${SERVER_FILE})
 
 #
 # add the executables

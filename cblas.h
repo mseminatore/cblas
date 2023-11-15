@@ -9,6 +9,10 @@
 #include <stddef.h>
 #include <math.h>
 
+#ifndef MAX_THREADS
+#   define MAX_THREADS 8
+#endif
+
 //------------------------------------------------------
 //
 //------------------------------------------------------
@@ -73,5 +77,6 @@ void cblas_init();
 void cblas_shutdown();
 void cblas_set_num_threads(int threads);
 int cblas_get_num_threads(void);
+void cblas_init_server();
 
 #endif

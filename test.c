@@ -335,7 +335,7 @@ static void test_level3()
 //------------------------------------------------------
 int setupConsole()
 {
-#if defined(_WIN32) | defined(_WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 	// Set output mode to handle virtual terminal sequences
 	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (hOut == INVALID_HANDLE_VALUE)
@@ -366,6 +366,8 @@ int main(int argc, char *argv[])
 {
 	setupConsole();
 
+	cblas_init();
+	
 	BEGIN_TESTS();
 
 	test_level1();
