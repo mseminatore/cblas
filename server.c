@@ -5,10 +5,7 @@
 #include <stdio.h>
 #include "cblas.h"
 
-typedef struct work_queue_t
-{
-    struct work_queue_t* next;
-} work_queue_t;
+extern int cblas_max_threads;
 
 static work_queue_t *work_queue = NULL;
 
