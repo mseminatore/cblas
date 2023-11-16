@@ -102,7 +102,7 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
             continue;
         }
 
-        // execute work
+        // execute the work
         work_item->kernel(NULL);
 
         InterlockedIncrement(&work_item->finished);
