@@ -34,7 +34,7 @@ static int cblas_worker_thread(void *pvoid)
 //------------------------------------------------------
 //
 //------------------------------------------------------
-void cblas_execute()
+void cblas_execute(int items, work_queue_t* queue)
 {
 
 }
@@ -42,7 +42,7 @@ void cblas_execute()
 //------------------------------------------------------
 //
 //------------------------------------------------------
-void cblas_execute_async()
+void cblas_execute_async(int items, work_queue_t* queue)
 {
 
 }
@@ -50,7 +50,7 @@ void cblas_execute_async()
 //------------------------------------------------------
 //
 //------------------------------------------------------
-void cblas_join()
+void cblas_join(int items, work_queue_t* queue)
 {
 
 }
