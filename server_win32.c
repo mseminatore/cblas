@@ -3,6 +3,7 @@
 // Copyright 2023 Mark Seminatore. All rights reserved.
 //------------------------------------------------------
 #include <stdio.h>
+#include <assert.h>
 #include <windows.h>
 #include "cblas.h"
 
@@ -39,7 +40,7 @@ void cblas_init_server()
     InitializeCriticalSection(&queue_lock);
 
     // create the worker threads
-    for (INT_PTR i = 0; i < cblas_max_threads; i++)
+    for (INT_PTR i = 0; i < cblas_max_threads - 1; i++)
     {
         cblas_threads[i] = CreateThread(
             NULL, 
@@ -85,7 +86,7 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
 
         MT_TRACE("thread %d woke up.\n", thread_num);
 
-        // check for work
+        // check for more work, if so remove it from queue
         EnterCriticalSection(&queue_lock);
         
         work_item = work_queue;
@@ -102,7 +103,9 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
         }
 
         // execute work
+        work_item->kernel(NULL);
 
+        InterlockedIncrement(&work_item->finished);
     }
 
     return 0;
@@ -111,23 +114,57 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
 //------------------------------------------------------
 // execute a work queue synchronously
 //------------------------------------------------------
-void cblas_execute(work_queue_t *queue)
+void cblas_execute(int items, work_queue_t *queue)
 {
+    assert(queue);
 
+    cblas_execute_async(items, queue);
+
+    // wait for the queue of work to finish
+    cblas_join(items, queue);
 }
 
 //------------------------------------------------------
 // execute a work queue asynchronously
 //------------------------------------------------------
-void cblas_execute_async(work_queue_t* queue)
+void cblas_execute_async(int items, work_queue_t* queue)
 {
+    assert(queue);
 
+    // add new work to the end of the work_queue
+    EnterCriticalSection(&queue_lock);
+
+    work_queue_t *next_item = work_queue;
+
+    // find the end of the work queue
+    while (next_item)
+        next_item = next_item->next;
+
+    // add new work to the end
+    next_item = queue;
+
+    LeaveCriticalSection(&queue_lock);
+
+    // wake up the worker threads
+    SetEvent(kickoff_event);
 }
 
 //------------------------------------------------------
-//
+// wait for the set of tasks to complete
 //------------------------------------------------------
-void cblas_join()
+void cblas_join(int items, work_queue_t* queue)
 {
+    assert(queue);
 
+    MT_TRACE("waiting on queue to complete.\n");
+
+    while (items)
+    {
+        while (!*((volatile int*)&queue->finished));
+
+        queue = queue->next;
+        items--;
+    }
+
+    MT_TRACE("queue finished.\n");
 }

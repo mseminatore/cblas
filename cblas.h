@@ -29,12 +29,23 @@ enum {
     CblasLevel1
 };
 
+//
+typedef struct
+{
+    CBLAS_INDEX m, n, k, incx, incy, lda, ldb;
+    void* x, * y, * alpha, * beta;
+} cblas_args_t;
+
+//
 typedef struct work_queue_t
 {
     struct work_queue_t* next;
 
-    int type;
-    void* kernel;
+    cblas_args_t* args;
+    int type;       // type of call
+    int finished;   // this work item is finished
+
+    void (*kernel)(void *arg);
 } work_queue_t;
 
 //------------------------------------------------------
@@ -90,5 +101,9 @@ void cblas_shutdown();
 void cblas_set_num_threads(int threads);
 int cblas_get_num_threads(void);
 void cblas_init_server();
+
+void cblas_execute(int items, work_queue_t* queue);
+void cblas_execute_async(int items, work_queue_t* queue);
+void cblas_join(int items, work_queue_t* queue);
 
 #endif
