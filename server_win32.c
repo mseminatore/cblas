@@ -3,7 +3,6 @@
 // Copyright 2023 Mark Seminatore. All rights reserved.
 //------------------------------------------------------
 #include <stdio.h>
-#include <assert.h>
 #include <windows.h>
 #include "cblas.h"
 
@@ -103,7 +102,7 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
         }
 
         // execute the work
-        work_item->kernel(NULL);
+        work_item->kernel(work_item->args);
 
         InterlockedIncrement(&work_item->finished);
     }
@@ -134,14 +133,19 @@ void cblas_execute_async(int items, work_queue_t* queue)
     // add new work to the end of the work_queue
     EnterCriticalSection(&queue_lock);
 
-    work_queue_t *next_item = work_queue;
+    if (!work_queue)
+        work_queue = queue;
+    else
+    {
+        work_queue_t* next_item = work_queue;
 
-    // find the end of the work queue
-    while (next_item)
-        next_item = next_item->next;
+        // find the end of the work queue
+        while (next_item)
+            next_item = next_item->next;
 
-    // add new work to the end
-    next_item = queue;
+        // add new work to the end
+        next_item = queue;
+    }
 
     LeaveCriticalSection(&queue_lock);
 
@@ -160,6 +164,7 @@ void cblas_join(int items, work_queue_t* queue)
 
     while (items)
     {
+        // TODO - yield here in loop?
         while (!*((volatile int*)&queue->finished));
 
         queue = queue->next;

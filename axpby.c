@@ -3,7 +3,6 @@
 // Copyright 2023 Mark Seminatore. All rights reserved.
 //------------------------------------------------------
 
-#include <assert.h>
 #include "cblas.h"
 
 //------------------------------------------------------
@@ -17,11 +16,41 @@ void cblas_saxpby(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float 
         return;
     }
 
-    for (CBLAS_INDEX i = 0; i < n; i++)
+    if (alpha == 1.0 && beta == 1.0)
     {
-        *y = alpha * *x + beta * *y;
-        x += incx;
-        y += incy;
+        for (CBLAS_INDEX i = 0; i < n; i++)
+        {
+            *y += *x;
+            x += incx;
+            y += incy;
+        }
+    }
+    else if (alpha == 1.0)
+    {
+        for (CBLAS_INDEX i = 0; i < n; i++)
+        {
+            *y = *x + beta * *y;
+            x += incx;
+            y += incy;
+        }
+    }
+    else if (beta == 1.0)
+    {
+        for (CBLAS_INDEX i = 0; i < n; i++)
+        {
+            *y = alpha * *x + *y;
+            x += incx;
+            y += incy;
+        }
+    }
+    else // general case
+    {
+        for (CBLAS_INDEX i = 0; i < n; i++)
+        {
+            *y = alpha * *x + beta * *y;
+            x += incx;
+            y += incy;
+        }
     }
 }
 

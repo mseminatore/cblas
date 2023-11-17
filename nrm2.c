@@ -3,7 +3,6 @@
 // Copyright 2023 Mark Seminatore. All rights reserved.
 //------------------------------------------------------
 
-#include <assert.h>
 #include "cblas.h"
 
 //------------------------------------------------------

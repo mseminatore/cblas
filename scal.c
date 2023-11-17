@@ -3,41 +3,56 @@
 // Copyright 2023 Mark Seminatore. All rights reserved.
 //------------------------------------------------------
 
-#include <assert.h>
 #include "cblas.h"
 
 //------------------------------------------------------
 //
 //------------------------------------------------------
-void cblas_sscal(CBLAS_INDEX n, float a, float *x, CBLAS_INDEX incx)
+void cblas_sscal(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx)
 {
-    if (n <= 0 || !x || incx <= 0 || a == 1.0f)
+    if (n <= 0 || !x || incx <= 0)
     {
         assert(n >= 0 && x && incx > 0);
         return;
     }
 
-    for (CBLAS_INDEX i = 0; i < n; i++)
+    if (alpha == 1.0f)
     {
-        *x = a * *x;
-        x += incx;
+        // nothing to do!!
+        return;
+    }
+    else
+    {
+        for (CBLAS_INDEX i = 0; i < n; i++)
+        {
+            *x = alpha * *x;
+            x += incx;
+        }
     }
 }
 
 //------------------------------------------------------
 //
 //------------------------------------------------------
-void cblas_dscal(CBLAS_INDEX n, double a, double *x, CBLAS_INDEX incx)
+void cblas_dscal(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx)
 {
-    if (n <= 0 || !x || incx <= 0 || a == 1.0)
+    if (n <= 0 || !x || incx <= 0)
     {
-        assert(n >= 0 && x);
+        assert(n >= 0 && x && incx > 0);
         return;
     }
 
-    for (CBLAS_INDEX i = 0; i < n; i++)
+    if (alpha == 1.0)
     {
-        *x = a * *x;
-        x += incx;
-    }    
+        // nothing to do!!
+        return;
+    }
+    else
+    {
+        for (CBLAS_INDEX i = 0; i < n; i++)
+        {
+            *x = alpha * *x;
+            x += incx;
+        }
+    }
 }

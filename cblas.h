@@ -8,10 +8,13 @@
 
 #include <stddef.h>
 #include <math.h>
+#include <assert.h>
 
 #ifndef MAX_THREADS
 #   define MAX_THREADS 8
 #endif
+
+//#define MT_ENABLED
 
 //------------------------------------------------------
 //
@@ -36,6 +39,8 @@ typedef struct
     void* x, * y, * alpha, * beta;
 } cblas_args_t;
 
+typedef void (*kernel_function)(cblas_args_t* args);
+
 //
 typedef struct work_queue_t
 {
@@ -45,7 +50,7 @@ typedef struct work_queue_t
     int type;       // type of call
     int finished;   // this work item is finished
 
-    void (*kernel)(void *arg);
+    kernel_function kernel;
 } work_queue_t;
 
 //------------------------------------------------------
