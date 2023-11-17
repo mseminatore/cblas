@@ -28,6 +28,7 @@ void cblas_shutdown()
 //------------------------------------------------------
 static int cblas_worker_thread(void *pvoid)
 {
+    return 0;
 }
 
 
