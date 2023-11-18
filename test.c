@@ -24,7 +24,12 @@ static float sb[] = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
 static float sc[] = {9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0};
 static float sd[] = {9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0};
 
-static float sbig_ones[1024] = { 1.0 };
+static float sbig_ones[1024] = { 1.0f };
+static float sbig_zeroes[1024] = { 0.0f };
+
+static double dbig_ones[1024] = { 1.0 };
+static double dbig_zeroes[1024] = { 0.0 };
+
 static double dzeros[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 static double dones[] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 static double da[] = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
@@ -42,6 +47,21 @@ static void print_sarray(int n, float *x)
 	for (int i = 0; i < n; i++)
 	{
 		printf("%f, ", x[i]);
+	}
+
+	puts("}");
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+static void print_darray(int n, double* x)
+{
+	putchar('{');
+
+	for (int i = 0; i < n; i++)
+	{
+		printf("%g, ", x[i]);
 	}
 
 	puts("}");
@@ -117,12 +137,22 @@ static void test_copy()
 	cblas_scopy(ARRAY_SIZE(sones), sr, 1, sones, 1);
 	TEST(EQUAL_ARRAY(sones, sr));
 
+	float sr1[ARRAY_SIZE(sbig_ones)];
+
+	cblas_scopy(ARRAY_SIZE(sbig_ones), sr1, 1, sbig_ones, 1);
+	TEST(EQUAL_ARRAY(sbig_ones, sr1));
+
 	SUITE("cblas_dcopy");
 
 	double dr[ARRAY_SIZE(dones)];
 
 	cblas_dcopy(ARRAY_SIZE(dones), dr, 1, dones, 1);
 	TEST(EQUAL_ARRAY(dones, dr));
+
+	double dr1[ARRAY_SIZE(dbig_ones)];
+
+	cblas_dcopy(ARRAY_SIZE(dbig_ones), dr1, 1, dbig_ones, 1);
+	TEST(EQUAL_ARRAY(dbig_ones, dr1));
 }
 
 //------------------------------------------------------

@@ -14,7 +14,7 @@
 #   define MAX_THREADS 8
 #endif
 
-//#define MT_ENABLED
+#define MT_ENABLED
 
 //------------------------------------------------------
 //
@@ -110,5 +110,7 @@ void cblas_init_server();
 void cblas_execute(int items, work_queue_t* queue);
 void cblas_execute_async(int items, work_queue_t* queue);
 void cblas_join(int items, work_queue_t* queue);
+
+void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, const void* y, CBLAS_INDEX incy);
 
 #endif
