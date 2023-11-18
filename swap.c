@@ -8,6 +8,45 @@
 //------------------------------------------------------
 //
 //------------------------------------------------------
+static void cblas_sswap_k(cblas_args_t* args)
+{
+    float temp;
+    float* x = args->x;
+    float* y = args->y;
+
+    for (CBLAS_INDEX i = 0; i < args->n; i++)
+    {
+        temp = *y;
+        *y = *x;
+        *x = temp;
+
+        x += args->incx;
+        y += args->incy;
+    }
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+static void cblas_dswap_k(cblas_args_t* args)
+{
+    double temp;
+    double* x = args->x;
+    double* y = args->y;
+
+    for (CBLAS_INDEX i = 0; i < args->n; i++)
+    {
+        temp = *y;
+        *y = *x;
+        *x = temp;
+
+        x += args->incx;
+        y += args->incy;
+    }
+}
+//------------------------------------------------------
+//
+//------------------------------------------------------
 void cblas_sswap(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy)
 {
     if (n < 0 || !x || !y)
@@ -16,6 +55,9 @@ void cblas_sswap(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
         return;
     }
 
+#ifdef MT_ENABLED
+    cblas_level1_exec(sizeof(float), cblas_sswap_k, n, x, incx, y, incy);
+#else
     float temp;
     for (CBLAS_INDEX i = 0; i < n; i++)
     {
@@ -26,6 +68,7 @@ void cblas_sswap(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
         x += incx;
         y += incy;
     }
+#endif
 }
 
 //------------------------------------------------------
@@ -39,6 +82,9 @@ void cblas_dswap(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IN
         return;
     }
 
+#ifdef MT_ENABLED
+    cblas_level1_exec(sizeof(double), cblas_dswap_k, n, x, incx, y, incy);
+#else
     double temp;
     for (CBLAS_INDEX i = 0; i < n; i++)
     {
@@ -49,4 +95,5 @@ void cblas_dswap(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IN
         x += incx;
         y += incy;
     }    
+#endif
 }

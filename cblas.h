@@ -14,7 +14,17 @@
 #   define MAX_THREADS 8
 #endif
 
-//#define MT_ENABLED
+#ifdef _WIN32
+#   define MT_ENABLED
+#endif
+
+//#define MT_DEBUG
+
+#ifdef MT_DEBUG
+#   define MT_TRACE printf
+#else
+#   define MT_TRACE __noop
+#endif
 
 //------------------------------------------------------
 //

@@ -8,7 +8,7 @@
 //------------------------------------------------------
 // single-precision copy kernel
 //------------------------------------------------------
-void cblas_scopy_k(cblas_args_t *args)
+static void cblas_scopy_k(cblas_args_t *args)
 {
     float *x = args->x;
     float *y = args->y;
@@ -24,7 +24,7 @@ void cblas_scopy_k(cblas_args_t *args)
 //------------------------------------------------------
 // double-precision copy kernel
 //------------------------------------------------------
-void cblas_dcopy_k(cblas_args_t* args)
+static void cblas_dcopy_k(cblas_args_t* args)
 {
     double *x = args->x;
     double *y = args->y;
