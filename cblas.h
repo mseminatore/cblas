@@ -14,7 +14,7 @@
 #   define MAX_THREADS 8
 #endif
 
-#define MT_ENABLED
+//#define MT_ENABLED
 
 //------------------------------------------------------
 //
