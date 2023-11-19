@@ -151,7 +151,7 @@ void cblas_execute(int items, work_queue_t *queue)
 
     // wait for the queue of work to finish
     if (items > 1 && queue->next)
-        cblas_join(items - 1, queue->next);
+        cblas_execute_async_join(items - 1, queue->next);
 }
 
 //------------------------------------------------------
@@ -192,7 +192,7 @@ void cblas_execute_async(int items, work_queue_t* queue)
 //------------------------------------------------------
 // wait for the set of tasks to complete
 //------------------------------------------------------
-void cblas_join(int items, work_queue_t* queue)
+void cblas_execute_async_join(int items, work_queue_t* queue)
 {
     assert(queue);
 

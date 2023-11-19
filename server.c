@@ -51,7 +51,7 @@ void cblas_execute_async(int items, work_queue_t* queue)
 //------------------------------------------------------
 //
 //------------------------------------------------------
-void cblas_join(int items, work_queue_t* queue)
+void cblas_execute_async_wait(int items, work_queue_t* queue)
 {
 
 }
