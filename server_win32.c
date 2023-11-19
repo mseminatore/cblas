@@ -114,7 +114,7 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
         // if no work, reset event and then go to sleep to wait for more work
         if (!work_item)
         {
-            MT_TRACE("thread %d resetting event.\n", thread_num);
+            MT_TRACE("thread %d no work, resetting event.\n", thread_num);
 
             ResetEvent(kickoff_event);
             continue;
@@ -136,13 +136,22 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
 //------------------------------------------------------
 void cblas_execute(int items, work_queue_t *queue)
 {
-    assert(queue);
+    assert(items > 0 && queue);
+
+    if (items <= 0 || queue == NULL)
+        return;
 
     // submit task queue
-    cblas_execute_async(items, queue);
+    if (items > 1 && queue->next)
+        cblas_execute_async(items - 1, queue->next);
+
+    // execute the first task on the main thread
+    queue->kernel(queue->args);
+//    InterlockedIncrement(&queue->finished);
 
     // wait for the queue of work to finish
-    cblas_join(items, queue);
+    if (items > 1 && queue->next)
+        cblas_join(items - 1, queue->next);
 }
 
 //------------------------------------------------------
