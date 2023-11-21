@@ -31,17 +31,24 @@
 //------------------------------------------------------
 typedef size_t CBLAS_INDEX;
 
-typedef int CBLAS_LAYOUT;
-
-enum {
+typedef enum CBLAS_LAYOUT {
     CblasRowMajor,
     CblasColMajor
-};
+} CBLAS_LAYOUT;
+
+typedef enum CBLAS_TRANSPOSE {
+    CblasTrans,
+    CblasNoTrans
+} CBLAS_TRANSPOSE;
 
 enum {
-    CblasLevel1
+    CblasLevel1,
+    CblasLevel2,
+    CblasLevel3
 };
 
+//
+//
 //
 typedef struct
 {
@@ -51,6 +58,8 @@ typedef struct
 
 typedef void (*kernel_function)(cblas_args_t* args);
 
+//
+//
 //
 typedef struct work_queue_t
 {
@@ -99,8 +108,8 @@ double cblas_dnrm2(CBLAS_INDEX n, double *x, CBLAS_INDEX incx);
 void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda);
 void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy, double *a, CBLAS_INDEX lda);
 
-void cblas_sgemv();
-void cblas_dgemv();
+void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, float *a, CBLAS_INDEX lda, float *x, CBLAS_INDEX incx, float beta, float *y, CBLAS_INDEX incy);
+void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLAS_INDEX n, double alpha, double *a, CBLAS_INDEX lda, double *x, CBLAS_INDEX incx, double beta, double *y, CBLAS_INDEX incy);
 
 //------------------------------------------------------
 // Level 3 functions
