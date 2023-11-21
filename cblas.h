@@ -31,25 +31,34 @@
 //------------------------------------------------------
 typedef size_t CBLAS_INDEX;
 
+//------------------------------------------------------
+// enumeration for matrix layouts
+//------------------------------------------------------
 typedef enum CBLAS_LAYOUT {
     CblasRowMajor,
     CblasColMajor
 } CBLAS_LAYOUT;
 
+//------------------------------------------------------
+// enumeration for transposing matrices
+//------------------------------------------------------
 typedef enum CBLAS_TRANSPOSE {
     CblasTrans,
     CblasNoTrans
 } CBLAS_TRANSPOSE;
 
+//------------------------------------------------------
+// mode indicator for BLAS level
+//------------------------------------------------------
 enum {
     CblasLevel1,
     CblasLevel2,
     CblasLevel3
 };
 
-//
-//
-//
+//------------------------------------------------------
+// arguments passed to kernel functions
+//------------------------------------------------------
 typedef struct
 {
     CBLAS_INDEX m, n, k, incx, incy, lda, ldb;
@@ -58,9 +67,9 @@ typedef struct
 
 typedef void (*kernel_function)(cblas_args_t* args);
 
-//
-//
-//
+//------------------------------------------------------
+// structure defining the work queue format
+//------------------------------------------------------
 typedef struct work_queue_t
 {
     struct work_queue_t* next;
@@ -73,7 +82,7 @@ typedef struct work_queue_t
 } work_queue_t;
 
 //------------------------------------------------------
-// Level 1 functions
+// BLAS Level 1 functions
 //------------------------------------------------------
 float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, const float *y, CBLAS_INDEX incy);
 double cblas_ddot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, const double *y, CBLAS_INDEX incy);
@@ -103,7 +112,7 @@ float cblas_snrm2(CBLAS_INDEX n, float *x, CBLAS_INDEX incx);
 double cblas_dnrm2(CBLAS_INDEX n, double *x, CBLAS_INDEX incx);
 
 //------------------------------------------------------
-// Level 2 functions
+// BLAS Level 2 functions
 //------------------------------------------------------
 void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda);
 void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy, double *a, CBLAS_INDEX lda);
@@ -112,7 +121,7 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLAS_INDEX n, double alpha, double *a, CBLAS_INDEX lda, double *x, CBLAS_INDEX incx, double beta, double *y, CBLAS_INDEX incy);
 
 //------------------------------------------------------
-// Level 3 functions
+// BLAS Level 3 functions
 //------------------------------------------------------
 void cblas_sgemm();
 void cblas_dgemm();
