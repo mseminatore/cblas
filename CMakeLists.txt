@@ -25,10 +25,13 @@ else()
 endif()
 
 # link with correct cpuid code
-set(CPUID_FILE "")
+set(CPUID_FILE "cpuid_x64.c")
 if ( APPLE )
     set(CPUID_FILE "cpuid_arm64.c")
 endif()
+
+message("SERVER_FILE: " ${SERVER_FILE})
+message("CPUID_FILE: " ${CPUID_FILE})
 
 # add the library
 add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c rot.c asum.c nrm2.c ger.c gemv.c rotg.c util.c ${SERVER_FILE} ${CPUID_FILE})

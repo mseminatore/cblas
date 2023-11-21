@@ -13,6 +13,8 @@ endif
 # add ARM64 cpuid code
 ifeq ($(ARCH), arm64)
 	OBJS += cpuid_arm64.o
+else
+	OBJS += cpuid_x64.o
 endif
 
 all: $(TARGET) blas_stress
