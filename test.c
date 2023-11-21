@@ -315,7 +315,23 @@ static void test_gemv()
 {
 	SUITE("cblas_sgemv");
 
+	float smtx[9] = {1,0,0,0,1,0,0,0,1};
+	float sx[3] = {2,2,2};
+	float sy[3] = {0};
+
+	cblas_sgemv(CblasRowMajor, CblasNoTrans, 3, 3, 1.0f, smtx, 1, sx, 1, 1.0f, sy, 1);
+
+	TEST(EQUAL_ARRAY(sx, sy));
+	
 	SUITE("cblas_dgemv");
+
+	double dmtx[9] = {1,0,0,0,1,0,0,0,1};
+	double dx[3] = {2,2,2};
+	double dy[3] = {0};
+
+	cblas_dgemv(CblasRowMajor, CblasNoTrans, 3, 3, 1.0, dmtx, 1, dx, 1, 1.0, dy, 1);
+
+	TEST(EQUAL_ARRAY(dx, dy));
 }
 
 //------------------------------------------------------

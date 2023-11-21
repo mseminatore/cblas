@@ -6,43 +6,43 @@
 #include "cblas.h"
 
 //------------------------------------------------------
-//
+// y = alpha * A * x + beta * y
 //------------------------------------------------------
 void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, float *a, CBLAS_INDEX lda, float *x, CBLAS_INDEX incx, float beta, float *y, CBLAS_INDEX incy)
 {
-	// float sum;
+	float sum;
 
-	// if (trans == Cblas_NoTranspose)
-	// {
-	// 	// for each row of the matrix
-	// 	for (int mtx_row = 0; mtx_row < mtx->rows; mtx_row++)
-	// 	{
-	// 		sum = 0.0f;
+    assert(m > 0 && n > 0);
 
-	// 		for (int mtx_col = 0; mtx_col < mtx->cols; mtx_col++)
-	// 		{
-	// 			sum += alpha * mtx->values[mtx_row * mtx->cols + mtx_col] * v->values[mtx_col];
-	// 		}
+	if (trans == CblasNoTrans)
+	{
+		// for each row of the matrix
+		for (int row = 0; row < m; row++)
+		{
+			sum = 0.0f;
 
-	// 		dest->values[mtx_row] = beta * dest->values[mtx_row] + sum;
-	// 	}
-	// }
-	// else
-	// {
-	// 	assert(dest->rows == 1);
+			for (int col = 0; col < n; col++)
+			{
+				sum += alpha * a[row * n + col] * x[col];
+			}
 
-	// 	for (int mtx_col = 0; mtx_col < mtx->cols; mtx_col++)
-	// 	{
-	// 		sum = 0.0f;
+			y[row] = beta * y[row] + sum;
+		}
+	}
+	else
+	{
+		for (int col = 0; col < n; col++)
+		{
+			sum = 0.0f;
 
-	// 		for (int mtx_row = 0; mtx_row < mtx->rows; mtx_row++)
-	// 		{
-	// 			sum += alpha * mtx->values[mtx_row * mtx->cols + mtx_col] * v->values[mtx_row];
-	// 		}
+			for (int row = 0; row < m; row++)
+			{
+				sum += alpha * a[row * n + col] * x[row];
+			}
 
-	// 		dest->values[mtx_col] = beta * dest->values[mtx_col] + sum;
-	// 	}
-	// }
+			y[col] = beta * y[col] + sum;
+		}
+	}
 }
 
 //------------------------------------------------------
@@ -50,5 +50,37 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 //------------------------------------------------------
 void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLAS_INDEX n, double alpha, double *a, CBLAS_INDEX lda, double *x, CBLAS_INDEX incx, double beta, double *y, CBLAS_INDEX incy)
 {
+	float sum;
 
+    assert(m > 0 && n > 0);
+
+	if (trans == CblasNoTrans)
+	{
+		// for each row of the matrix
+		for (int row = 0; row < m; row++)
+		{
+			sum = 0.0;
+
+			for (int col = 0; col < n; col++)
+			{
+				sum += alpha * a[row * n + col] * x[col];
+			}
+
+			y[row] = beta * y[row] + sum;
+		}
+	}
+	else
+	{
+		for (int col = 0; col < n; col++)
+		{
+			sum = 0.0;
+
+			for (int row = 0; row < m; row++)
+			{
+				sum += alpha * a[row * n + col] * x[row];
+			}
+
+			y[col] = beta * y[col] + sum;
+		}
+	}
 }
