@@ -17,6 +17,7 @@ if ( LINUX )
     set(MATH_LIB "m")
 endif()
 
+# link with correct thread server
 if ( WIN32 )
     set(SERVER_FILE "server_win32.c")
 else()

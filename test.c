@@ -12,10 +12,10 @@
 #endif
 
 //
-int test_number = 0;
-int test_failures = 0;
-int test_suites = 0;
-int test_modules = 0;
+int test_number		= 0;
+int test_failures 	= 0;
+int test_suites 	= 0;
+int test_modules 	= 0;
 
 static float szeros[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 static float sones[] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
