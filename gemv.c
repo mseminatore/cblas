@@ -14,7 +14,7 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 
     assert(m > 0 && n > 0);
 
-	if (trans == CblasNoTrans)
+	if ((trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor))
 	{
 		// for each row of the matrix
 		for (int row = 0; row < m; row++)
@@ -54,7 +54,7 @@ void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 
     assert(m > 0 && n > 0);
 
-	if (trans == CblasNoTrans && layout == CblasRowMajor || trans == CblasTrans && layout == CblasColMajor)
+	if ((trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor))
 	{
 		// for each row of the matrix
 		for (int row = 0; row < m; row++)
