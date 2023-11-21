@@ -18,7 +18,7 @@
 #   define MT_ENABLED
 #endif
 
-//#define MT_DEBUG
+#define MT_DEBUG
 
 #ifdef MT_DEBUG
 #   define MT_TRACE printf
@@ -72,11 +72,12 @@ typedef void (*kernel_function)(cblas_args_t* args);
 //------------------------------------------------------
 typedef struct work_queue_t
 {
-    struct work_queue_t* next;
+    struct work_queue_t* next;  // ptr to next task in queue
 
-    cblas_args_t* args;
-    int type;       // type of call
-    int finished;   // this work item is finished
+    cblas_args_t* args;         // parameters to kernel function
+    int type;                   // type of call
+    volatile int finished;      // this work item is finished
+    int thread_num, tid;
 
     kernel_function kernel;
 } work_queue_t;

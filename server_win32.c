@@ -76,16 +76,16 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
 
     int thread_num = (int)pvArg;
 
-    MT_TRACE("thread %d created.\n", thread_num);
+    MT_TRACE("thread [%d] created.\n", thread_num);
 
     while(1)
     {
-        MT_TRACE("thread %d sleeps.\n", thread_num);
+        MT_TRACE("thread [%d] sleeps.\n", thread_num);
 
         // event raised when work is added to the queue
         WaitForSingleObject(kickoff_event, INFINITE);
 
-        MT_TRACE("thread %d woke up.\n", thread_num);
+        MT_TRACE("thread [%d] woke up.\n", thread_num);
 
         // check for more work, if so remove it from queue
 #if 1
@@ -114,18 +114,26 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
         // if no work, reset event and then go to sleep to wait for more work
         if (!work_item)
         {
-            MT_TRACE("thread %d no work, resetting event.\n", thread_num);
+            MT_TRACE("thread [%d] no work, resetting event.\n", thread_num);
 
             ResetEvent(kickoff_event);
             continue;
         }
 
-        // execute the work
-        MT_TRACE("thread %d executing a task.\n", thread_num);
+        work_item->thread_num = thread_num;
+        work_item->tid = cblas_thread_ids[thread_num];
 
+        MT_TRACE("thread [%d] executing a task.\n", thread_num);
+
+        // execute the task
         work_item->kernel(work_item->args);
 
-        InterlockedIncrement(&work_item->finished);
+        assert(work_item->finished == 0);
+        LONG r = InterlockedIncrement(&work_item->finished);
+
+        assert(r == 1);
+
+        MT_TRACE("thread [%d] task completed.\n", thread_num);
     }
 
     return 0;
@@ -147,7 +155,7 @@ void cblas_execute(int items, work_queue_t *queue)
 
     // execute the first task on the main thread
     queue->kernel(queue->args);
-//    InterlockedIncrement(&queue->finished);
+    InterlockedIncrement(&queue->finished);
 
     // wait for the queue of work to finish
     if (items > 1 && queue->next)
@@ -167,9 +175,13 @@ void cblas_execute_async(int items, work_queue_t* queue)
     EnterCriticalSection(&queue_lock);
 
     if (!work_queue)
+    {
         work_queue = queue;
+    }
     else
     {
+        MT_TRACE("work_queue was not empty!\n");
+
         work_queue_t* next_item = work_queue;
 
         // find the end of the work queue
@@ -186,7 +198,6 @@ void cblas_execute_async(int items, work_queue_t* queue)
     MT_TRACE("waking worker threads.\n");
 
     SetEvent(kickoff_event);
-   
 }
 
 //------------------------------------------------------
@@ -200,7 +211,8 @@ void cblas_execute_async_join(int items, work_queue_t* queue)
 
     while (items)
     {
-        while (!*((volatile int*)&queue->finished))
+        //while (!*((volatile int*)&queue->finished))
+        while (!queue->finished)
             YieldProcessor();
 
         queue = queue->next;

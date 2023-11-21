@@ -139,15 +139,18 @@ static void test_copy()
 
 	float sr1[ARRAY_SIZE(sbig_ones)];
 
-	//time_t time_start = time(NULL);
+	time_t time_start = time(NULL);
 
-	cblas_scopy(ARRAY_SIZE(sbig_ones), sr1, 1, sbig_ones, 1);
+	for (int i = 0; i < 500; i++)
+	{
+		cblas_scopy(ARRAY_SIZE(sbig_ones), sr1, 1, sbig_ones, 1);
+	}
 	TEST(EQUAL_ARRAY(sbig_ones, sr1));
 
-//	time_t time_end = time(NULL);
-//	double diff_t = (double)(time_end - time_start);
+	time_t time_end = time(NULL);
+	double diff_t = (double)(time_end - time_start);
 //	double per_step = 1000.0 * diff_t / (rows * epoch);
-//	printf("\ncblas_scopy time: %f seconds\n", diff_t);
+	printf("\ncblas_scopy time: %f seconds\n", diff_t);
 
 	SUITE("cblas_dcopy");
 
