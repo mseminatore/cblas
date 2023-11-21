@@ -1,3 +1,8 @@
+//------------------------------------------------------
+//
+// Copyright 2023 Mark Seminatore. All rights reserved.
+//------------------------------------------------------
+#include <stdio.h>
 #include "cblas.h"
 
 //
@@ -46,18 +51,21 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
 }
 
 //------------------------------------------------------
-//
+// initialize the CBLAS library
 //------------------------------------------------------
 void cblas_init()
 {
     // TODO - detect CPU
+    cblas_set_num_threads(cpu_get_core_count());
+    printf("CBLAS 0.1 %s MAX_THREADS=%d\n", cpu_get_core_name(), MAX_THREADS);
+    printf("Threads used: %d\n\n", cblas_get_num_threads());
 
     // start server
     cblas_init_server();
 }
 
 //------------------------------------------------------
-//
+// set the active number of threads
 //------------------------------------------------------
 void cblas_set_num_threads(int threads)
 {
@@ -71,7 +79,7 @@ void cblas_set_num_threads(int threads)
 }
 
 //------------------------------------------------------
-//
+// return the active number of threads
 //------------------------------------------------------
 int cblas_get_num_threads(void)
 {

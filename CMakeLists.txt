@@ -24,8 +24,14 @@ else()
     set(SERVER_FILE "server.c")
 endif()
 
+# link with correct cpuid code
+set(CPUID_FILE "")
+if ( APPLE )
+    set(CPUID_FILE "cpuid_arm64.c")
+endif()
+
 # add the library
-add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c rot.c asum.c nrm2.c ger.c gemv.c rotg.c util.c ${SERVER_FILE})
+add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c rot.c asum.c nrm2.c ger.c gemv.c rotg.c util.c ${SERVER_FILE} ${CPUID_FILE})
 
 #
 # add the executables

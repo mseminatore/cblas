@@ -11,7 +11,7 @@
 #include <assert.h>
 
 #ifndef MAX_THREADS
-#   define MAX_THREADS 8
+#   define MAX_THREADS 64
 #endif
 
 #ifdef _WIN32
@@ -141,5 +141,8 @@ void cblas_execute_async(int items, work_queue_t* queue);
 void cblas_execute_async_join(int items, work_queue_t* queue);
 
 void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, const void* y, CBLAS_INDEX incy);
+
+int cpu_get_core_count();
+const char *cpu_get_core_name();
 
 #endif

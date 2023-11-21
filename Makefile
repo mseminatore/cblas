@@ -1,15 +1,19 @@
 # get arch name
 ARCH = $(shell uname -m)
+TARGET = blas_test
+OBJS = swap.o dot.o copy.o axpy.o scal.o axpby.o asum.o nrm2.o rot.o ger.o gemv.o rotg.o util.o server.o
+DEPS = cblas.h test.h
+CFLAGS += -g -O3
 
 # add Intel specific compiler flags
 ifeq ($(ARCH), x86_64)
 	CFLAGS += -mavx2 -mfma
 endif
 
-TARGET = blas_test
-OBJS = swap.o dot.o copy.o axpy.o scal.o axpby.o asum.o nrm2.o rot.o ger.o gemv.o rotg.o util.o server.o
-DEPS = cblas.h test.h
-CFLAGS += -g -O3
+# add ARM64 cpuid code
+ifeq ($(ARCH), arm64)
+	OBJS += cpuid_arm64.o
+endif
 
 all: $(TARGET) blas_stress
 
