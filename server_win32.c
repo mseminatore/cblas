@@ -88,52 +88,53 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
         MT_TRACE("thread [%d] woke up.\n", thread_num);
 
         // check for more work, if so remove it from queue
-#if 1
-        EnterCriticalSection(&queue_lock);
-        
-        work_item = work_queue;
-        if (work_item)
-            work_queue = work_queue->next;
+        while (1)
+        {
+#if 0
+            EnterCriticalSection(&queue_lock);
 
-        LeaveCriticalSection(&queue_lock);
+            work_item = work_queue;
+            if (work_item)
+                work_queue = work_queue->next;
+
+            LeaveCriticalSection(&queue_lock);
 #else
-        volatile work_queue_t* queue_next;
+            volatile work_queue_t* queue_next;
 
-        INT_PTR prev_value;
-        do {
-            work_item = (volatile work_queue_t*)work_queue;
-            if (!work_item)
-                break;
+            INT_PTR prev_value;
+            do {
+                work_item = (volatile work_queue_t*)work_queue;
+                if (!work_item)
+                    break;
 
-            queue_next = (volatile work_queue_t*)work_item->next;
-            prev_value = WIN_CAS((INT_PTR*)&work_queue, (INT_PTR)queue_next, (INT_PTR)work_item);
-        } while (prev_value != work_item);
-
+                queue_next = (volatile work_queue_t*)work_item->next;
+                prev_value = WIN_CAS((INT_PTR*)&work_queue, (INT_PTR)queue_next, (INT_PTR)work_item);
+            } while (prev_value != work_item);
 #endif
 
-        // if no work, reset event and then go to sleep to wait for more work
-        if (!work_item)
-        {
-            MT_TRACE("thread [%d] no work, resetting event.\n", thread_num);
+            // if no work, reset event and then go to sleep to wait for more work
+            if (!work_item)
+            {
+                //MT_TRACE("thread [%d] no work, resetting event.\n", thread_num);
+                //ResetEvent(kickoff_event);
+                break;
+            }
 
-            ResetEvent(kickoff_event);
-            continue;
+            work_item->thread_num = thread_num;
+            work_item->tid = cblas_thread_ids[thread_num];
+
+            MT_TRACE("thread [%d] executing a task.\n", thread_num);
+
+            // execute the task
+            work_item->kernel(work_item->args);
+
+            assert(work_item->finished == 0);
+            LONG r = InterlockedIncrement(&work_item->finished);
+
+            assert(r == 1);
+
+            MT_TRACE("thread [%d] task completed.\n", thread_num);
         }
-
-        work_item->thread_num = thread_num;
-        work_item->tid = cblas_thread_ids[thread_num];
-
-        MT_TRACE("thread [%d] executing a task.\n", thread_num);
-
-        // execute the task
-        work_item->kernel(work_item->args);
-
-        assert(work_item->finished == 0);
-        LONG r = InterlockedIncrement(&work_item->finished);
-
-        assert(r == 1);
-
-        MT_TRACE("thread [%d] task completed.\n", thread_num);
     }
 
     return 0;
@@ -211,7 +212,6 @@ void cblas_execute_async_join(int items, work_queue_t* queue)
 
     while (items)
     {
-        //while (!*((volatile int*)&queue->finished))
         while (!queue->finished)
             YieldProcessor();
 
@@ -220,4 +220,11 @@ void cblas_execute_async_join(int items, work_queue_t* queue)
     }
 
     MT_TRACE("queued tasks finished.\n");
+
+    // TODO - what happens if new work has been added to the queue while we were waiting here?
+    // TODO - if we reset the event before the worker threads wake, that work won't be processed.
+    // TODO - possible check that global work queue is empty before resetting the event??
+    assert(work_queue == NULL);
+
+    ResetEvent(kickoff_event);
 }

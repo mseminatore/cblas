@@ -18,7 +18,7 @@
 #   define MT_ENABLED
 #endif
 
-#define MT_DEBUG
+//#define MT_DEBUG
 
 #ifdef MT_DEBUG
 #   define MT_TRACE printf
