@@ -1,5 +1,7 @@
 # Project files
 blas_test
+blas_stress
+blas_perf
 build/
 
 # Prerequisites

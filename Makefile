@@ -11,7 +11,10 @@ OBJS = swap.o dot.o copy.o axpy.o scal.o axpby.o asum.o nrm2.o rot.o ger.o gemv.
 DEPS = cblas.h test.h
 CFLAGS += -g -O3
 
-all: $(TARGET)
+all: $(TARGET) blas_stress
+
+blas_stress: $(OBJS) test_stress.o
+	$(CC) $(LFLAGS) -o $@ $^
 
 $(TARGET):	$(OBJS) test.o
 	$(CC) $(LFLAGS) -o $@ $^
@@ -20,5 +23,5 @@ $(TARGET):	$(OBJS) test.o
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 clean:
-	rm $(TARGET) $(OBJS) test.o
+	rm $(TARGET) $(OBJS) test.o test_stress.o blas_stress
 
