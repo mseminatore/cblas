@@ -53,13 +53,13 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
 //------------------------------------------------------
 void cblas_init()
 {
-    // detect CPU and core count
     cblas_set_num_threads(cpu_get_core_count());
     printf("\nCBLAS 0.1 %s MAX_THREADS=%d\n", cpu_get_core_name(), MAX_THREADS);
     printf("Threads used: %d\n", cblas_get_num_threads());
 
     // TODO - detect cache sizes?
-    
+    // TODO - detect cpu features?
+
     // start server
     cblas_init_server();
 }
@@ -69,17 +69,23 @@ void cblas_init()
 //------------------------------------------------------
 void cblas_set_num_threads(int threads)
 {
+    printf("set threads = %d\n", threads);
+
     if (threads < 1)
         threads = 1;
         
     if (threads > MAX_THREADS)
         threads = MAX_THREADS;
 
+    // TODO - need code for if we are adding more threads!!
+    // if (threads > cblas_max_threads)
+    //     ;
+
     cblas_max_threads = threads;
 }
 
 //------------------------------------------------------
-// return the active number of threads
+// return the active number of cblas threads
 //------------------------------------------------------
 int cblas_get_num_threads(void)
 {

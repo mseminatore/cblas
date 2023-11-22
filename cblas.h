@@ -10,6 +10,10 @@
 #include <math.h>
 #include <assert.h>
 
+#ifdef __cplusplus
+    extern "C" {
+#endif
+
 #ifndef MAX_THREADS
 #   define MAX_THREADS 64
 #endif
@@ -17,6 +21,10 @@
 #ifdef _WIN32
 #   define MT_ENABLED
 #endif
+
+#define CBLAS_LEVEL_1_THREADING
+#define CBLAS_LEVEL_2_THREADING
+#define CBLAS_LEVEL_3_THREADING
 
 //#define MT_DEBUG
 
@@ -148,5 +156,9 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
 int cpu_get_core_count();
 const char *cpu_get_core_name();
 int cpu_get_cacheline_size();
+
+#ifdef __cplusplus
+    }
+#endif
 
 #endif

@@ -15,7 +15,7 @@
 #define EDX 3
 
 //------------------------------------------------------
-//
+// return the CPU name
 //------------------------------------------------------
 const char *cpu_get_core_name()
 {
@@ -47,7 +47,7 @@ const char *cpu_get_core_name()
 }
 
 //------------------------------------------------------
-//
+// return the CPU core brand name
 //------------------------------------------------------
 const char* cpu_get_brand_string(void)
 {
@@ -72,7 +72,7 @@ const char* cpu_get_brand_string(void)
 }
 
 //------------------------------------------------------
-//
+// return the number of usable cores
 //------------------------------------------------------
 int cpu_get_core_count()
 {

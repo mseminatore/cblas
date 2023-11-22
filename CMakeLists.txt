@@ -17,6 +17,14 @@ if ( LINUX )
     set(MATH_LIB "m")
 endif()
 
+# if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
+#     set_property(TARGET foo APPEND PROPERTY COMPILE_OPTIONS -g -O2)
+# elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+#     set_property(TARGET foo APPEND PROPERTY COMPILE_OPTIONS -g -O2)
+# elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
+#     set_property(TARGET foo APPEND PROPERTY COMPILE_OPTIONS /W3)
+# endif()
+
 # link with correct thread server
 if ( WIN32 )
     set(SERVER_FILE "server_win32.c")
@@ -25,9 +33,10 @@ else()
 endif()
 
 # link with correct cpuid code
-set(CPUID_FILE "cpuid_x64.c")
-if ( APPLE )
+if ( CMAKE_HOST_SYSTEM_PROCESSOR MATCHES arm64)
     set(CPUID_FILE "cpuid_arm64.c")
+else()
+    set(CPUID_FILE "cpuid_x64.c")
 endif()
 
 message("SERVER_FILE: " ${SERVER_FILE})
