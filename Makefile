@@ -1,7 +1,7 @@
 # get arch name
 ARCH = $(shell uname -m)
 TARGET = blas_test
-OBJS = swap.o dot.o copy.o axpy.o scal.o axpby.o asum.o nrm2.o rot.o ger.o gemv.o rotg.o util.o server.o
+OBJS = swap.o dot.o copy.o axpy.o scal.o axpby.o asum.o nrm2.o rot.o ger.o gemv.o rotg.o util.o server.o test_main.o
 DEPS = cblas.h test.h
 CFLAGS += -g -O3
 

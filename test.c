@@ -408,4 +408,6 @@ int test_main(int argc, char *argv[])
 	test_level1();
 	test_level2();
 	test_level3();
+
+	return 0;
 }

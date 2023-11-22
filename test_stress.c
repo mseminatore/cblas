@@ -68,4 +68,6 @@ int test_main(int argc, char *argv[])
 	cblas_init();
 	
 	test_stress();
+
+	return 0;
 }
