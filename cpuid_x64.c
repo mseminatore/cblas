@@ -5,6 +5,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#if defined(__clang__) || defined(__GNUC__)
+#	include <cpuid.h>
+#endif
+
 #define EAX 0
 #define EBX 1
 #define ECX 2
@@ -15,8 +19,8 @@
 //------------------------------------------------------
 const char *cpu_get_core_name()
 {
-#if defined(_MSC_VER)
 	static char mfgID[13];
+#if defined(_MSC_VER)
 	int info[4];
 
 	__cpuid(info, 0);
@@ -28,6 +32,16 @@ const char *cpu_get_core_name()
 
 	return mfgID;
 #else
+	unsigned int eax, ebx, ecx, edx;
+
+	__cpuid(0, eax, ebx, ecx, edx);
+	((int*)mfgID)[0] = ebx;
+	((int*)mfgID)[1] = edx;
+	((int*)mfgID)[2] = ecx;
+	mfgID[12] = 0;
+
+	return mfgID;
+
 	return "Generic x64";
 #endif
 }
@@ -62,10 +76,10 @@ const char* cpu_get_brand_string(void)
 //------------------------------------------------------
 int cpu_get_core_count()
 {
+	const char* vendor_string = cpu_get_core_name();
+
 #if defined(_MSC_VER)
 	int info[4];
-
-	const char* vendor_string = cpu_get_core_name();
 
 	if (!strcmp(vendor_string, "GenuineIntel"))
 	{
@@ -77,10 +91,30 @@ int cpu_get_core_count()
 		__cpuid(info, 0x80000008);
 		return ((unsigned)(info[ECX] & 0xff)) + 1; // ECX[7:0] + 1
 	}
-#else
+	else
 	{
 		puts("Error: Unknown CPU vendor");
 		return 1;
 	}
+
+#else
+	unsigned int eax, ebx, ecx, edx;
+
+	if (!strcmp(vendor_string, "GenuineIntel"))
+	{
+		__cpuid(4, eax, ebx, ecx, edx);
+		return ((eax >> 26) & 0x3f) + 1; // EAX[31:26] + 1
+	}
+	else if (!strcmp(vendor_string, "AuthenticAMD"))
+	{
+		__cpuid(0x80000008, eax, ebx, ecx, edx);
+		return ((unsigned)(ecx & 0xff)) + 1; // ECX[7:0] + 1
+	}
+	else
+	{
+		puts("Error: Unknown CPU vendor");
+		return 1;
+	}
+
 #endif
 }
