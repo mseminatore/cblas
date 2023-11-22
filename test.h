@@ -66,9 +66,11 @@
 #   define EPSILON 1e-5
 #endif
 
-#define EQUAL_EPSILON(a, b)     fabs((a) - (b)) < EPSILON
+#define EQUAL_EPSILON(a, b)     (fabs((a) - (b)) < EPSILON)
 
-#define ARRAY_SIZE(a)           (sizeof(a)/sizeof(a[0]))
+#ifndef ARRAY_SIZE
+#	define ARRAY_SIZE(a)        (sizeof(a)/sizeof(a[0]))
+#endif
 
 #define EQUAL_ARRAY(a, b)       !memcmp((a), (b), sizeof(a))
 #define NOT_EQUAL_ARRAY(a, b)   !EQUAL_ARRAY(a, b)
@@ -77,5 +79,7 @@ extern int test_number;
 extern int test_suites;
 extern int test_failures;
 extern int test_modules;
+
+int test_main(int argc, char* argv[]);
 
 #endif // #ifndef __TEST_H

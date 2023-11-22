@@ -11,7 +11,7 @@ int cblas_max_threads = MAX_THREADS;
 //------------------------------------------------------
 // leve1 1 dispatch
 //------------------------------------------------------
-void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, const void* y, CBLAS_INDEX incy)
+void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n, void *x, CBLAS_INDEX incx, void *y, CBLAS_INDEX incy)
 {
     work_queue_t queue[MAX_THREADS];
     cblas_args_t args[MAX_THREADS];

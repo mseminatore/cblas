@@ -85,11 +85,11 @@ typedef struct work_queue_t
 //------------------------------------------------------
 // BLAS Level 1 functions
 //------------------------------------------------------
-float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, const float *y, CBLAS_INDEX incy);
-double cblas_ddot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, const double *y, CBLAS_INDEX incy);
+float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy);
+double cblas_ddot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy);
 
-void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, const float *y, CBLAS_INDEX incy);
-void cblas_dcopy(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, const double *y, CBLAS_INDEX incy);
+void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy);
+void cblas_dcopy(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy);
 
 void cblas_sscal(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx);
 void cblas_dscal(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx);
@@ -140,7 +140,7 @@ void cblas_execute(int items, work_queue_t* queue);
 void cblas_execute_async(int items, work_queue_t* queue);
 void cblas_execute_async_join(int items, work_queue_t* queue);
 
-void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, const void* y, CBLAS_INDEX incy);
+void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy);
 
 int cpu_get_core_count();
 const char *cpu_get_core_name();

@@ -8,16 +8,6 @@
 #include "test.h"
 #include "cblas.h"
 
-#if defined(_WIN32) | defined(_WIN64)
-#	include <Windows.h>
-#endif
-
-//
-int test_number		= 0;
-int test_failures 	= 0;
-int test_suites 	= 0;
-int test_modules 	= 0;
-
 static float szeros[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 static float sones[] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 static float sa[] = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
@@ -69,46 +59,13 @@ static void test_stress()
 }
 
 //------------------------------------------------------
-// enable VT100 support in pre Win11 console window
-//------------------------------------------------------
-int setupConsole()
-{
-#if defined(_WIN32) || defined(_WIN64)
-	// Set output mode to handle virtual terminal sequences
-	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-	if (hOut == INVALID_HANDLE_VALUE)
-	{
-		return GetLastError();
-	}
-
-	DWORD dwMode = 0;
-	if (!GetConsoleMode(hOut, &dwMode))
-	{
-		return GetLastError();
-	}
-
-	dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-	if (!SetConsoleMode(hOut, dwMode))
-	{
-		return GetLastError();
-	}
-#endif
-
-	return 0;
-}
-
-//------------------------------------------------------
 //
 //------------------------------------------------------
-int main(int argc, char *argv[])
+int test_main(int argc, char *argv[])
 {
-	setupConsole();
+//	cblas_set_num_threads(1);
 
 	cblas_init();
 	
-	BEGIN_TESTS();
-
 	test_stress();
-
-	END_TESTS();
 }

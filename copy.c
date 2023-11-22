@@ -40,7 +40,7 @@ static void cblas_dcopy_k(cblas_args_t* args)
 //------------------------------------------------------
 // single-precision copy
 //------------------------------------------------------
-void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, const float *y, CBLAS_INDEX incy)
+void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy)
 {
     if (n < 0 || !x || !y)
     {
@@ -63,7 +63,7 @@ void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, const float *y, CBLA
 //------------------------------------------------------
 // double-precision copy
 //------------------------------------------------------
-void cblas_dcopy(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, const double *y, CBLAS_INDEX incy)
+void cblas_dcopy(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy)
 {
     if (n < 0 || !x || !y)
     {

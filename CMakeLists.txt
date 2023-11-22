@@ -39,8 +39,8 @@ add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c rot.c asum.c 
 #
 # add the executables
 #
-add_executable(blas_test test.c)
+add_executable(blas_test test_main.c test.c)
 target_link_libraries(blas_test cblas ${MATH_LIB})
 
-add_executable(blas_stress test_stress.c)
+add_executable(blas_stress test_main.c test_stress.c)
 target_link_libraries(blas_stress cblas ${MATH_LIB})
