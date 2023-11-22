@@ -58,7 +58,7 @@ void cblas_init()
     // TODO - detect CPU
     cblas_set_num_threads(cpu_get_core_count());
     printf("\nCBLAS 0.1 %s MAX_THREADS=%d\n", cpu_get_core_name(), MAX_THREADS);
-    printf("Threads used: %d\n\n", cblas_get_num_threads());
+    printf("Threads used: %d\n", cblas_get_num_threads());
 
     // start server
     cblas_init_server();
