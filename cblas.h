@@ -142,7 +142,11 @@ void cblas_execute_async_join(int items, work_queue_t* queue);
 
 void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy);
 
+//------------------------------------------------------
+// cpu ID functions
+//------------------------------------------------------
 int cpu_get_core_count();
 const char *cpu_get_core_name();
+int cpu_get_cacheline_size();
 
 #endif

@@ -64,3 +64,19 @@ int cpu_get_core_count()
 
     return 1;
 }
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+int cpu_get_cacheline_size()
+{
+#ifdef __APPLE__
+    uint32_t entry;
+    size_t len = sizeof(entry);
+
+    sysctlbyname("hw.cachelinesize", &entry, &len, NULL, 0);
+    return entry;
+#endif
+
+    return 32;
+}
