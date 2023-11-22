@@ -6,6 +6,7 @@
 
 #ifdef __APPLE__
 #include <sys/sysctl.h>
+//#include <mach/machine.h>
 #endif
 
 enum {
@@ -23,7 +24,9 @@ static const char *cpu_names[] =
     "Vortex-M3"
 };
 
-//
+//------------------------------------------------------
+// return the name of the current processor
+//------------------------------------------------------
 const char *cpu_get_core_name()
 {
 #ifdef __APPLE__
@@ -31,6 +34,7 @@ const char *cpu_get_core_name()
     size_t len = sizeof(entry);
     sysctlbyname("hw.cpufamily", &entry, &len, NULL, 0);
 
+    // these values taken from <mach/machine.h>
     if (entry == 131287967 || entry == 458787763)
         return cpu_names[CPU_VORTEX_M1];
     else if (entry == 3660830781)
@@ -41,15 +45,19 @@ const char *cpu_get_core_name()
         return cpu_names[CPU_GENERIC];
 
 #endif
+    return cpu_names[CPU_GENERIC];
 }
 
-//
+//------------------------------------------------------
+// return the number of CPU cores available
+//------------------------------------------------------
 int cpu_get_core_count()
 {    
 #ifdef __APPLE__
     uint32_t entry;
     size_t len = sizeof(entry);
 
+    // TODO - per sysctl.h this might want to be hw.ncpu?
     sysctlbyname("hw.physicalcpu_max", &entry, &len, NULL, 0);
     return entry;
 #endif

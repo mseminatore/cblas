@@ -23,7 +23,7 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
         args[i].incx = incx;
         args[i].incy = incy;
 
-        // compute partition starts based on partition size and threads
+        // compute partition starts based on remaining task size and remaining threads
         CBLAS_INDEX partition_size = (n + thread_count - i - 1) / (thread_count - i);
 
         args[i].n = partition_size;
@@ -31,8 +31,6 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
         args[i].y = y;
 
         n -= partition_size;
-        //x += partition_size * incx;
-        //y += partition_size * incy;
 
         x = (void*)((CBLAS_INDEX)x + partition_size * incx * stride);
         y = (void*)((CBLAS_INDEX)y + partition_size * incy * stride);
@@ -55,11 +53,13 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
 //------------------------------------------------------
 void cblas_init()
 {
-    // TODO - detect CPU
+    // detect CPU and core count
     cblas_set_num_threads(cpu_get_core_count());
     printf("\nCBLAS 0.1 %s MAX_THREADS=%d\n", cpu_get_core_name(), MAX_THREADS);
     printf("Threads used: %d\n", cblas_get_num_threads());
 
+    // TODO - detect cache sizes?
+    
     // start server
     cblas_init_server();
 }
