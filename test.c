@@ -289,7 +289,31 @@ static void test_ger()
 {
 	SUITE("cblas_sger");
 
+	float sx[3] = {1,1,1};
+	float sy[3] = {1,1,1};
+	float sa[9] = {0,0,0,0,0,0,0,0,0};
+	float sr[9] = {1,1,1,1,1,1,1,1,1};
+
+	cblas_sger(CblasRowMajor, 3, 3, 1.0f, sx, 1, sy, 1, sa, 3);
+	TEST(EQUAL_ARRAY(sa, sr));
+
+	cblas_sscal(9, 3.0f, sr, 1);
+	cblas_sger(CblasColMajor, 3, 3, 2.0f, sx, 1, sy, 1, sa, 3);
+	TEST(EQUAL_ARRAY(sa, sr));
+
 	SUITE("cblas_dger");
+
+	double dx[3] = {1,1,1};
+	double dy[3] = {1,1,1};
+	double da[9] = {0,0,0,0,0,0,0,0,0};
+	double dr[9] = {1,1,1,1,1,1,1,1,1};
+
+	cblas_dger(CblasRowMajor, 3, 3, 1.0, dx, 1, dy, 1, da, 3);
+	TEST(EQUAL_ARRAY(da, dr));
+
+	cblas_dscal(9, 3.0f, dr, 1);
+	cblas_dger(CblasColMajor, 3, 3, 2.0, dx, 1, dy, 1, da, 3);
+	TEST(EQUAL_ARRAY(da, dr));
 }
 
 //------------------------------------------------------
