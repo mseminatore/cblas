@@ -69,7 +69,7 @@ void cblas_init()
 //------------------------------------------------------
 void cblas_set_num_threads(int threads)
 {
-    printf("set threads = %d\n", threads);
+//    printf("set threads = %d\n", threads);
 
     if (threads < 1)
         threads = 1;

@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 #ifdef __APPLE__
-#include <sys/sysctl.h>
+#   include <sys/sysctl.h>
 //#include <mach/machine.h>
 #endif
 
