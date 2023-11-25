@@ -5,6 +5,7 @@ OBJS = swap.o dot.o copy.o axpy.o scal.o axpby.o asum.o nrm2.o rot.o ger.o gemv.
 DEPS = cblas.h test.h
 CFLAGS += -g -O3
 LIBNAME = libcblas.a
+#LFLAGS += -lcblas
 
 # add Intel specific compiler flags
 ifeq ($(ARCH), x86_64)
@@ -18,16 +19,16 @@ else
 	OBJS += cpuid_x64.o
 endif
 
-all: $(TARGET) blas_stress
+all: $(LIBNAME) blas_stress blas_test
 	
-lib: $(OBJS)
+$(LIBNAME): $(OBJS)
 	ar rcs $(LIBNAME) $(OBJS)
 
-blas_stress: $(OBJS) test_stress.o
-	$(CC) $(LFLAGS) -o $@ $^
+blas_stress: test_stress.o
+	$(CC) -o $@ $^ $(LFLAGS) $(LIBNAME)
 
-$(TARGET):	$(OBJS) test.o
-	$(CC) $(LFLAGS) -o $@ $^
+blas_test: test.o
+	$(CC) -o $@ $^ $(LFLAGS) $(LIBNAME)
 
 %.o: %.c $(DEPS)
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
