@@ -6,14 +6,22 @@
 #include "cblas.h"
 
 //------------------------------------------------------
-//
+// single-precision rank-1 update
 //------------------------------------------------------
 void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda)
 {
-	assert(m > 0 && n > 0);
+	assert(m > 0 && n > 0 && incx != 0 && incy != 0 && alpha != 0.0f);
 	assert(x && y && a);
 	assert(layout == CblasRowMajor || layout == CblasColMajor);
+	assert(lda >= MAX(1, m));
 
+	if (m <= 0 || n <= 0 || alpha == 0.0f)
+		return;
+
+	if (layout != CblasRowMajor && layout != CblasColMajor)
+		return;
+
+	// TODO - handle incx == 1 special case
     if (layout == CblasRowMajor)
     {
 		if (alpha == 1.0f)
@@ -62,13 +70,20 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 }
 
 //------------------------------------------------------
-//
+// double-precision rank-1 update
 //------------------------------------------------------
 void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy, double *a, CBLAS_INDEX lda)
 {
-	assert(m > 0 && n > 0);
+	assert(m > 0 && n > 0 && incx != 0 && incy != 0 && alpha != 0.0f);
 	assert(x && y && a);
 	assert(layout == CblasRowMajor || layout == CblasColMajor);
+	assert(lda >= MAX(1, m));
+
+	if (m <= 0 || n <= 0 || alpha == 0.0f)
+		return;
+
+	if (layout != CblasRowMajor && layout != CblasColMajor)
+		return;
 
     if (layout == CblasRowMajor)
     {
