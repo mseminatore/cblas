@@ -120,6 +120,9 @@ double cblas_dasum(CBLAS_INDEX n, double *x, CBLAS_INDEX incx);
 float cblas_snrm2(CBLAS_INDEX n, float *x, CBLAS_INDEX incx);
 double cblas_dnrm2(CBLAS_INDEX n, double *x, CBLAS_INDEX incx);
 
+void cblas_srotg(float *a, float *b, float *c, float *s);
+void cblas_drotg(double *a, double *b, double *c, double *s);
+
 //------------------------------------------------------
 // BLAS Level 2 functions
 //------------------------------------------------------
