@@ -4,6 +4,7 @@ TARGET = blas_test
 OBJS = swap.o dot.o copy.o axpy.o scal.o axpby.o asum.o nrm2.o rot.o ger.o gemv.o rotg.o util.o server.o test_main.o
 DEPS = cblas.h test.h
 CFLAGS += -g -O3
+LIBNAME = libcblas.a
 
 # add Intel specific compiler flags
 ifeq ($(ARCH), x86_64)
@@ -18,6 +19,9 @@ else
 endif
 
 all: $(TARGET) blas_stress
+	
+lib: $(OBJS)
+	ar rcs $(LIBNAME) $(OBJS)
 
 blas_stress: $(OBJS) test_stress.o
 	$(CC) $(LFLAGS) -o $@ $^
