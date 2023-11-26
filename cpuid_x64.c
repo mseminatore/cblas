@@ -107,7 +107,7 @@ int cpu_get_core_count()
     size_t len = sizeof(entry);
 
     // TODO - per sysctl.h this might want to be hw.ncpu or physicalcpu_max?
-    sysctlbyname("hw.ncpu", &entry, &len, NULL, 0);
+    sysctlbyname("hw.physicalcpu", &entry, &len, NULL, 0);
     return entry;
 #else
 	unsigned int eax, ebx, ecx, edx;
