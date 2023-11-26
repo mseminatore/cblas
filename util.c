@@ -14,7 +14,7 @@ int cblas_max_threads = MAX_THREADS;
 const char *cblas_get_config()
 {
     static char buf[256];
-    printf("\nCBLAS 0.1 %s MAX_THREADS=%d", cpu_get_core_name(), MAX_THREADS);
+    sprintf(buf, "\nCBLAS 0.1 %s MAX_THREADS=%d", cpu_get_core_name(), MAX_THREADS);
     return buf;
 }
 
@@ -80,8 +80,8 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
 void cblas_init()
 {
     cblas_set_num_threads(cpu_get_core_count());
-    printf("%s\n", cblas_get_config());
-    printf("Cores/Threads: %d/%d\n", cblas_get_num_procs(), cblas_get_num_threads());
+    // printf("%s\n", cblas_get_config());
+    // printf("Cores/Threads: %d/%d\n", cblas_get_num_procs(), cblas_get_num_threads());
 
     // TODO - detect cache sizes?
     // TODO - detect cpu features?

@@ -428,6 +428,10 @@ static void test_level3()
 int test_main(int argc, char *argv[])
 {
 	cblas_init();
+
+	printf( "%s\n", cblas_get_config());
+	printf("      CPU uArch: %s\n", cblas_get_corename());
+	printf("  Cores/Threads: %d/%d\n", cblas_get_num_procs(), cblas_get_num_threads());
 	
 	test_level1();
 	test_level2();
