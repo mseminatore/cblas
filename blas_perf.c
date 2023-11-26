@@ -22,19 +22,24 @@ int main(int argc, char *argv[])
 	
     struct timespec t1, t2;
 
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t1);
+    CBLAS_INDEX m = 1024, n = 1024;
+    float x[m], y[n], a[m * n];
 
-    float x[1024], y[1024], a[1024*1024];
+    for (int i = 2; i <= 1024; i <<= 1)
+    {
+        m = n = i;
+        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t1);
 
-    cblas_sger(CblasRowMajor, 1024, 1024, 1.0f, x, 1, y, 1, a, 1024);
+        cblas_sger(CblasRowMajor, m, n, 1.0f, x, 1, y, 1, a, m);
 
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t2);
+        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t2);
 
-    int seconds = (int)(t2.tv_sec - t1.tv_sec);
-    long long ns = t2.tv_nsec - t1.tv_nsec;
-    float dt = (float)seconds + (float)ns/(1000000000);
+        int seconds = (int)(t2.tv_sec - t1.tv_sec);
+        long long ns = t2.tv_nsec - t1.tv_nsec;
+        float dt = (float)seconds + (float)ns/(1000000000);
 
-    printf("%f GLOPS in %fs\n", (float)2 * 0.001048f / dt, dt);
+        printf("%d: %f GFlops in %fs\n", i, (float)2 * m * n / 1000000000 / dt, dt);
+    }
 
 	return 0;
 }
