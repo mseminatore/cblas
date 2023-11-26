@@ -161,6 +161,10 @@ void cblas_execute_async_join(int items, work_queue_t* queue);
 
 void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy);
 
+const char *cblas_get_config();
+const char *cblas_get_corename();
+int cblas_get_num_procs();
+
 //------------------------------------------------------
 // cpu ID functions
 //------------------------------------------------------

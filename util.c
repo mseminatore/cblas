@@ -9,6 +9,32 @@
 int cblas_max_threads = MAX_THREADS;
 
 //------------------------------------------------------
+// return the current config
+//------------------------------------------------------
+const char *cblas_get_config()
+{
+    static char buf[256];
+    printf("\nCBLAS 0.1 %s MAX_THREADS=%d", cpu_get_core_name(), MAX_THREADS);
+    return buf;
+}
+
+//------------------------------------------------------
+// return the name of the host CPU
+//------------------------------------------------------
+const char *cblas_get_corename()
+{
+    return cpu_get_core_name();
+}
+
+//------------------------------------------------------
+// return number of CPUs on the host system
+//------------------------------------------------------
+int cblas_get_num_procs()
+{
+    return cpu_get_core_count();
+}
+
+//------------------------------------------------------
 // leve1 1 dispatch
 //------------------------------------------------------
 void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n, void *x, CBLAS_INDEX incx, void *y, CBLAS_INDEX incy)
@@ -54,8 +80,8 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
 void cblas_init()
 {
     cblas_set_num_threads(cpu_get_core_count());
-    printf("\nCBLAS 0.1 %s MAX_THREADS=%d\n", cpu_get_core_name(), MAX_THREADS);
-    printf("Threads used: %d\n", cblas_get_num_threads());
+    printf("%s\n", cblas_get_config());
+    printf("Cores/Threads: %d/%d\n", cblas_get_num_procs(), cblas_get_num_threads());
 
     // TODO - detect cache sizes?
     // TODO - detect cpu features?
