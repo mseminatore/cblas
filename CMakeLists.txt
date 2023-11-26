@@ -43,7 +43,7 @@ message("SERVER_FILE: " ${SERVER_FILE})
 message("CPUID_FILE: " ${CPUID_FILE})
 
 # add the library
-add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c rot.c asum.c nrm2.c ger.c gemv.c rotg.c util.c ${SERVER_FILE} ${CPUID_FILE})
+add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c rot.c asum.c nrm2.c ger.c gemv.c gemm.c rotg.c util.c ${SERVER_FILE} ${CPUID_FILE})
 
 #
 # add the executables
@@ -53,3 +53,6 @@ target_link_libraries(blas_test cblas ${MATH_LIB})
 
 add_executable(blas_stress test_main.c test_stress.c)
 target_link_libraries(blas_stress cblas ${MATH_LIB})
+
+add_executable(blas_perf blas_perf.c)
+target_link_libraries(blas_perf cblas ${MATH_LIB})

@@ -8,6 +8,7 @@
 //#include "test.h"
 #include "cblas.h"
 
+#define MAX_SIZE 1024
 
 //------------------------------------------------------
 //
@@ -22,11 +23,12 @@ int main(int argc, char *argv[])
 	
     struct timespec t1, t2;
 
-    CBLAS_INDEX m = 1024, n = 1024;
-    float x[m], y[n], a[m * n];
+    CBLAS_INDEX m = MAX_SIZE, n = MAX_SIZE;
+    float x[MAX_SIZE], y[MAX_SIZE], a[MAX_SIZE * MAX_SIZE];
 
-    for (int i = 2; i <= 1024; i <<= 1)
+    for (int i = 2; i <= MAX_SIZE; i <<= 1)
     {
+#ifndef WIN32
         m = n = i;
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t1);
 
@@ -39,6 +41,7 @@ int main(int argc, char *argv[])
         float dt = (float)seconds + (float)ns/(1000000000);
 
         printf("%d: %f GFlops in %fs\n", i, (float)2 * m * n / 1000000000 / dt, dt);
+#endif
     }
 
 	return 0;

@@ -100,36 +100,36 @@ int cpu_get_core_count()
 		puts("Error: Unknown CPU vendor");
 		return 1;
 	}
-#endif
+#else 
+	#ifdef __APPLE__
+		uint32_t entry;
+		size_t len = sizeof(entry);
 
-#ifdef __APPLE__
-    uint32_t entry;
-    size_t len = sizeof(entry);
+		// TODO - per sysctl.h this might want to be hw.ncpu or physicalcpu_max?
+		sysctlbyname("hw.physicalcpu", &entry, &len, NULL, 0);
+		return entry;
+	#else
+		unsigned int eax, ebx, ecx, edx;
+		int core_count = 1;
 
-    // TODO - per sysctl.h this might want to be hw.ncpu or physicalcpu_max?
-    sysctlbyname("hw.physicalcpu", &entry, &len, NULL, 0);
-    return entry;
-#else
-	unsigned int eax, ebx, ecx, edx;
-	int core_count = 1;
+		if (!strcmp(vendor_string, "GenuineIntel"))
+		{
+			__cpuid(4, eax, ebx, ecx, edx);
+			core_count =  ((eax >> 26) & 0x3f) + 1; // EAX[31:26] + 1
+		}
+		else if (!strcmp(vendor_string, "AuthenticAMD"))
+		{
+			__cpuid(0x80000008, eax, ebx, ecx, edx);
+			core_count = ((unsigned)(ecx & 0xff)) + 1; // ECX[7:0] + 1
+		}
+		else
+		{
+			puts("Error: Unknown CPU vendor, defaulting to 1 core");
+		}
 
-	if (!strcmp(vendor_string, "GenuineIntel"))
-	{
-		__cpuid(4, eax, ebx, ecx, edx);
-		core_count =  ((eax >> 26) & 0x3f) + 1; // EAX[31:26] + 1
-	}
-	else if (!strcmp(vendor_string, "AuthenticAMD"))
-	{
-		__cpuid(0x80000008, eax, ebx, ecx, edx);
-		core_count = ((unsigned)(ecx & 0xff)) + 1; // ECX[7:0] + 1
-	}
-	else
-	{
-		puts("Error: Unknown CPU vendor, defaulting to 1 core");
-	}
-
-	printf("Detected %d cores\n", core_count);
-	return core_count;
+		printf("Detected %d cores\n", core_count);
+		return core_count;
+	#endif
 #endif
 
 }
