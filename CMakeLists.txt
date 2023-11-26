@@ -53,3 +53,6 @@ target_link_libraries(blas_test cblas ${MATH_LIB})
 
 add_executable(blas_stress test_main.c test_stress.c)
 target_link_libraries(blas_stress cblas ${MATH_LIB})
+
+add_executable(blas_perf blas_perf.c)
+target_link_libraries(blas_perf cblas ${MATH_LIB})
