@@ -24,14 +24,14 @@ all: $(LIBNAME) blas_stress blas_test blas_perf
 $(LIBNAME): $(OBJS)
 	ar rcs $(LIBNAME) $(OBJS)
 
-blas_stress: test_stress.o
-	$(CC) -o $@ $^ $(LFLAGS) $(LIBNAME)
+blas_stress: $(LIBNAME) test_stress.o
+	$(CC) -o $@ $^ $(LFLAGS)
 
-blas_test: test.o
-	$(CC) -o $@ $^ $(LFLAGS) $(LIBNAME)
+blas_test: $(LIBNAME) test.o
+	$(CC) -o $@ $^ $(LFLAGS)
 
-blas_perf: blas_perf.o
-	$(CC) -o $@ $^ $(LFLAGS) $(LIBNAME)
+blas_perf: $(LIBNAME) blas_perf.o
+	$(CC) -o $@ $^ $(LFLAGS)
 
 %.o: %.c $(DEPS)
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@

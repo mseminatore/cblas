@@ -283,7 +283,7 @@ static void test_nrm2()
 }
 
 //------------------------------------------------------
-//
+// test single and double precision ?ger()
 //------------------------------------------------------
 static void test_ger()
 {
@@ -317,7 +317,7 @@ static void test_ger()
 }
 
 //------------------------------------------------------
-//
+// test single and double precision ?gemv()
 //------------------------------------------------------
 static void test_gemv()
 {
