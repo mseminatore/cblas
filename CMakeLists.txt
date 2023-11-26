@@ -43,7 +43,7 @@ message("SERVER_FILE: " ${SERVER_FILE})
 message("CPUID_FILE: " ${CPUID_FILE})
 
 # add the library
-add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c rot.c asum.c nrm2.c ger.c gemv.c rotg.c util.c ${SERVER_FILE} ${CPUID_FILE})
+add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c rot.c asum.c nrm2.c ger.c gemv.c gemm.c rotg.c util.c ${SERVER_FILE} ${CPUID_FILE})
 
 #
 # add the executables
