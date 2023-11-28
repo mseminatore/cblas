@@ -26,17 +26,8 @@ void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
 {
     for (int p = 0; p < k; p++) {
         C(0,0) += A(p, 0) * B (0, p);
-    }
-
-    for (int p = 0; p < k; p++) {
         C(1,0) += A(p, 0) * B (1, p);
-    }
-
-    for (int p = 0; p < k; p++) {
         C(2,0) += A(p, 0) * B (2, p);
-    }
-
-    for (int p = 0; p < k; p++) {
         C(3,0) += A(p, 0) * B (3, p);
     }
 }
