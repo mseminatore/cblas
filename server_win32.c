@@ -80,7 +80,7 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
 
     while(1)
     {
-        MT_TRACE("thread [%d] sleeps.\n", thread_num);
+        MT_TRACE("thread [%d] waits.\n", thread_num);
 
         // event raised when work is added to the queue
         WaitForSingleObject(kickoff_event, INFINITE);
@@ -88,53 +88,49 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
         MT_TRACE("thread [%d] woke up.\n", thread_num);
 
         // check for more work, if so remove it from queue
-        while (1)
-        {
 #if 0
-            EnterCriticalSection(&queue_lock);
+        EnterCriticalSection(&queue_lock);
 
-            work_item = work_queue;
-            if (work_item)
-                work_queue = work_queue->next;
+        work_item = work_queue;
+        if (work_item)
+            work_queue = work_queue->next;
 
-            LeaveCriticalSection(&queue_lock);
+        LeaveCriticalSection(&queue_lock);
 #else
-            volatile work_queue_t* queue_next;
+        volatile work_queue_t* queue_next;
 
-            INT_PTR prev_value;
-            do {
-                work_item = (volatile work_queue_t*)work_queue;
-                if (!work_item)
-                    break;
+        INT_PTR prev_value;
+        do {
+            work_item = (volatile work_queue_t*)work_queue;
+            if (!work_item)
+                break;
 
-                queue_next = (volatile work_queue_t*)work_item->next;
-                prev_value = WIN_CAS((INT_PTR*)&work_queue, (INT_PTR)queue_next, (INT_PTR)work_item);
-            } while (prev_value != work_item);
+            queue_next = (volatile work_queue_t*)work_item->next;
+            prev_value = WIN_CAS((INT_PTR*)&work_queue, (INT_PTR)queue_next, (INT_PTR)work_item);
+        } while (prev_value != work_item);
 #endif
 
-            // if no work, reset event and then go to sleep to wait for more work
-            if (!work_item)
-            {
-                //MT_TRACE("thread [%d] no work, resetting event.\n", thread_num);
-                //ResetEvent(kickoff_event);
-                break;
-            }
-
-            work_item->thread_num = thread_num;
-            work_item->tid = cblas_thread_ids[thread_num];
-
-            MT_TRACE("thread [%d] executing a task.\n", thread_num);
-
-            // execute the task
-            work_item->kernel(work_item->args);
-
-            assert(work_item->finished == 0);
-            LONG r = InterlockedIncrement(&work_item->finished);
-
-            assert(r == 1);
-
-            MT_TRACE("thread [%d] task completed.\n", thread_num);
+        // if no work, reset event and then go to sleep to wait for more work
+        if (!work_item)
+        {
+            MT_TRACE("thread [%d] no work, trying again.\n", thread_num);
+            continue;
         }
+
+        work_item->thread_num = thread_num;
+        work_item->tid = cblas_thread_ids[thread_num];
+
+        MT_TRACE("thread [%d] executing a task.\n", thread_num);
+
+        // execute the task
+        work_item->kernel(work_item->args);
+
+        assert(work_item->finished == 0);
+        LONG r = InterlockedIncrement(&work_item->finished);
+
+        assert(r == 1);
+
+        MT_TRACE("thread [%d] task completed.\n", thread_num);
     }
 
     return 0;

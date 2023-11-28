@@ -10,6 +10,8 @@
 
 #define MAX_SIZE 1024
 
+float x[MAX_SIZE], y[MAX_SIZE], a[MAX_SIZE * MAX_SIZE];
+
 //------------------------------------------------------
 //
 //------------------------------------------------------
@@ -24,7 +26,6 @@ int main(int argc, char *argv[])
     struct timespec t1, t2;
 
     CBLAS_INDEX m = MAX_SIZE, n = MAX_SIZE;
-    float x[MAX_SIZE], y[MAX_SIZE], a[MAX_SIZE * MAX_SIZE];
 
     for (int i = 2; i <= MAX_SIZE; i <<= 1)
     {
