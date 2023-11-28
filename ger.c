@@ -5,30 +5,6 @@
 
 #include "cblas.h"
 
-// macro to simpify matrix element access
-#define A(col, row) a[(row) * lda + (col)]
-
-//
-void AddDot1x4(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, float *a, CBLAS_INDEX lda)
-{
-	for (int p = 0; p < k; p++)
-	{
-		A(0, 0) += *x * y[p];
-		A(1, 0) += *x * y[p + 1];
-		A(2, 0) += *x * y[p + 2];
-		A(3, 0) += *x * y[p + 3];
-	}
-}
-
-//
-void AddDot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, float *a, CBLAS_INDEX lda)
-{
-	for (int p = 0; p < n; p++)
-	{
-		*a += *x * y[p];
-	}
-}
-
 //------------------------------------------------------
 // single-precision rank-1 update
 //------------------------------------------------------
