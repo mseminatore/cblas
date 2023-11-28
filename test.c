@@ -390,12 +390,22 @@ static void test_gemm()
 {
 	SUITE("cblas_sgemm");
 
-	float samtx[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-	float sbmtx[] = {1,0,0,0,1,0,0,0,1};
-	float scmtx[9] = {0};
+	float samtx[] = {
+		1, 2, 3, 4, 
+		5, 6, 7, 8, 
+		9, 10, 11, 12,
+		13, 14, 15, 16
+	};
+	float sbmtx[] = {
+		1,0,0,0,
+		0,1,0,0,
+		0,0,1,0,
+		0,0,0,1
+	};
+	float scmtx[16] = {0};
 
 print_sarray(9, samtx);
-	cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 3, 3, 3, 1.0f, samtx, 3, sbmtx, 3, 1.0f, scmtx, 3);
+	cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 4, 4, 4, 1.0f, samtx, 4, sbmtx, 4, 1.0f, scmtx, 4);
 print_sarray(9, scmtx);
 
 	TEST(EQUAL_ARRAY(samtx, scmtx));

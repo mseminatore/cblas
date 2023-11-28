@@ -47,6 +47,8 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
             AddDot(k, &A(0, row), lda, &B(col + 2, 0), &C(col + 2, row));
             AddDot(k, &A(0, row), lda, &B(col + 3, 0), &C(col + 3, row));
         }
+
+    // TODO - handle remainder for matrices that are not multiples of 4 in size!
 }
 
 //------------------------------------------------------
