@@ -21,15 +21,26 @@ void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, float *gamma)
 	}
 }
 
-//
+// compute 4 dot products at a time
 void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
 {
+    register float c_00, c_10, c_20, c_30, a_p0;
+
+    c_00 = c_10 = c_20 = c_30 == 0.0f;
+
     for (int p = 0; p < k; p++) {
-        C(0,0) += A(p, 0) * B (0, p);
-        C(1,0) += A(p, 0) * B (1, p);
-        C(2,0) += A(p, 0) * B (2, p);
-        C(3,0) += A(p, 0) * B (3, p);
+        a_p0 = A(p,0);
+
+        c_00 += a_p0 * B (0, p);
+        c_10 += a_p0 * B (1, p);
+        c_20 += a_p0 * B (2, p);
+        c_30 += a_p0 * B (3, p);
     }
+
+    C(0,0) += c_00;
+    C(1,0) += c_10;
+    C(2,0) += c_20;
+    C(3,0) += c_30;
 }
 
 //------------------------------------------------------
