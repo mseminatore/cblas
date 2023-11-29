@@ -35,7 +35,7 @@ void test_gemm()
         long long ns = t2.tv_nsec - t1.tv_nsec;
         float dt = (float)seconds + (float)ns/(1000000000);
 
-        printf("%d: %f GFlops in %fs\n", i, (float)2 * m * n / 1000000000 / dt, dt);
+        printf("%4d: %5.2f GFlops in %5.2fs\n", i, (float)2 * m * n * k / 1000000000 / dt, dt);
 #endif
     }
 }
@@ -64,7 +64,7 @@ void test_ger()
         long long ns = t2.tv_nsec - t1.tv_nsec;
         float dt = (float)seconds + (float)ns/(1000000000);
 
-        printf("%d: %f GFlops in %fs\n", i, (float)2 * m * n / 1000000000 / dt, dt);
+        printf("%4d: %5.2f GFlops in %5.2fs\n", i, (float)2 * m * n / 1000000000 / dt, dt);
 #endif
     }
 }
