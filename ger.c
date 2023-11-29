@@ -26,7 +26,7 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
     {
 		if (alpha == 1.0f)
 		{
-			for (int row = 0; row < m; row++)
+			for (int row = 0; row < m; row ++)
 			{
 				for (int col = 0; col < n; col++)
 				{

@@ -283,7 +283,7 @@ static void test_nrm2()
 }
 
 //------------------------------------------------------
-//
+// test single and double precision ?ger()
 //------------------------------------------------------
 static void test_ger()
 {
@@ -317,7 +317,7 @@ static void test_ger()
 }
 
 //------------------------------------------------------
-//
+// test single and double precision ?gemv()
 //------------------------------------------------------
 static void test_gemv()
 {
@@ -386,6 +386,38 @@ static void test_rotg()
 //------------------------------------------------------
 //
 //------------------------------------------------------
+static void test_gemm()
+{
+	SUITE("cblas_sgemm");
+
+	float samtx[16] = {
+		1, 2, 3, 4, 
+		5, 6, 7, 8, 
+		9, 10, 11, 12,
+		13, 14, 15, 16
+	};
+	float sbmtx[16] = {
+		1,0,0,0,
+		0,1,0,0,
+		0,0,1,0,
+		0,0,0,1
+	};
+	float scmtx[16] = {0};
+
+print_sarray(16, samtx);
+// print_sarray(16, sbmtx);
+	cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 4, 4, 4, 1.0f, samtx, 4, sbmtx, 4, 1.0f, scmtx, 4);
+print_sarray(16, scmtx);
+
+	TEST(EQUAL_ARRAY(samtx, scmtx));
+
+	SUITE("cblas_dgemm");
+
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
 static void test_level1()
 {
 	MODULE("BLAS Level1");
@@ -420,6 +452,7 @@ static void test_level3()
 {
 	MODULE("BLAS Level3");
 
+	test_gemm();
 }
 
 //------------------------------------------------------
