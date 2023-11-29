@@ -404,10 +404,9 @@ static void test_gemm()
 	};
 	float scmtx[16] = {0};
 
-print_sarray(16, samtx);
-// print_sarray(16, sbmtx);
+// print_sarray(16, samtx);
 	cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 4, 4, 4, 1.0f, samtx, 4, sbmtx, 4, 1.0f, scmtx, 4);
-print_sarray(16, scmtx);
+// print_sarray(16, scmtx);
 
 	TEST(EQUAL_ARRAY(samtx, scmtx));
 
