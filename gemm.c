@@ -76,11 +76,10 @@ void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
         a3 += 4;
     }
 
-    // update C
-    C(0, 0) += c_00;
-    C(0, 1) += c_01;
-    C(0, 2) += c_02;
-    C(0, 3) += c_03;
+    C(0,0) += c_00;
+    C(0,1) += c_01;
+    C(0,2) += c_02;
+    C(0,3) += c_03;
 }
 
 //------------------------------------------------------
