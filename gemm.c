@@ -29,7 +29,10 @@ void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
     register float c_00, c_01, c_02, c_03, b_0p;
     float *a0, *a1, *a2, *a3;
 
-    c_00 = c_01 = c_02 = c_03 = 0.0f;
+    c_00 = 0.0f;
+    c_01 = 0.0f;
+    c_02 = 0.0f;
+    c_03 = 0.0f;
 
     // grab the start of 4 rows of A
     a0 = &A(0, 0);
