@@ -4,6 +4,7 @@
 //------------------------------------------------------
 
 #include "cblas.h"
+#include <stdio.h>
 
 // macros to simpify matrix element access
 #define A(col, row) a[((row) * lda + (col))]
@@ -24,23 +25,28 @@ void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, float *gamma)
 // compute 4 dot products at a time
 void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
 {
-    register float c_00, c_10, c_20, c_30, a_p0;
+    register float c_00, c_01, c_02, c_03, b_0p;
 
-    c_00 = c_10 = c_20 = c_30 == 0.0f;
+    c_00 = c_01 = c_02 = c_03 == 0.0f;
 
     for (int p = 0; p < k; p++) {
-        a_p0 = A(p,0);
+        b_0p = B(0,p);
 
-        c_00 += a_p0 * B (0, p);
-        c_10 += a_p0 * B (1, p);
-        c_20 += a_p0 * B (2, p);
-        c_30 += a_p0 * B (3, p);
+        c_00 += b_0p * A(p, 0);
+        c_01 += b_0p * A(p, 1);
+        c_02 += b_0p * A(p, 2);
+        c_03 += b_0p * A(p, 3);
+
+        //printf("B(0,p) = %f\n", b_0p);
+        printf("%f/%f/%f/%f\n", A(p,0), A(p,1), A(p,2), A(p,3));
     }
+    puts("");
 
     C(0,0) += c_00;
-    C(1,0) += c_10;
-    C(2,0) += c_20;
-    C(3,0) += c_30;
+    C(0,1) += c_01;
+    C(0,2) += c_02;
+    C(0,3) += c_03;
+    printf("%f/%f/%f/%f, ", c_00, c_01, c_02, c_03);
 }
 
 //------------------------------------------------------
@@ -48,8 +54,8 @@ void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
 //------------------------------------------------------
 void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float alpha, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float beta, float *c, CBLAS_INDEX ldc)
 {
-    for (int col = 0; col < n; col += 4)
-        for (int row = 0; row < m; row++)
+    for (int row = 0; row < m; row += 4)
+        for (int col = 0; col < n; col++)
         {
             AddDot1x4(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
         }
