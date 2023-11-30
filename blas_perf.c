@@ -66,7 +66,7 @@ void test_gemm()
     CBLAS_INDEX m, n, k;
     float dt;
 
-    for (int i = 2; i <= MAX_SIZE; i <<= 1)
+    for (int i = 4; i <= MAX_SIZE; i <<= 1)
     {
         m = n = k = i;
 
