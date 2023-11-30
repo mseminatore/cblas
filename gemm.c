@@ -55,28 +55,30 @@ void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
         b_2p = B(2, p);
         b_3p = B(3, p);
 
-        // row 1
+        // row 1 and row 2
         c_00 += a_p0 * b_0p;
-        c_10 += a_p0 * b_1p;
-        c_20 += a_p0 * b_2p;
-        c_30 += a_p0 * b_3p;
-
-        // row 2
         c_01 += a_p1 * b_0p;
+
+        c_10 += a_p0 * b_1p;
         c_11 += a_p1 * b_1p;
+
+        c_20 += a_p0 * b_2p;
         c_21 += a_p1 * b_2p;
+
+        c_30 += a_p0 * b_3p;
         c_31 += a_p1 * b_3p;
 
-        // row 3
+        // row 3 and row 4
         c_02 += a_p2 * b_0p;
-        c_12 += a_p2 * b_1p;
-        c_22 += a_p2 * b_2p;
-        c_32 += a_p2 * b_3p;
-
-        // row 4
         c_03 += a_p3 * b_0p;
+
+        c_12 += a_p2 * b_1p;
         c_13 += a_p3 * b_1p;
+
+        c_22 += a_p2 * b_2p;
         c_23 += a_p3 * b_2p;
+
+        c_32 += a_p2 * b_3p;
         c_33 += a_p3 * b_3p;
     }
 
