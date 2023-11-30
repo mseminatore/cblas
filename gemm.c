@@ -31,6 +31,7 @@ void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
         c_02, c_12, c_22, c_32,
         c_03, c_13, c_23, c_33;
     register float a_p0, a_p1, a_p2, a_p3;
+    float *b_0p, *b_1p, *b_2p, *b_3p;
 
     c_00 = 0.0f; c_10 = 0.0f; c_20 = 0.0f; c_30 = 0.0f;
     c_01 = 0.0f; c_11 = 0.0f; c_21 = 0.0f; c_31 = 0.0f;
@@ -43,29 +44,34 @@ void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
         a_p2 = A(p, 2);
         a_p3 = A(p, 3);
 
+        b_0p = &B(0, p);
+        b_1p = &B(1, p);
+        b_2p = &B(2, p);
+        b_3p = &B(3, p);
+
         // row 1
-        c_00 += a_p0 * B(0, p);
-        c_10 += a_p0 * B(1, p);
-        c_20 += a_p0 * B(2, p);
-        c_30 += a_p0 * B(3, p);
+        c_00 += a_p0 * *b_0p;
+        c_10 += a_p0 * *b_1p;
+        c_20 += a_p0 * *b_2p;
+        c_30 += a_p0 * *b_3p;
 
         // row 2
-        c_01 += a_p1 * B(0, p);
-        c_11 += a_p1 * B(1, p);
-        c_21 += a_p1 * B(2, p);
-        c_31 += a_p1 * B(3, p);
+        c_01 += a_p1 * *b_0p;
+        c_11 += a_p1 * *b_1p;
+        c_21 += a_p1 * *b_2p;
+        c_31 += a_p1 * *b_3p;
 
         // row 3
-        c_02 += a_p2 * B(0, p);
-        c_12 += a_p2 * B(1, p);
-        c_22 += a_p2 * B(2, p);
-        c_32 += a_p2 * B(3, p);
+        c_02 += a_p2 * *b_0p;
+        c_12 += a_p2 * *b_1p;
+        c_22 += a_p2 * *b_2p;
+        c_32 += a_p2 * *b_3p;
 
         // row 4
-        c_03 += a_p3 * B(0, p);
-        c_13 += a_p3 * B(1, p);
-        c_23 += a_p3 * B(2, p);
-        c_33 += a_p3 * B(3, p);
+        c_03 += a_p3 * *b_0p;
+        c_13 += a_p3 * *b_1p;
+        c_23 += a_p3 * *b_2p;
+        c_33 += a_p3 * *b_3p;
     }
 
     C(0, 0) = c_00; C(1, 0) = c_10; C(2, 0) = c_20; C(3,0) = c_30;
