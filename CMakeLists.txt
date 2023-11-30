@@ -17,15 +17,19 @@ if ( LINUX )
     set(MATH_LIB "m")
 endif()
 
- if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
-#     set_property(TARGET foo APPEND PROPERTY COMPILE_OPTIONS -g -O2)
- elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
-#     set_property(TARGET foo APPEND PROPERTY COMPILE_OPTIONS -g -O2)
- elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
+message("Compiler = ${CMAKE_C_COMPILER_ID}")
+
+if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2")    
+elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "AppleClang")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2")    
+elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2")
+elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /arch:avx2")
-    message("Using AVX2")
-#    set_property(TARGET foo APPEND PROPERTY COMPILE_OPTIONS /W3)
 endif()
+
+message("CFLAGS = ${CMAKE_C_FLAGS}")
 
 # link with correct thread server
 if ( WIN32 )
