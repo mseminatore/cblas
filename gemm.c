@@ -14,7 +14,9 @@
 //#define X(i) x[(i) * incx]
 #define Y(i) y[(i) * incx]
 
+//------------------------------------------------------
 // compute dot product of row of X and col of Y
+//------------------------------------------------------
 void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, float *gamma)
 {
 	for (int p = 0; p < k; p++) {
@@ -22,7 +24,9 @@ void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, float *gamma)
 	}
 }
 
+//------------------------------------------------------
 // compute 16 dot products at a time, 4 cols x 4 rows
+//------------------------------------------------------
 void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
 {
     register float 
@@ -88,8 +92,10 @@ void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
     C(0, 3) = c_03; C(1, 3) = c_13; C(2, 3) = c_23; C(3,3) = c_33;
 }
 
+//------------------------------------------------------
 // compute 4 dot products at a time
 // 4 rows of A by 1 column of B
+//------------------------------------------------------
 void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
 {
     register float c_00, c_01, c_02, c_03, b_0p;
@@ -162,6 +168,8 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     // TODO - handle remainder for matrices that are not multiples of 4 in size!
 }
 
+//------------------------------------------------------
+// single-precision reference matrix multipl
 //------------------------------------------------------
 void cblas_sgemm_naive(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float alpha, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float beta, float* c, CBLAS_INDEX ldc)
 {
