@@ -25,37 +25,53 @@ void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, float *gamma)
 // compute 16 dot products at a time, 4 cols x 4 rows
 void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
 {
-    // row 1
+    register float 
+        c_00, c_10, c_20, c_30,
+        c_01, c_11, c_21, c_31,
+        c_02, c_12, c_22, c_32,
+        c_03, c_13, c_23, c_33;
+    register float a_p0, a_p1, a_p2, a_p3;
+
+    c_00 = 0.0f; c_10 = 0.0f; c_20 = 0.0f; c_30 = 0.0f;
+    c_01 = 0.0f; c_11 = 0.0f; c_21 = 0.0f; c_31 = 0.0f;
+    c_02 = 0.0f; c_12 = 0.0f; c_22 = 0.0f; c_32 = 0.0f;
+    c_03 = 0.0f; c_13 = 0.0f; c_23 = 0.0f; c_33 = 0.0f;
+
 	for (int p = 0; p < k; p++) {
-        C(0, 0) += A(p, 0) * B(0, p);
-        C(1, 0) += A(p, 0) * B(1, p);
-        C(2, 0) += A(p, 0) * B(2, p);
-        C(3, 0) += A(p, 0) * B(3, p);
+        a_p0 = A(p, 0);
+        a_p1 = A(p, 1);
+        a_p2 = A(p, 2);
+        a_p3 = A(p, 3);
+
+        // row 1
+        c_00 += a_p0 * B(0, p);
+        c_10 += a_p0 * B(1, p);
+        c_20 += a_p0 * B(2, p);
+        c_30 += a_p0 * B(3, p);
+
+        // row 2
+        c_01 += a_p1 * B(0, p);
+        c_11 += a_p1 * B(1, p);
+        c_21 += a_p1 * B(2, p);
+        c_31 += a_p1 * B(3, p);
+
+        // row 3
+        c_02 += a_p2 * B(0, p);
+        c_12 += a_p2 * B(1, p);
+        c_22 += a_p2 * B(2, p);
+        c_32 += a_p2 * B(3, p);
+
+        // row 4
+        c_03 += a_p3 * B(0, p);
+        c_13 += a_p3 * B(1, p);
+        c_23 += a_p3 * B(2, p);
+        c_33 += a_p3 * B(3, p);
     }
 
-    // row 2
-	for (int p = 0; p < k; p++) {
-        C(0, 1) += A(p, 1) * B(0, p);
-        C(1, 1) += A(p, 1) * B(1, p);
-        C(2, 1) += A(p, 1) * B(2, p);
-        C(3, 1) += A(p, 1) * B(3, p);
-    }
-
-    // row 3
-	for (int p = 0; p < k; p++) {
-        C(0, 2) += A(p, 2) * B(0, p);
-        C(1, 2) += A(p, 2) * B(1, p);
-        C(2, 2) += A(p, 2) * B(2, p);
-        C(3, 2) += A(p, 2) * B(3, p);
-    }
-
-    // row 4
-	for (int p = 0; p < k; p++) {
-        C(0, 3) += A(p, 3) * B(0, p);
-        C(1, 3) += A(p, 3) * B(1, p);
-        C(2, 3) += A(p, 3) * B(2, p);
-        C(3, 3) += A(p, 3) * B(3, p);
-    }
+    C(0, 0) = c_00; C(1, 0) = c_10; C(2, 0) = c_20; C(3,0) = c_30;
+    C(0, 1) = c_01; C(1, 1) = c_11; C(2, 1) = c_21; C(3,1) = c_31;
+    C(0, 2) = c_02; C(1, 2) = c_12; C(2, 2) = c_22; C(3,2) = c_32;
+    C(0, 3) = c_03; C(1, 3) = c_13; C(2, 3) = c_23; C(3,3) = c_33;
 }
 
 // compute 4 dot products at a time
