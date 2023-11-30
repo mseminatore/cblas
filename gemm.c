@@ -31,47 +31,53 @@ void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
         c_02, c_12, c_22, c_32,
         c_03, c_13, c_23, c_33;
     register float a_p0, a_p1, a_p2, a_p3;
-    float *b_0p, *b_1p, *b_2p, *b_3p;
+    register float b_0p, b_1p, b_2p, b_3p;
+    float *a_p0_ptr, *a_p1_ptr, *a_p2_ptr, *a_p3_ptr;
 
+    a_p0_ptr = &A(0, 0);
+    a_p1_ptr = &A(0, 1);
+    a_p2_ptr = &A(0, 2);
+    a_p3_ptr = &A(0, 3);
+    
     c_00 = 0.0f; c_10 = 0.0f; c_20 = 0.0f; c_30 = 0.0f;
     c_01 = 0.0f; c_11 = 0.0f; c_21 = 0.0f; c_31 = 0.0f;
     c_02 = 0.0f; c_12 = 0.0f; c_22 = 0.0f; c_32 = 0.0f;
     c_03 = 0.0f; c_13 = 0.0f; c_23 = 0.0f; c_33 = 0.0f;
 
 	for (int p = 0; p < k; p++) {
-        a_p0 = A(p, 0);
-        a_p1 = A(p, 1);
-        a_p2 = A(p, 2);
-        a_p3 = A(p, 3);
+        a_p0 = *a_p0_ptr++;
+        a_p1 = *a_p1_ptr++;
+        a_p2 = *a_p2_ptr++;
+        a_p3 = *a_p3_ptr++;
 
-        b_0p = &B(0, p);
-        b_1p = &B(1, p);
-        b_2p = &B(2, p);
-        b_3p = &B(3, p);
+        b_0p = B(0, p);
+        b_1p = B(1, p);
+        b_2p = B(2, p);
+        b_3p = B(3, p);
 
         // row 1
-        c_00 += a_p0 * *b_0p;
-        c_10 += a_p0 * *b_1p;
-        c_20 += a_p0 * *b_2p;
-        c_30 += a_p0 * *b_3p;
+        c_00 += a_p0 * b_0p;
+        c_10 += a_p0 * b_1p;
+        c_20 += a_p0 * b_2p;
+        c_30 += a_p0 * b_3p;
 
         // row 2
-        c_01 += a_p1 * *b_0p;
-        c_11 += a_p1 * *b_1p;
-        c_21 += a_p1 * *b_2p;
-        c_31 += a_p1 * *b_3p;
+        c_01 += a_p1 * b_0p;
+        c_11 += a_p1 * b_1p;
+        c_21 += a_p1 * b_2p;
+        c_31 += a_p1 * b_3p;
 
         // row 3
-        c_02 += a_p2 * *b_0p;
-        c_12 += a_p2 * *b_1p;
-        c_22 += a_p2 * *b_2p;
-        c_32 += a_p2 * *b_3p;
+        c_02 += a_p2 * b_0p;
+        c_12 += a_p2 * b_1p;
+        c_22 += a_p2 * b_2p;
+        c_32 += a_p2 * b_3p;
 
         // row 4
-        c_03 += a_p3 * *b_0p;
-        c_13 += a_p3 * *b_1p;
-        c_23 += a_p3 * *b_2p;
-        c_33 += a_p3 * *b_3p;
+        c_03 += a_p3 * b_0p;
+        c_13 += a_p3 * b_1p;
+        c_23 += a_p3 * b_2p;
+        c_33 += a_p3 * b_3p;
     }
 
     C(0, 0) = c_00; C(1, 0) = c_10; C(2, 0) = c_20; C(3,0) = c_30;
