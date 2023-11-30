@@ -6,6 +6,8 @@
 #include "cblas.h"
 #include <stdio.h>
 
+#include <immintrin.h>
+
 // macros to simpify matrix element access
 #define A(col, row) a[((row) * lda + (col))]
 #define B(col, row) b[((row) * ldb + (col))]
@@ -27,15 +29,13 @@ void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, float *gamma)
 //------------------------------------------------------
 // compute 16 dot products at a time, 4 cols x 4 rows
 //------------------------------------------------------
-void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
+void AddDot4x4_sse(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
 {
-    register float 
-        c_00, c_10, c_20, c_30,
-        c_01, c_11, c_21, c_31,
-        c_02, c_12, c_22, c_32,
-        c_03, c_13, c_23, c_33;
-    register float a_p0, a_p1, a_p2, a_p3;
-    register float b_0p, b_1p, b_2p, b_3p;
+    __m128 c_row1, c_row2, c_row3, c_row4;
+    __m128 b_row;
+
+    __m128 a_p0, a_p1, a_p2, a_p3;
+
     float *a_p0_ptr, *a_p1_ptr, *a_p2_ptr, *a_p3_ptr;
 
     a_p0_ptr = &A(0, 0);
@@ -43,12 +43,66 @@ void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
     a_p2_ptr = &A(0, 2);
     a_p3_ptr = &A(0, 3);
     
+    c_row1 = _mm_setzero_ps();
+    c_row2 = _mm_setzero_ps();
+    c_row3 = _mm_setzero_ps();
+    c_row4 = _mm_setzero_ps();
+
+	for (int p = 0; p < k; p++) {
+        a_p0 = _mm_load_ps1(a_p0_ptr++);
+        a_p1 = _mm_load_ps1(a_p1_ptr++);
+        a_p2 = _mm_load_ps1(a_p2_ptr++);
+        a_p3 = _mm_load_ps1(a_p3_ptr++);
+
+        b_row = _mm_load_ps(&B(0, p));
+
+        // rows 1 - 4 using FMADD
+#if 0
+        c_row1 = _mm_fmadd_ps(a_p0, b_row, c_row1);
+        c_row2 = _mm_fmadd_ps(a_p1, b_row, c_row2);
+        c_row3 = _mm_fmadd_ps(a_p2, b_row, c_row3);
+        c_row4 = _mm_fmadd_ps(a_p3, b_row, c_row4);
+#else
+        // rows 1 - 4 using SSE3
+        c_row1 = _mm_add_ps(c_row1, _mm_mul_ps(a_p0, b_row));
+        c_row2 = _mm_add_ps(c_row2, _mm_mul_ps(a_p1, b_row));
+        c_row3 = _mm_add_ps(c_row3, _mm_mul_ps(a_p2, b_row));
+        c_row4 = _mm_add_ps(c_row4, _mm_mul_ps(a_p3, b_row));
+#endif
+    }
+
+    _mm_store_ps(&C(0, 0), c_row1);
+    _mm_store_ps(&C(0, 1), c_row2);
+    _mm_store_ps(&C(0, 2), c_row3);
+    _mm_store_ps(&C(0, 3), c_row4);
+}
+
+//------------------------------------------------------
+// compute 16 dot products at a time, 4 cols x 4 rows
+//------------------------------------------------------
+void AddDot4x4(CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float* c, CBLAS_INDEX ldc)
+{
+    register float 
+        c_00, c_10, c_20, c_30,
+        c_01, c_11, c_21, c_31,
+        c_02, c_12, c_22, c_32,
+        c_03, c_13, c_23, c_33;
+
+    register float a_p0, a_p1, a_p2, a_p3;
+    register float b_0p, b_1p, b_2p, b_3p;
+    float* a_p0_ptr, * a_p1_ptr, * a_p2_ptr, * a_p3_ptr;
+
+    a_p0_ptr = &A(0, 0);
+    a_p1_ptr = &A(0, 1);
+    a_p2_ptr = &A(0, 2);
+    a_p3_ptr = &A(0, 3);
+
     c_00 = 0.0f; c_10 = 0.0f; c_20 = 0.0f; c_30 = 0.0f;
     c_01 = 0.0f; c_11 = 0.0f; c_21 = 0.0f; c_31 = 0.0f;
     c_02 = 0.0f; c_12 = 0.0f; c_22 = 0.0f; c_32 = 0.0f;
     c_03 = 0.0f; c_13 = 0.0f; c_23 = 0.0f; c_33 = 0.0f;
 
-	for (int p = 0; p < k; p++) {
+    for (int p = 0; p < k; p++) {
         a_p0 = *a_p0_ptr++;
         a_p1 = *a_p1_ptr++;
         a_p2 = *a_p2_ptr++;
@@ -59,30 +113,28 @@ void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
         b_2p = B(2, p);
         b_3p = B(3, p);
 
-        // row 1 and row 2
+        // row 1
         c_00 += a_p0 * b_0p;
-        c_01 += a_p1 * b_0p;
-
         c_10 += a_p0 * b_1p;
-        c_11 += a_p1 * b_1p;
-
         c_20 += a_p0 * b_2p;
-        c_21 += a_p1 * b_2p;
-
         c_30 += a_p0 * b_3p;
+
+        // row 2
+        c_01 += a_p1 * b_0p;
+        c_11 += a_p1 * b_1p;
+        c_21 += a_p1 * b_2p;
         c_31 += a_p1 * b_3p;
 
-        // row 3 and row 4
+        // row 3
         c_02 += a_p2 * b_0p;
-        c_03 += a_p3 * b_0p;
-
         c_12 += a_p2 * b_1p;
-        c_13 += a_p3 * b_1p;
-
         c_22 += a_p2 * b_2p;
-        c_23 += a_p3 * b_2p;
-
         c_32 += a_p2 * b_3p;
+
+        // row 4
+        c_03 += a_p3 * b_0p;
+        c_13 += a_p3 * b_1p;
+        c_23 += a_p3 * b_2p;
         c_33 += a_p3 * b_3p;
     }
 
@@ -162,7 +214,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     for (int row = 0; row < m; row += 4)    // loop over rows of C unrolled by 4
         for (int col = 0; col < n; col += 4)   // loop over cols of C
         {
-            AddDot4x4(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
+            AddDot4x4_sse(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
         }
 
     // TODO - handle remainder for matrices that are not multiples of 4 in size!
