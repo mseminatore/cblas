@@ -22,6 +22,34 @@ void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, float *gamma)
 	}
 }
 
+// compute 16 dot products at a time, 4 cols x 4 rows
+void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
+{
+    // row 1
+    AddDot( k, &A( 0, 0 ), lda, &B( 0, 0 ), &C( 0, 0 ) );
+    AddDot( k, &A( 0, 0 ), lda, &B( 1, 0 ), &C( 1, 0 ) );
+    AddDot( k, &A( 0, 0 ), lda, &B( 2, 0 ), &C( 2, 0 ) );
+    AddDot( k, &A( 0, 0 ), lda, &B( 3, 0 ), &C( 3, 0 ) );
+
+    // row 2
+    AddDot( k, &A( 0, 1 ), lda, &B( 0, 0 ), &C( 0, 1 ) );
+    AddDot( k, &A( 0, 1 ), lda, &B( 1, 0 ), &C( 1, 1 ) );
+    AddDot( k, &A( 0, 1 ), lda, &B( 2, 0 ), &C( 2, 1 ) );
+    AddDot( k, &A( 0, 1 ), lda, &B( 3, 0 ), &C( 3, 1 ) );
+
+    // row 3
+    AddDot( k, &A( 0, 2 ), lda, &B( 0, 0 ), &C( 0, 2 ) );
+    AddDot( k, &A( 0, 2 ), lda, &B( 1, 0 ), &C( 1, 2 ) );
+    AddDot( k, &A( 0, 2 ), lda, &B( 2, 0 ), &C( 2, 2 ) );
+    AddDot( k, &A( 0, 2 ), lda, &B( 3, 0 ), &C( 3, 2 ) );
+
+    // row 4
+    AddDot( k, &A( 0, 3 ), lda, &B( 0, 0 ), &C( 0, 3 ) );
+    AddDot( k, &A( 0, 3 ), lda, &B( 1, 0 ), &C( 1, 3 ) );
+    AddDot( k, &A( 0, 3 ), lda, &B( 2, 0 ), &C( 2, 3 ) );
+    AddDot( k, &A( 0, 3 ), lda, &B( 3, 0 ), &C( 3, 3 ) );
+}
+
 // compute 4 dot products at a time
 // 4 rows of A by 1 column of B
 void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
@@ -88,9 +116,9 @@ void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
 void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float alpha, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float beta, float *c, CBLAS_INDEX ldc)
 {
     for (int row = 0; row < m; row += 4)    // loop over rows of C unrolled by 4
-        for (int col = 0; col < n; col++)   // loop over cols of C
+        for (int col = 0; col < n; col += 4)   // loop over cols of C
         {
-            AddDot1x4(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
+            AddDot4x4(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
         }
 
     // TODO - handle remainder for matrices that are not multiples of 4 in size!
