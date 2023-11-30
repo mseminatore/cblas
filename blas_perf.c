@@ -51,7 +51,7 @@ float timer_get_delta(struct timer *t1, struct timer *t2)
 #else
     int seconds = (int)(t2->t.tv_sec - t1->t.tv_sec);
     long long ns = t2->t.tv_nsec - t1->t.tv_nsec;
-    float dt = (float)seconds + (float)ns / (1000000000);
+    dt = (float)seconds + (float)ns / (1000000000);
 #endif
 
     return dt;
