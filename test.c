@@ -396,22 +396,45 @@ static void test_gemm()
 		9, 10, 11, 12,
 		13, 14, 15, 16
 	};
+
 	float sbmtx[16] = {
 		1,0,0,0,
 		0,1,0,0,
 		0,0,1,0,
 		0,0,0,1
 	};
-	float scmtx[16] = {0};
 
-// print_sarray(16, samtx);
-	cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 4, 4, 4, 1.0f, samtx, 4, sbmtx, 4, 1.0f, scmtx, 4);
-// print_sarray(16, scmtx);
+	{
+		float scmtx[16] = { 0 };
 
-	TEST(EQUAL_ARRAY(samtx, scmtx));
+		// print_sarray(16, samtx);
+		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 4, 4, 4, 1.0f, samtx, 4, sbmtx, 4, 1.0f, scmtx, 4);
+		// print_sarray(16, scmtx);
+
+		TEST(EQUAL_ARRAY(samtx, scmtx));
+	}
 
 	SUITE("cblas_dgemm");
 
+	double damtx[16] = {
+		1, 2, 3, 4,
+		5, 6, 7, 8,
+		9, 10, 11, 12,
+		13, 14, 15, 16
+	};
+	
+	double dbmtx[16] = {
+		1,0,0,0,
+		0,1,0,0,
+		0,0,1,0,
+		0,0,0,1
+	};
+
+	double dcmtx[16] = { 0 };
+
+	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 4, 4, 4, 1.0, damtx, 4, dbmtx, 4, 1.0, dcmtx, 4);
+
+	TEST(EQUAL_ARRAY(damtx, dcmtx));
 }
 
 //------------------------------------------------------
