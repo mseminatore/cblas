@@ -27,7 +27,7 @@ void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
 {
     register float c_00, c_01, c_02, c_03, b_0p;
 
-    c_00 = c_01 = c_02 = c_03 == 0.0f;
+    c_00 = c_01 = c_02 = c_03 = 0.0f;
 
     for (int p = 0; p < k; p++) {
         b_0p = B(0,p);
@@ -36,17 +36,12 @@ void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
         c_01 += b_0p * A(p, 1);
         c_02 += b_0p * A(p, 2);
         c_03 += b_0p * A(p, 3);
-
-        //printf("B(0,p) = %f\n", b_0p);
-        printf("%f/%f/%f/%f\n", A(p,0), A(p,1), A(p,2), A(p,3));
     }
-    puts("");
 
     C(0,0) += c_00;
     C(0,1) += c_01;
     C(0,2) += c_02;
     C(0,3) += c_03;
-    printf("%f/%f/%f/%f, ", c_00, c_01, c_02, c_03);
 }
 
 //------------------------------------------------------
