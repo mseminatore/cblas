@@ -26,28 +26,36 @@ void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, float *gamma)
 void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
 {
     // row 1
-    AddDot( k, &A( 0, 0 ), lda, &B( 0, 0 ), &C( 0, 0 ) );
-    AddDot( k, &A( 0, 0 ), lda, &B( 1, 0 ), &C( 1, 0 ) );
-    AddDot( k, &A( 0, 0 ), lda, &B( 2, 0 ), &C( 2, 0 ) );
-    AddDot( k, &A( 0, 0 ), lda, &B( 3, 0 ), &C( 3, 0 ) );
+	for (int p = 0; p < k; p++) {
+        C(0, 0) += A(p, 0) * B(0, p);
+        C(1, 0) += A(p, 0) * B(1, p);
+        C(2, 0) += A(p, 0) * B(2, p);
+        C(3, 0) += A(p, 0) * B(3, p);
+    }
 
     // row 2
-    AddDot( k, &A( 0, 1 ), lda, &B( 0, 0 ), &C( 0, 1 ) );
-    AddDot( k, &A( 0, 1 ), lda, &B( 1, 0 ), &C( 1, 1 ) );
-    AddDot( k, &A( 0, 1 ), lda, &B( 2, 0 ), &C( 2, 1 ) );
-    AddDot( k, &A( 0, 1 ), lda, &B( 3, 0 ), &C( 3, 1 ) );
+	for (int p = 0; p < k; p++) {
+        C(0, 1) += A(p, 1) * B(0, p);
+        C(1, 1) += A(p, 1) * B(1, p);
+        C(2, 1) += A(p, 1) * B(2, p);
+        C(3, 1) += A(p, 1) * B(3, p);
+    }
 
     // row 3
-    AddDot( k, &A( 0, 2 ), lda, &B( 0, 0 ), &C( 0, 2 ) );
-    AddDot( k, &A( 0, 2 ), lda, &B( 1, 0 ), &C( 1, 2 ) );
-    AddDot( k, &A( 0, 2 ), lda, &B( 2, 0 ), &C( 2, 2 ) );
-    AddDot( k, &A( 0, 2 ), lda, &B( 3, 0 ), &C( 3, 2 ) );
+	for (int p = 0; p < k; p++) {
+        C(0, 2) += A(p, 2) * B(0, p);
+        C(1, 2) += A(p, 2) * B(1, p);
+        C(2, 2) += A(p, 2) * B(2, p);
+        C(3, 2) += A(p, 2) * B(3, p);
+    }
 
     // row 4
-    AddDot( k, &A( 0, 3 ), lda, &B( 0, 0 ), &C( 0, 3 ) );
-    AddDot( k, &A( 0, 3 ), lda, &B( 1, 0 ), &C( 1, 3 ) );
-    AddDot( k, &A( 0, 3 ), lda, &B( 2, 0 ), &C( 2, 3 ) );
-    AddDot( k, &A( 0, 3 ), lda, &B( 3, 0 ), &C( 3, 3 ) );
+	for (int p = 0; p < k; p++) {
+        C(0, 3) += A(p, 3) * B(0, p);
+        C(1, 3) += A(p, 3) * B(1, p);
+        C(2, 3) += A(p, 3) * B(2, p);
+        C(3, 3) += A(p, 3) * B(3, p);
+    }
 }
 
 // compute 4 dot products at a time
