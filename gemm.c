@@ -116,12 +116,20 @@ void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
         a_p3 = vld1q_dup_f32(a_p3_ptr++);
 
         b_row = vld1q_f32(&B(0, p));
+#if 1
+        // rows 1 - 4 using NEON FMAD
+        c_row1 = vfmaq_f32(c_row1, a_p0, b_row);
+        c_row2 = vfmaq_f32(c_row2, a_p1, b_row);
+        c_row3 = vfmaq_f32(c_row3, a_p2, b_row);
+        c_row4 = vfmaq_f32(c_row4, a_p3, b_row);
 
-        // rows 1 - 4 using SSE3
+#else
+        // rows 1 - 4 using NEON
         c_row1 = vaddq_f32(c_row1, vmulq_f32(a_p0, b_row));
         c_row2 = vaddq_f32(c_row2, vmulq_f32(a_p1, b_row));
         c_row3 = vaddq_f32(c_row3, vmulq_f32(a_p2, b_row));
         c_row4 = vaddq_f32(c_row4, vmulq_f32(a_p3, b_row));
+#endif
     }
 
     vst1q_f32(&C(0, 0), c_row1);
