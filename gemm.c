@@ -6,7 +6,7 @@
 #include "cblas.h"
 #include <stdio.h>
 
-#ifdef __x86_64__
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 #   include <immintrin.h>
 #endif
 
@@ -39,9 +39,7 @@ void AddDot4x4_sse(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_IND
 {
     __m128 c_row1, c_row2, c_row3, c_row4;
     __m128 b_row;
-
     __m128 a_p0, a_p1, a_p2, a_p3;
-
     float *a_p0_ptr, *a_p1_ptr, *a_p2_ptr, *a_p3_ptr;
 
     a_p0_ptr = &A(0, 0);
