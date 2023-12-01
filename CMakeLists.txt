@@ -26,7 +26,7 @@ elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "AppleClang")
 elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2")
 elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /arch:avx2")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /arch:AVX2")
 endif()
 
 message("CFLAGS = ${CMAKE_C_FLAGS}")
