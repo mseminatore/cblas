@@ -37,10 +37,12 @@ void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, float *gamma)
 	}
 }
 
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
+
 //------------------------------------------------------
 // compute 16 dot products at a time, 4 cols x 4 rows
 //------------------------------------------------------
-void AddDot4x4_sse(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
+void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
 {
     __m128 c_row1, c_row2, c_row3, c_row4;
     __m128 b_row;
@@ -86,6 +88,49 @@ void AddDot4x4_sse(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_IND
     _mm_store_ps(&C(0, 2), c_row3);
     _mm_store_ps(&C(0, 3), c_row4);
 }
+
+#elif defined(__aarch64__)
+
+void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
+{
+    float32x4_t c_row1, c_row2, c_row3, c_row4;
+    float32x4_t b_row;
+    float32x4_t a_p0, a_p1, a_p2, a_p3;
+    float *a_p0_ptr, *a_p1_ptr, *a_p2_ptr, *a_p3_ptr;
+
+    a_p0_ptr = &A(0, 0);
+    a_p1_ptr = &A(0, 1);
+    a_p2_ptr = &A(0, 2);
+    a_p3_ptr = &A(0, 3);
+    
+    c_row1 = vdupq_n_f32(0);
+    c_row2 = vdupq_n_f32(0);
+    c_row3 = vdupq_n_f32(0);
+    c_row4 = vdupq_n_f32(0);
+
+	for (int p = 0; p < k; p++) 
+    {
+        a_p0 = vld1q_dup_f32(a_p0_ptr++);
+        a_p1 = vld1q_dup_f32(a_p1_ptr++);
+        a_p2 = vld1q_dup_f32(a_p2_ptr++);
+        a_p3 = vld1q_dup_f32(a_p3_ptr++);
+
+        b_row = vld1q_f32(&B(0, p));
+
+        // rows 1 - 4 using SSE3
+        c_row1 = vaddq_f32(c_row1, vmulq_f32(a_p0, b_row));
+        c_row2 = vaddq_f32(c_row2, vmulq_f32(a_p1, b_row));
+        c_row3 = vaddq_f32(c_row3, vmulq_f32(a_p2, b_row));
+        c_row4 = vaddq_f32(c_row4, vmulq_f32(a_p3, b_row));
+    }
+
+    vst1q_f32(&C(0, 0), c_row1);
+    vst1q_f32(&C(0, 1), c_row2);
+    vst1q_f32(&C(0, 2), c_row3);
+    vst1q_f32(&C(0, 3), c_row4);
+}
+
+#else
 
 //------------------------------------------------------
 // compute 16 dot products at a time, 4 cols x 4 rows
@@ -154,6 +199,8 @@ void AddDot4x4(CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX l
     C(0, 2) = c_02; C(1, 2) = c_12; C(2, 2) = c_22; C(3,2) = c_32;
     C(0, 3) = c_03; C(1, 3) = c_13; C(2, 3) = c_23; C(3,3) = c_33;
 }
+
+#endif
 
 //------------------------------------------------------
 // compute 4 dot products at a time
@@ -226,7 +273,7 @@ void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, CBLAS_IN
     // Loop over the rows and columns of C unrolled by 4
     for (int row = 0; row < m; row += 4)
         for (int col = 0; col < n; col += 4)
-            AddDot4x4_sse(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
+            AddDot4x4(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
 }
 
 //------------------------------------------------------
