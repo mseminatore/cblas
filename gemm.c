@@ -6,7 +6,13 @@
 #include "cblas.h"
 #include <stdio.h>
 
-#include <immintrin.h>
+#ifdef __x86_64__
+#   include <immintrin.h>
+#endif
+
+#ifdef __aarch64__
+#   include <arm_neon.h>
+#endif
 
 // macros to simpify matrix element access
 #define A(col, row) a[((row) * lda + (col))]
