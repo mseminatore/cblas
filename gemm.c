@@ -14,6 +14,10 @@
 #   include <arm_neon.h>
 #endif
 
+// Block sizes
+#define mc 256
+#define kc 128
+
 // macros to simpify matrix element access
 #define A(col, row) a[((row) * lda + (col))]
 #define B(col, row) b[((row) * ldb + (col))]
@@ -27,7 +31,8 @@
 //------------------------------------------------------
 void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, float *gamma)
 {
-	for (int p = 0; p < k; p++) {
+	for (int p = 0; p < k; p++)
+    {
 		*gamma += x[p] * Y(p);
 	}
 }
@@ -52,7 +57,8 @@ void AddDot4x4_sse(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_IND
     c_row3 = _mm_setzero_ps();
     c_row4 = _mm_setzero_ps();
 
-	for (int p = 0; p < k; p++) {
+	for (int p = 0; p < k; p++) 
+    {
         a_p0 = _mm_load_ps1(a_p0_ptr++);
         a_p1 = _mm_load_ps1(a_p1_ptr++);
         a_p2 = _mm_load_ps1(a_p2_ptr++);
@@ -106,7 +112,8 @@ void AddDot4x4(CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX l
     c_02 = 0.0f; c_12 = 0.0f; c_22 = 0.0f; c_32 = 0.0f;
     c_03 = 0.0f; c_13 = 0.0f; c_23 = 0.0f; c_33 = 0.0f;
 
-    for (int p = 0; p < k; p++) {
+    for (int p = 0; p < k; p++) 
+    {
         a_p0 = *a_p0_ptr++;
         a_p1 = *a_p1_ptr++;
         a_p2 = *a_p2_ptr++;
@@ -169,7 +176,8 @@ void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
     c_03 = 0.0f;
 
     // 
-    for (int p = 0; p < k; p += 4) {
+    for (int p = 0; p < k; p += 4) 
+    {
         b_0p = B(0, p);
 
         c_00 += *a0 * b_0p;
@@ -211,15 +219,33 @@ void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
 }
 
 //------------------------------------------------------
+//
+//------------------------------------------------------
+void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float* c, CBLAS_INDEX ldc)
+{
+    // Loop over the rows and columns of C unrolled by 4
+    for (int row = 0; row < m; row += 4)
+        for (int col = 0; col < n; col += 4)
+            AddDot4x4_sse(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
+}
+
+//------------------------------------------------------
 // single-precision general matrix multiply
 //------------------------------------------------------
 void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float alpha, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float beta, float *c, CBLAS_INDEX ldc)
 {
-    for (int row = 0; row < m; row += 4)    // loop over rows of C unrolled by 4
-        for (int col = 0; col < n; col += 4)   // loop over cols of C
+    CBLAS_INDEX pb, ib;
+
+    // Compute an mc x n block of C by a call to the InnerKernel
+    for (int p = 0; p < k; p += kc) 
+    {
+        pb = MIN(k - p, kc);
+        for (int row = 0; row < m; row += mc) 
         {
-            AddDot4x4_sse(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
+            ib = MIN(m - row, mc);
+            InnerKernel(ib, n, pb, &A(p, row), lda, &B(0, p), ldb, &C(0, row), ldc);
         }
+    }
 
     // TODO - handle remainder for matrices that are not multiples of 4 in size!
 }
