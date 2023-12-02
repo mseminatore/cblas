@@ -18,15 +18,13 @@
 #   define MAX_THREADS 64
 #endif
 
-#ifdef _WIN32
-#   define MT_ENABLED
-#endif
-
 #define CBLAS_LEVEL_1_THREADING
 #define CBLAS_LEVEL_2_THREADING
 #define CBLAS_LEVEL_3_THREADING
 
-//#define MT_DEBUG
+#   define MT_ENABLED
+
+// #   define MT_DEBUG
 
 #ifdef MT_DEBUG
 #   define MT_TRACE printf
@@ -40,6 +38,14 @@
 
 #ifndef MIN
     #define MIN(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
+#if !defined(__STDC_NO_ATOMICS__)
+#   include <stdatomic.h>
+#   define MB atomic_thread_fence()
+#else
+#   error C11 is required!
+#   define MB
 #endif
 
 //------------------------------------------------------
