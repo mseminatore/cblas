@@ -23,7 +23,7 @@
 #define CBLAS_LEVEL_3_THREADING
 
 #   define MT_ENABLED
-#   define MT_DEBUG
+// #   define MT_DEBUG
 
 #ifdef MT_DEBUG
 #   define MT_TRACE printf
