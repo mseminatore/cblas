@@ -26,7 +26,9 @@ struct timer
 
 };
 
+//------------------------------------------------------
 //
+//------------------------------------------------------
 void timer_gettime(struct timer* t)
 {
 #ifdef WIN32
@@ -37,7 +39,9 @@ void timer_gettime(struct timer* t)
 
 }
 
+//------------------------------------------------------
 //
+//------------------------------------------------------
 float timer_get_delta(struct timer *t1, struct timer *t2)
 {
     float dt;
