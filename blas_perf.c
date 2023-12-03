@@ -29,7 +29,7 @@ struct timer
 //------------------------------------------------------
 //
 //------------------------------------------------------
-void timer_gettime(struct timer* t)
+void timer_get_time(struct timer* t)
 {
 #ifdef WIN32
     QueryPerformanceCounter(&t->t);
@@ -74,11 +74,11 @@ void test_gemm()
     {
         m = n = k = i;
 
-        timer_gettime(&t1);
+        timer_get_time(&t1);
 
         cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1.0f, a, m, b, k, 1.0f, c, k);
 
-        timer_gettime(&t2);
+        timer_get_time(&t2);
 
         dt = timer_get_delta(&t1, &t2);
 
@@ -100,11 +100,11 @@ void test_ger()
     {
         m = n = i;
 
-        timer_gettime(&t1);
+        timer_get_time(&t1);
 
         cblas_sger(CblasRowMajor, m, n, 1.0f, x, 1, y, 1, a, m);
 
-        timer_gettime(&t2);
+        timer_get_time(&t2);
 
         dt = timer_get_delta(&t1, &t2);
 
