@@ -7,6 +7,7 @@
 
 //
 int cblas_max_threads = MAX_THREADS;
+int cblas_set_threads = 1;
 
 //------------------------------------------------------
 // return the current config

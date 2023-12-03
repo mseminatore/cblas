@@ -217,10 +217,12 @@ void cblas_execute_async_join(int items, work_queue_t* queue)
 
     MT_TRACE("queued tasks finished.\n");
 
-    // TODO - what happens if new work has been added to the queue while we were waiting here?
-    // TODO - if we reset the event before the worker threads wake, that work won't be processed.
-    // TODO - possible check that global work queue is empty before resetting the event??
-    assert(work_queue == NULL);
+    // if work was added to the queue after this batch we can't sleep the worker threads
+    // by resetting the event
+    EnterCriticalSection(&queue_lock);
 
-    ResetEvent(kickoff_event);
+        if (work_queue == NULL)
+            ResetEvent(kickoff_event);
+
+    LeaveCriticalSection(&queue_lock);
 }
