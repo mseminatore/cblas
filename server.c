@@ -59,7 +59,12 @@ static void *cblas_worker_thread(void *pvoid)
     {
         MT_TRACE("thread [%d] waits.\n", thread_num);
 
-        pthread_cond_wait(&kickoff_event, &event_lock);
+        pthread_mutex_lock(&event_lock);
+        
+        while (!work_queue)
+            pthread_cond_wait(&kickoff_event, &event_lock);
+        
+        pthread_mutex_unlock(&event_lock);
 
         MT_TRACE("thread [%d] woke up.\n", thread_num);
 
@@ -90,7 +95,7 @@ static void *cblas_worker_thread(void *pvoid)
             assert(work_item->finished == 0);
             
             work_item->finished = 1;
-            MB;
+            // MB;
 
             MT_TRACE("thread [%d] task completed.\n", thread_num);
         }
@@ -118,7 +123,7 @@ void cblas_execute(int items, work_queue_t* queue)
     queue->kernel(queue->args);
     
     queue->finished = 1;
-    MB;
+    // MB;
 
     // wait for the queue of work to finish
     if (items > 1 && queue->next)
