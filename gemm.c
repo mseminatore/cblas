@@ -10,7 +10,7 @@
 #   include <immintrin.h>
 #endif
 
-#ifdef __aarch64__
+#if defined(__aarch64__) && defined(__ARM_NEON)
 #   include <arm_neon.h>
 #endif
 
@@ -143,7 +143,7 @@ void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
         a_p3 = vld1q_dup_f32(a_p3_ptr++);
 
         b_row = vld1q_f32(&B(0, p));
-#if 1
+#ifdef __ARM_FEATURE_FMA
         // rows 1 - 4 using NEON FMAD
         c_row1 = vfmaq_f32(c_row1, a_p0, b_row);
         c_row2 = vfmaq_f32(c_row2, a_p1, b_row);
@@ -165,7 +165,7 @@ void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
     vst1q_f32(&C(0, 3), c_row4);
 }
 
-#else
+#else   // fall-back non vector version
 
 //------------------------------------------------------
 // compute 16 dot products at a time, 4 cols x 4 rows

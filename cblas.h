@@ -23,13 +23,13 @@
 #define CBLAS_LEVEL_3_THREADING
 
 #   define MT_ENABLED
-
-// #   define MT_DEBUG
+#   define MT_DEBUG
 
 #ifdef MT_DEBUG
 #   define MT_TRACE printf
 #else
-#   define MT_TRACE //__noop
+#   define MT_TRACE
+// #   define MT_TRACE __noop
 #endif
 
 #ifndef MAX
