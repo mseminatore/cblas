@@ -70,6 +70,8 @@ void test_gemm()
     CBLAS_INDEX m, n, k;
     float dt;
 
+    printf("Testing performance of cblas_sgemm()\n\n");
+
     for (int i = 4; i <= MAX_SIZE; i <<= 1)
     {
         m = n = k = i;
@@ -93,6 +95,8 @@ void test_ger()
 {
     struct timer t1, t2;
     float dt;
+
+    printf("Testing performance of cblas_sger()\n\n");
 
     CBLAS_INDEX m = MAX_SIZE, n = MAX_SIZE;
 
