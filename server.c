@@ -90,7 +90,7 @@ static void *cblas_worker_thread(void *pvoid)
             assert(work_item->finished == 0);
             
             work_item->finished = 1;
-            // MB;
+            MB;
 
             MT_TRACE("thread [%d] task completed.\n", thread_num);
         }
@@ -118,7 +118,7 @@ void cblas_execute(int items, work_queue_t* queue)
     queue->kernel(queue->args);
     
     queue->finished = 1;
-    // MB;
+    MB;
 
     // wait for the queue of work to finish
     if (items > 1 && queue->next)
