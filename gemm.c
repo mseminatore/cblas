@@ -71,10 +71,15 @@ void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
     a_p2_ptr = &A(0, 2);
     a_p3_ptr = &A(0, 3);
     
-    c_row1 = _mm_setzero_ps();
-    c_row2 = _mm_setzero_ps();
-    c_row3 = _mm_setzero_ps();
-    c_row4 = _mm_setzero_ps();
+    c_row1 = _mm_load_ps(&C(0,0));
+    c_row2 = _mm_load_ps(&C(0,1));
+    c_row3 = _mm_load_ps(&C(0,2));
+    c_row4 = _mm_load_ps(&C(0,3));
+
+    // c_row1 = _mm_setzero_ps();
+    // c_row2 = _mm_setzero_ps();
+    // c_row3 = _mm_setzero_ps();
+    // c_row4 = _mm_setzero_ps();
 
 	for (int p = 0; p < k; p++) 
     {
@@ -120,10 +125,15 @@ void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
     a_p2_ptr = &A(0, 2);
     a_p3_ptr = &A(0, 3);
     
-    c_row1 = vdupq_n_f32(0);
-    c_row2 = vdupq_n_f32(0);
-    c_row3 = vdupq_n_f32(0);
-    c_row4 = vdupq_n_f32(0);
+    c_row1 = vld1q_f32(&C(0,0));
+    c_row2 = vld1q_f32(&C(0,1));
+    c_row3 = vld1q_f32(&C(0,2));
+    c_row4 = vld1q_f32(&C(0,3));
+
+    // c_row1 = vdupq_n_f32(0);
+    // c_row2 = vdupq_n_f32(0);
+    // c_row3 = vdupq_n_f32(0);
+    // c_row4 = vdupq_n_f32(0);
 
 	for (int p = 0; p < k; p++) 
     {
@@ -219,10 +229,10 @@ void AddDot4x4(CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX l
         c_33 += a_p3 * b_3p;
     }
 
-    C(0, 0) = c_00; C(1, 0) = c_10; C(2, 0) = c_20; C(3,0) = c_30;
-    C(0, 1) = c_01; C(1, 1) = c_11; C(2, 1) = c_21; C(3,1) = c_31;
-    C(0, 2) = c_02; C(1, 2) = c_12; C(2, 2) = c_22; C(3,2) = c_32;
-    C(0, 3) = c_03; C(1, 3) = c_13; C(2, 3) = c_23; C(3,3) = c_33;
+    C(0, 0) += c_00; C(1, 0) += c_10; C(2, 0) += c_20; C(3,0) += c_30;
+    C(0, 1) += c_01; C(1, 1) += c_11; C(2, 1) += c_21; C(3,1) += c_31;
+    C(0, 2) += c_02; C(1, 2) += c_12; C(2, 2) += c_22; C(3,2) += c_32;
+    C(0, 3) += c_03; C(1, 3) += c_13; C(2, 3) += c_23; C(3,3) += c_33;
 }
 
 #endif
