@@ -37,6 +37,23 @@ void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, float *gamma)
 	}
 }
 
+//------------------------------------------------------
+//
+//------------------------------------------------------
+void PackMatrixA( int k, float *a, int lda, float *a_to )
+{
+    /* loop over rows of A */
+    for(int j = 0; j < k; j++)
+    {
+        float *a_ij_pntr = &A(0, j);
+
+        *a_to++ = *a_ij_pntr;
+        *a_to++ = *(a_ij_pntr + 1);
+        *a_to++ = *(a_ij_pntr + 2);
+        *a_to++ = *(a_ij_pntr + 3);
+    }
+}
+
 #if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 
 //------------------------------------------------------
@@ -278,10 +295,20 @@ void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
 //------------------------------------------------------
 void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float* c, CBLAS_INDEX ldc)
 {
+    float packedA[m * k];
+
     // Loop over the rows and columns of C unrolled by 4
     for (int row = 0; row < m; row += 4)
+    {
+        PackMatrixA(k, &A(0,row), lda, &packedA[row * k]);
+
         for (int col = 0; col < n; col += 4)
-            AddDot4x4(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
+        {
+            // AddDot4x4(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
+
+            AddDot4x4(k, &packedA[row * k], 4, &B(col, 0), ldb, &C(col, row), ldc);
+        }
+    }
 }
 
 //------------------------------------------------------
