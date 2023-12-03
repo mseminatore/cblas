@@ -83,8 +83,8 @@ enum {
 //------------------------------------------------------
 typedef struct
 {
-    CBLAS_INDEX m, n, k, incx, incy, lda, ldb;
-    void* x, * y, * alpha, * beta;
+    CBLAS_INDEX m, n, k, incx, incy, lda, ldb, ldc;
+    void *x, *y, *c, *alpha, *beta;
 } cblas_args_t;
 
 typedef void (*kernel_function)(cblas_args_t* args);
@@ -98,7 +98,13 @@ typedef struct work_queue_t
 
     cblas_args_t* args;         // parameters to kernel function
     int type;                   // type of call
+
+#if 1
     volatile int finished;      // this work item is finished
+#else
+    atomic_int finished;
+#endif
+
     int thread_num, tid;
 
     kernel_function kernel;
