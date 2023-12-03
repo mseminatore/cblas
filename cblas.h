@@ -42,7 +42,7 @@
 
 #if !defined(__STDC_NO_ATOMICS__)
 #   include <stdatomic.h>
-#   define MB atomic_thread_fence()
+#   define MB atomic_thread_fence(memory_order_relaxed)
 #else
 #   error C11 is required!
 #   define MB
