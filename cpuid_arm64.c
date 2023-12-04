@@ -3,6 +3,7 @@
 // Copyright 2023 Mark Seminatore. All rights reserved.
 //------------------------------------------------------
 #include <stdio.h>
+#include "cblas.h"
 
 #ifdef __APPLE__
 #   include <sys/sysctl.h>
@@ -46,6 +47,16 @@ const char *cpu_get_core_name()
 
 #endif
     return cpu_names[CPU_GENERIC];
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+unsigned int cpu_get_features()
+{
+	unsigned int features = CPU_NONE;
+
+    return features;
 }
 
 //------------------------------------------------------

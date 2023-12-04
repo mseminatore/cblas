@@ -79,6 +79,18 @@ enum {
 };
 
 //------------------------------------------------------
+// CPU features
+//------------------------------------------------------
+#define CPU_NONE        0x00
+#define CPU_SSE         0x01
+#define CPU_AVX         0x02
+#define CPU_AVX2        0x04
+#define CPU_AVX512      0x08
+#define CPU_x64_FMA3    0x10
+#define CPU_NEON        0x20
+#define CPU_NEON_FMA    0x40
+
+//------------------------------------------------------
 // arguments passed to kernel functions
 //------------------------------------------------------
 typedef struct
@@ -184,6 +196,7 @@ int cblas_get_num_procs();
 int cpu_get_core_count();
 const char *cpu_get_core_name();
 int cpu_get_cacheline_size();
+unsigned int cpu_get_features();
 
 #ifdef __cplusplus
     }

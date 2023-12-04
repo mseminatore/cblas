@@ -4,6 +4,7 @@
 //------------------------------------------------------
 #include <stdio.h>
 #include <string.h>
+#include "cblas.h"
 
 #if defined(__clang__) || defined(__GNUC__)
 #	include <cpuid.h>
@@ -73,6 +74,37 @@ const char* cpu_get_brand_string(void)
 #else
 	return "Generic x64";
 #endif
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+unsigned int cpu_get_features()
+{
+	unsigned int features = CPU_NONE;
+
+#if defined(_MSC_VER)
+	int info[4];
+
+	__cpuid(info, 1);
+	if (info[ECX] & (1 << 20))
+		features |= CPU_SSE;
+
+	if (info[ECX] & (1 << 28))
+		features |= CPU_AVX;
+
+	__cpuid(info, 7);
+
+	if (info[EBX] & (1 << 5))
+		features |= CPU_AVX2;
+
+	if (info[EBX] & (1 << 16))
+		features |= CPU_AVX512;
+	
+#else
+#endif
+
+	return features;
 }
 
 //------------------------------------------------------
