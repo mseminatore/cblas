@@ -324,7 +324,7 @@ void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, CBLAS_IN
         }
 
         // use Duff's device to handle leftover columns
-        printf("col_leftover = %d, col = %d\n", col_leftover, col);
+        // printf("col_leftover = %d, col = %d\n", col_leftover, col);
         switch(col_leftover)
         {
             case 3:     AddDot(k, &A(0, row), lda, &B(col + 2, 0), &C(col + 2, row));
