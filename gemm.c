@@ -307,18 +307,40 @@ void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, CBLAS_IN
 {
     float packedA[m * k];
 
+    int row_leftover    = m % 4;
+    int col_leftover    = n % 4;
+    int row, col;
+
     // Loop over the rows and columns of C unrolled by 4
-    for (int row = 0; row < m; row += 4)
+    for (row = 0; row < m; row += 4)
     {
         PackMatrixA(k, &A(0,row), lda, &packedA[row * k]);
 
-        for (int col = 0; col < n; col += 4)
+        for (col = 0; col < n; col += 4)
         {
             // AddDot4x4(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
 
             AddDot4x4(k, &packedA[row * k], 4, &B(col, 0), ldb, &C(col, row), ldc);
         }
+
+        // use Duff's device to handle leftover columns
+        printf("col_leftover = %d, col = %d\n", col_leftover, col);
+        switch(col_leftover)
+        {
+            case 3:     AddDot(k, &A(0, row), lda, &B(col + 2, 0), &C(col + 2, row));
+            case 2:     AddDot(k, &A(0, row), lda, &B(col + 1, 0), &C(col + 1, row));
+            case 1:     AddDot(k, &A(0, row), lda, &B(col, 0), &C(col, row));
+            case 0: ;   // nothing to do!
+        }
     }
+
+    // switch(row_leftover)
+    // {
+    //     case 3:
+    //     case 2:
+    //     case 1:
+    //     case 0: ;   // nothing to do!
+    // }
 }
 
 //------------------------------------------------------
