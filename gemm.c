@@ -31,7 +31,7 @@ static float packedA[mc * kc];
 //------------------------------------------------------
 // compute dot product of row of X and col of Y
 //------------------------------------------------------
-void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, float *gamma)
+static void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, float *gamma)
 {
 	for (int p = 0; p < k; p++)
     {
@@ -44,7 +44,7 @@ void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, float *gamma)
 //------------------------------------------------------
 // compute 16 dot products at a time, 4 cols x 4 rows
 //------------------------------------------------------
-void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
+static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
 {
     __m128 c_row1, c_row2, c_row3, c_row4;
     __m128 b_row;
@@ -90,7 +90,7 @@ void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
 
 #elif defined(__aarch64__)
 
-void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
+static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
 {
     float32x4_t c_row1, c_row2, c_row3, c_row4;
     float32x4_t b_row;
@@ -139,7 +139,7 @@ void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
 //------------------------------------------------------
 // compute 16 dot products at a time, 4 cols x 4 rows
 //------------------------------------------------------
-void AddDot4x4(CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float* c, CBLAS_INDEX ldc)
+static void AddDot4x4(CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float* c, CBLAS_INDEX ldc)
 {
     register float 
         c_00, c_10, c_20, c_30,
@@ -212,7 +212,7 @@ void AddDot4x4(CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX l
 // compute 4 dot products at a time
 // 4 rows of A by 1 column of B
 //------------------------------------------------------
-void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
+static void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
 {
     register float c_00, c_01, c_02, c_03, b_0p;
     float *a0, *a1, *a2, *a3;
@@ -274,7 +274,7 @@ void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
 //------------------------------------------------------
 //
 //------------------------------------------------------
-void PackMatrixB(int k, float *b, int ldb, float* b_to)
+static void PackMatrixB(int k, float *b, int ldb, float* b_to)
 {
     /* loop over cols of B */
     for (int j = 0; j < k; j++)
@@ -291,7 +291,7 @@ void PackMatrixB(int k, float *b, int ldb, float* b_to)
 //------------------------------------------------------
 // pack a sub-tile of A into contiguous memory
 //------------------------------------------------------
-void PackMatrixA(int k, float *a, int lda, float *a_to)
+static void PackMatrixA(int k, float *a, int lda, float *a_to)
 {
     int i;
     float   *a_0i_pntr = &A(0,0), *a_1i_pntr = &A(0,1),
@@ -308,7 +308,7 @@ void PackMatrixA(int k, float *a, int lda, float *a_to)
 //------------------------------------------------------
 //
 //------------------------------------------------------
-void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float* c, CBLAS_INDEX ldc)
+static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float* c, CBLAS_INDEX ldc)
 {
 //    float packedA[m * k];
 
