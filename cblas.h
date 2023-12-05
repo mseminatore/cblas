@@ -22,6 +22,9 @@
 #define CBLAS_LEVEL_2_THREADING
 #define CBLAS_LEVEL_3_THREADING
 
+#define USE_SSE
+//#define USE_INTEL_FMA
+
 #   define MT_ENABLED
 // #   define MT_DEBUG
 

@@ -17,6 +17,7 @@
 // Block sizes
 #define mc 256
 #define kc 128
+#define nb 1000
 
 // macros to simpify matrix element access
 #define A(col, row) a[((row) * lda + (col))]
@@ -27,6 +28,7 @@
 #define Y(i) y[(i) * incx]
 
 static float packedA[mc * kc];
+static float packedB[kc * nb];
 
 //------------------------------------------------------
 // compute dot product of row of X and col of Y
@@ -35,11 +37,13 @@ static void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, float *g
 {
 	for (int p = 0; p < k; p++)
     {
+        // TODO - turn x[p] into *x++
+        // TODO - optimize Y(p)
 		*gamma += x[p] * Y(p);
 	}
 }
 
-#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
+#if defined(USE_SSE) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
 
 //------------------------------------------------------
 // compute 16 dot products at a time, 4 cols x 4 rows
@@ -68,7 +72,7 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
         b_row = _mm_load_ps(&B(0, p));
 
         // rows 1 - 4 using FMADD
-#if 0
+#ifdef USE_INTEL_FMA
         c_row1 = _mm_fmadd_ps(a_p0, b_row, c_row1);
         c_row2 = _mm_fmadd_ps(a_p1, b_row, c_row2);
         c_row3 = _mm_fmadd_ps(a_p2, b_row, c_row3);
@@ -272,19 +276,21 @@ static void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
 }
 
 //------------------------------------------------------
-//
+// pack a sub-tile of B into contiguous memory
 //------------------------------------------------------
-static void PackMatrixB(int k, float *b, int ldb, float* b_to)
+static void PackMatrixB(int k, float *b, int ldb, float *b_to)
 {
-    /* loop over cols of B */
+    // loop over rows of B
     for (int j = 0; j < k; j++)
     {
-        float *b_ij_pntr = &B(j, 0);
+        float *b_ij_pntr = &B(0, j);
 
-        *b_to++ = *b_ij_pntr;
-        *b_to++ = *(b_ij_pntr + 1);
-        *b_to++ = *(b_ij_pntr + 2);
-        *b_to++ = *(b_ij_pntr + 3);
+        *b_to       = *b_ij_pntr;
+        *(b_to + 1) = *(b_ij_pntr + 1);
+        *(b_to + 2) = *(b_ij_pntr + 2);
+        *(b_to + 3) = *(b_ij_pntr + 3);
+
+        b_to += 4;
     }
 }
 
@@ -297,7 +303,9 @@ static void PackMatrixA(int k, float *a, int lda, float *a_to)
     float   *a_0i_pntr = &A(0,0), *a_1i_pntr = &A(0,1),
             *a_2i_pntr = &A(0,2), *a_3i_pntr = &A(0,3);
 
-    for (i = 0; i < k; i++) {  /* loop over rows of A */
+    // loop over cols of A
+    for (i = 0; i < k; i++)
+    {
         *a_to++ = *a_0i_pntr++;
         *a_to++ = *a_1i_pntr++;
         *a_to++ = *a_2i_pntr++;
@@ -319,11 +327,18 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
     // Loop over the rows and columns of C unrolled by 4
     for (row = 0; row < m; row += 4)
     {
+        // we are pre-caching all cols so we need to do it only once
+        if (row == 0)
+            PackMatrixB(k, &B(0, row), ldb, &packedB[row * k]);
+
         for (col = 0; col < n; col += 4)
         {
             //AddDot4x4(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
 
-            if (row == 0) PackMatrixA(k, &A(col, 0), lda, &packedA[row * k]);
+            // we are pre-caching all rows so we need to do it only once
+            if (row == 0) 
+                PackMatrixA(k, &A(col, 0), lda, &packedA[row * k]);
+
             AddDot4x4(k, &packedA[row * k], 4, &B(0, row), ldb, &C(col, row), ldc);
         }
 
