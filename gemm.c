@@ -329,7 +329,7 @@ void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, CBLAS_IN
         {
             //AddDot4x4(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
 
-            PackMatrixA(k, &A(col, 0), lda, &packedA[row * k]);
+            if (row == 0) PackMatrixA(k, &A(col, 0), lda, &packedA[row * k]);
             AddDot4x4(k, &packedA[row * k], 4, &B(0, row), ldb, &C(col, row), ldc);
         }
 
