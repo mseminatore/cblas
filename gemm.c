@@ -26,6 +26,8 @@
 //#define X(i) x[(i) * incx]
 #define Y(i) y[(i) * incx]
 
+static float packedA[mc * kc];
+
 //------------------------------------------------------
 // compute dot product of row of X and col of Y
 //------------------------------------------------------
@@ -35,23 +37,6 @@ void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, float *gamma)
     {
 		*gamma += x[p] * Y(p);
 	}
-}
-
-//------------------------------------------------------
-//
-//------------------------------------------------------
-void PackMatrixA( int k, float *a, int lda, float *a_to )
-{
-    /* loop over rows of A */
-    for(int j = 0; j < k; j++)
-    {
-        float *a_ij_pntr = &A(0, j);
-
-        *a_to++ = *a_ij_pntr;
-        *a_to++ = *(a_ij_pntr + 1);
-        *a_to++ = *(a_ij_pntr + 2);
-        *a_to++ = *(a_ij_pntr + 3);
-    }
 }
 
 #if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
@@ -64,29 +49,21 @@ void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
     __m128 c_row1, c_row2, c_row3, c_row4;
     __m128 b_row;
     __m128 a_p0, a_p1, a_p2, a_p3;
-    float *a_p0_ptr, *a_p1_ptr, *a_p2_ptr, *a_p3_ptr;
-
-    a_p0_ptr = &A(0, 0);
-    a_p1_ptr = &A(0, 1);
-    a_p2_ptr = &A(0, 2);
-    a_p3_ptr = &A(0, 3);
     
     c_row1 = _mm_load_ps(&C(0,0));
     c_row2 = _mm_load_ps(&C(0,1));
     c_row3 = _mm_load_ps(&C(0,2));
     c_row4 = _mm_load_ps(&C(0,3));
 
-    // c_row1 = _mm_setzero_ps();
-    // c_row2 = _mm_setzero_ps();
-    // c_row3 = _mm_setzero_ps();
-    // c_row4 = _mm_setzero_ps();
-
 	for (int p = 0; p < k; p++) 
     {
-        a_p0 = _mm_load_ps1(a_p0_ptr++);
-        a_p1 = _mm_load_ps1(a_p1_ptr++);
-        a_p2 = _mm_load_ps1(a_p2_ptr++);
-        a_p3 = _mm_load_ps1(a_p3_ptr++);
+        // load and duplicate 
+        a_p0 = _mm_load_ps1(a);
+        a_p1 = _mm_load_ps1(a + 1);
+        a_p2 = _mm_load_ps1(a + 2);
+        a_p3 = _mm_load_ps1(a + 3);
+
+        a += 4;
 
         b_row = _mm_load_ps(&B(0, p));
 
@@ -118,31 +95,29 @@ void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
     float32x4_t c_row1, c_row2, c_row3, c_row4;
     float32x4_t b_row;
     float32x4_t a_p0, a_p1, a_p2, a_p3;
-    float *a_p0_ptr, *a_p1_ptr, *a_p2_ptr, *a_p3_ptr;
+    //float *a_p0_ptr, *a_p1_ptr, *a_p2_ptr, *a_p3_ptr;
 
-    a_p0_ptr = &A(0, 0);
-    a_p1_ptr = &A(0, 1);
-    a_p2_ptr = &A(0, 2);
-    a_p3_ptr = &A(0, 3);
+    //a_p0_ptr = &A(0, 0);
+    //a_p1_ptr = &A(0, 1);
+    //a_p2_ptr = &A(0, 2);
+    //a_p3_ptr = &A(0, 3);
     
     c_row1 = vld1q_f32(&C(0,0));
     c_row2 = vld1q_f32(&C(0,1));
     c_row3 = vld1q_f32(&C(0,2));
     c_row4 = vld1q_f32(&C(0,3));
 
-    // c_row1 = vdupq_n_f32(0);
-    // c_row2 = vdupq_n_f32(0);
-    // c_row3 = vdupq_n_f32(0);
-    // c_row4 = vdupq_n_f32(0);
-
 	for (int p = 0; p < k; p++) 
     {
-        a_p0 = vld1q_dup_f32(a_p0_ptr++);
-        a_p1 = vld1q_dup_f32(a_p1_ptr++);
-        a_p2 = vld1q_dup_f32(a_p2_ptr++);
-        a_p3 = vld1q_dup_f32(a_p3_ptr++);
+        a_p0 = vld1q_dup_f32(a);
+        a_p1 = vld1q_dup_f32(a + 1);
+        a_p2 = vld1q_dup_f32(a + 2);
+        a_p3 = vld1q_dup_f32(a + 3);
+
+        a += 4;
 
         b_row = vld1q_f32(&B(0, p));
+
 #ifdef __ARM_FEATURE_FMA
         // rows 1 - 4 using NEON FMAD
         c_row1 = vfmaq_f32(c_row1, a_p0, b_row);
@@ -165,7 +140,7 @@ void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
     vst1q_f32(&C(0, 3), c_row4);
 }
 
-#else   // fall-back non vector version
+#else   // fall-back non-vector version
 
 //------------------------------------------------------
 // compute 16 dot products at a time, 4 cols x 4 rows
@@ -194,10 +169,12 @@ void AddDot4x4(CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX l
 
     for (int p = 0; p < k; p++) 
     {
-        a_p0 = *a_p0_ptr++;
-        a_p1 = *a_p1_ptr++;
-        a_p2 = *a_p2_ptr++;
-        a_p3 = *a_p3_ptr++;
+        a_p0 = *a;
+        a_p1 = *(a + 1);
+        a_p2 = *(a + 2);
+        a_p3 = *(a + 3);
+
+        a += 4;
 
         b_0p = B(0, p);
         b_1p = B(1, p);
@@ -303,35 +280,68 @@ void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
 //------------------------------------------------------
 //
 //------------------------------------------------------
+void PackMatrixB(int k, float *b, int ldb, float* b_to)
+{
+    /* loop over cols of B */
+    for (int j = 0; j < k; j++)
+    {
+        float *b_ij_pntr = &B(j, 0);
+
+        *b_to++ = *b_ij_pntr;
+        *b_to++ = *(b_ij_pntr + 1);
+        *b_to++ = *(b_ij_pntr + 2);
+        *b_to++ = *(b_ij_pntr + 3);
+    }
+}
+
+//------------------------------------------------------
+// pack a sub-tile of A into contiguous memory
+//------------------------------------------------------
+void PackMatrixA(int k, float *a, int lda, float *a_to)
+{
+    int i;
+    float   *a_0i_pntr = &A(0,0), *a_1i_pntr = &A(0,1),
+            *a_2i_pntr = &A(0,2), *a_3i_pntr = &A(0,3);
+
+    for (i = 0; i < k; i++) {  /* loop over rows of A */
+        *a_to++ = *a_0i_pntr++;
+        *a_to++ = *a_1i_pntr++;
+        *a_to++ = *a_2i_pntr++;
+        *a_to++ = *a_3i_pntr++;
+    }
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
 void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float* c, CBLAS_INDEX ldc)
 {
-    float packedA[m * k];
+//    float packedA[m * k];
 
-    int row_leftover    = m % 4;
-    int col_leftover    = n % 4;
+    //int row_leftover    = m % 4; 
+    //int col_leftover    = n % 4;
     int row, col;
 
     // Loop over the rows and columns of C unrolled by 4
     for (row = 0; row < m; row += 4)
     {
-        PackMatrixA(k, &A(0,row), lda, &packedA[row * k]);
-
         for (col = 0; col < n; col += 4)
         {
-            // AddDot4x4(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
+            //AddDot4x4(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
 
-            AddDot4x4(k, &packedA[row * k], 4, &B(col, 0), ldb, &C(col, row), ldc);
+            PackMatrixA(k, &A(col, 0), lda, &packedA[row * k]);
+            AddDot4x4(k, &packedA[row * k], 4, &B(0, row), ldb, &C(col, row), ldc);
         }
 
         // use Duff's device to handle leftover columns
         // printf("col_leftover = %d, col = %d\n", col_leftover, col);
-        switch(col_leftover)
-        {
-            case 3:     AddDot(k, &A(0, row), lda, &B(col + 2, 0), &C(col + 2, row));
-            case 2:     AddDot(k, &A(0, row), lda, &B(col + 1, 0), &C(col + 1, row));
-            case 1:     AddDot(k, &A(0, row), lda, &B(col, 0), &C(col, row));
-            case 0: ;   // nothing to do!
-        }
+        //switch(col_leftover)
+        //{
+        //    case 3:     AddDot(k, &A(0, row), lda, &B(col + 2, 0), &C(col + 2, row));
+        //    case 2:     AddDot(k, &A(0, row), lda, &B(col + 1, 0), &C(col + 1, row));
+        //    case 1:     AddDot(k, &A(0, row), lda, &B(col, 0), &C(col, row));
+        //    case 0: ;   // nothing to do!
+        //}
     }
 
     // switch(row_leftover)
