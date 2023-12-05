@@ -69,7 +69,9 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
 
         a += 4;
 
-        b_row = _mm_load_ps(&B(0, p));
+        b_row = _mm_load_ps(b);
+
+        b += 4;
 
         // rows 1 - 4 using FMADD
 #ifdef USE_INTEL_FMA
@@ -114,7 +116,9 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
 
         a += 4;
 
-        b_row = vld1q_f32(&B(0, p));
+        b_row = vld1q_f32(b);
+
+        b += 4;
 
 #ifdef __ARM_FEATURE_FMA
         // rows 1 - 4 using NEON FMAD
