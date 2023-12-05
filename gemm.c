@@ -14,7 +14,7 @@
 #   include <arm_neon.h>
 #endif
 
-// Block sizes
+// Matrix sub-tile block sizes for caching data in contiguous memory
 #define mc 256
 #define kc 128
 #define nb 1000
@@ -27,8 +27,10 @@
 //#define X(i) x[(i) * incx]
 #define Y(i) y[(i) * incx]
 
-static float packedA[mc * kc];
-static float packedB[kc * nb];
+#ifdef USE_STATIC_BUFFERS
+    static float packedA[mc * kc];
+    static float packedB[kc * nb];
+#endif
 
 //------------------------------------------------------
 // compute dot product of row of X and col of Y
@@ -310,10 +312,19 @@ static void PackMatrixA(int k, float *a, int lda, float *a_to)
     // loop over cols of A
     for (i = 0; i < k; i++)
     {
+#if 0
+        *a_to       = *a_0i_pntr++;
+        *(a_to + 1) = *a_1i_pntr++;
+        *(a_to + 2) = *a_2i_pntr++;
+        *(a_to + 3) = *a_3i_pntr++;
+
+        a_to += 4;
+#else
         *a_to++ = *a_0i_pntr++;
         *a_to++ = *a_1i_pntr++;
         *a_to++ = *a_2i_pntr++;
         *a_to++ = *a_3i_pntr++;
+#endif
     }
 }
 
@@ -322,7 +333,10 @@ static void PackMatrixA(int k, float *a, int lda, float *a_to)
 //------------------------------------------------------
 static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float* c, CBLAS_INDEX ldc)
 {
-//    float packedA[m * k];
+#if !defined(USE_STATIC_BUFFERS)
+    float* packedA = _malloca(m * k * sizeof(float));
+    float* packedB = _malloca(kc * nb * sizeof(float));
+#endif
 
     //int row_leftover    = m % 4; 
     //int col_leftover    = n % 4;
@@ -337,8 +351,6 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
 
         for (col = 0; col < n; col += 4)
         {
-            //AddDot4x4(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
-
             // we are pre-caching all rows so we need to do it only once
             if (row == 0) 
                 PackMatrixA(k, &A(col, 0), lda, &packedA[row * k]);

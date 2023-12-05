@@ -24,6 +24,7 @@
 
 #define USE_SSE
 //#define USE_INTEL_FMA
+#define USE_STATIC_BUFFERS
 
 #   define MT_ENABLED
 // #   define MT_DEBUG
