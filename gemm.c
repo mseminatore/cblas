@@ -95,12 +95,6 @@ void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX l
     float32x4_t c_row1, c_row2, c_row3, c_row4;
     float32x4_t b_row;
     float32x4_t a_p0, a_p1, a_p2, a_p3;
-    //float *a_p0_ptr, *a_p1_ptr, *a_p2_ptr, *a_p3_ptr;
-
-    //a_p0_ptr = &A(0, 0);
-    //a_p1_ptr = &A(0, 1);
-    //a_p2_ptr = &A(0, 2);
-    //a_p3_ptr = &A(0, 3);
     
     c_row1 = vld1q_f32(&C(0,0));
     c_row2 = vld1q_f32(&C(0,1));
