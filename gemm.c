@@ -352,7 +352,7 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
         for (col = 0; col < n; col += 4)
         {
             // we are pre-caching all rows so we need to do it only once
-            if (row == 0) 
+            if (col == 0) 
                 PackMatrixA(k, &A(col, 0), lda, &packedA[row * k]);
 
             AddDot4x4(k, &packedA[row * k], 4, &B(0, row), ldb, &C(col, row), ldc);
