@@ -13,7 +13,7 @@ static DWORD cblas_thread_ids[MAX_THREADS];
 
 static HANDLE kickoff_event = NULL;
 
-CRITICAL_SECTION queue_lock;
+static CRITICAL_SECTION queue_lock;
 
 static work_queue_t *work_queue = NULL;
 
