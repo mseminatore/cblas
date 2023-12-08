@@ -41,12 +41,12 @@ The following BLAS library functions are currently supported by the library.
 ## Level 1 BLAS functions: vector-vector ops
 
 The BLAS standard defines function prefixes to
-distinguish between variations of the same function. The prefix *s*
-denotes single-precision and *d* denotes double-precision. An *x* is used as a
-placeholder for *s* or *d* variants in the tables below.
+distinguish between variations of the same function. The prefix **s**
+denotes single-precision and *d* denotes double-precision. An **x** is used as a
+placeholder for **s** or **d** variants in the tables below.
 
-All library functions are prefixed with *cblas_* so, for example, the
-function for a single-precision vector-vector copy would be *cblas_scopy()*.
+All library functions are prefixed with **cblas_** so, for example, the
+function for a single-precision vector-vector copy would be **cblas_scopy()**.
 
 Function | Description
 -------- | -----------
@@ -54,8 +54,8 @@ xrotg | generate a plane rotation
 xrot | apply plane rotation
 xswap | swap two vectors x and y
 xcopy | copy one vector to another
-xaxpy | compute y = a * *x* + *y*
-xaxpby | compute y = a * *x* + b * *y*
+xaxpy | compute y = a * **x** + **y**
+xaxpby | compute y = a * **x** + b * **y**
 xdot | compute dot product of two vectors
 xnrm2 | euclidean norm of a vector
 xasum | sum of absolute value of vector elements
@@ -65,7 +65,7 @@ ixamax | index of max absolute value of a vector
 
 Function | Description
 -------- | -----------
-ger | rank 1 update A = a * x * y' + A
+ger | rank 1 update **A** = a * **x** * **y'** + **A**
 gemv | matrix-vector multiply
 
 ## Level 3 BLAS functions: matrix-matrix ops
