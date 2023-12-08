@@ -284,10 +284,10 @@ static void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
 //------------------------------------------------------
 // pack a sub-tile of B into contiguous memory
 //------------------------------------------------------
-static void PackMatrixB(int k, float *b, int ldb, float *b_to)
+static void PackMatrixB(CBLAS_INDEX k, float *b, CBLAS_INDEX ldb, float *b_to)
 {
     // loop over rows of B
-    for (int j = 0; j < k; j++)
+    for (CBLAS_INDEX j = 0; j < k; j++)
     {
         float *b_ij_pntr = &B(0, j);
 
@@ -303,9 +303,9 @@ static void PackMatrixB(int k, float *b, int ldb, float *b_to)
 //------------------------------------------------------
 // pack a sub-tile of A into contiguous memory
 //------------------------------------------------------
-static void PackMatrixA(int k, float *a, int lda, float *a_to)
+static void PackMatrixA(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
 {
-    int i;
+    CBLAS_INDEX i;
     float   *a_0i_pntr = &A(0,0), *a_1i_pntr = &A(0,1),
             *a_2i_pntr = &A(0,2), *a_3i_pntr = &A(0,3);
 
