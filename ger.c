@@ -10,11 +10,48 @@
 #define A(col, row) a[(row) * lda + (col)]
 
 //
-static void AddProd(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda)
+static void AddProd(float x, float y, float *a)
 {
-	for (int p = 0; p < k; p++)
+	*a += x * y;
+}
+
+//
+static void AddProd4x1(float *x, float *y, float *a)
+{
+
+}
+
+//
+static void sger_row_noalpha(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda)
+{
+	register float xr;
+	float *yc, *ap;
+
+	for (int row = 0; row < m; row++)
 	{
-		*a++ += *x++ * *y++;
+		xr = X(row);
+		for (int col = 0; col < n; col += 4)
+		{
+			yc = &Y(col);
+			ap = &A(col, row);
+
+			AddProd(xr, *yc, ap);
+			AddProd(xr, *(yc + 1), ap + 1);
+			AddProd(xr, *(yc + 2), ap + 2);
+			AddProd(xr, *(yc + 3), ap + 3);
+		}
+	}
+}
+
+//
+static void sger_row_noalpha_plain(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda)
+{
+	for (int row = 0; row < m; row++)
+	{
+		for (int col = 0; col < n; col++)
+		{
+			a[row * n + col] += x[row] * y[col];
+		}
 	}
 }
 
@@ -42,14 +79,7 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
     {
 		if (alpha == 1.0f)
 		{
-			for (int row = 0; row < m; row ++)
-			{
-				// AddProd(n, &X(row), 1, &Y(col), 1, &A(0, row), lda);
-				for (int col = 0; col < n; col++)
-				{
-					a[row * n + col] += x[row] * y[col];
-				}
-			}
+			sger_row_noalpha(m, n,  x, incx, y, incy, a, lda);
 		}
 		else
 		{

@@ -312,7 +312,7 @@ static void PackMatrixA(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
     // loop over cols of A
     for (i = 0; i < k; i++)
     {
-#if 0
+#if 1
         *a_to       = *a_0i_pntr++;
         *(a_to + 1) = *a_1i_pntr++;
         *(a_to + 2) = *a_2i_pntr++;

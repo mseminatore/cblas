@@ -20,7 +20,7 @@ else
 	OBJS += cpuid_x64.o
 endif
 
-all: $(LIBNAME) blas_stress blas_test blas_perf ger_perf
+all: $(LIBNAME) blas_stress blas_test gemm_perf ger_perf
 	
 $(LIBNAME): $(OBJS)
 	ar rcs $(LIBNAME) $(OBJS)
@@ -31,7 +31,7 @@ blas_stress: $(LIBNAME) test_stress.o
 blas_test: $(LIBNAME) test.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-blas_perf: $(LIBNAME) blas_perf.o
+gemm_perf: $(LIBNAME) gemm_perf.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 ger_perf: $(LIBNAME) ger_perf.o
@@ -41,5 +41,5 @@ ger_perf: $(LIBNAME) ger_perf.o
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 clean:
-	rm $(TARGET) $(OBJS) test.o test_stress.o blas_perf.o blas_stress blas_test blas_perf
+	rm $(TARGET) $(OBJS) test.o test_stress.o blas_perf.o blas_stress blas_test gemm_perf ger_perf
 

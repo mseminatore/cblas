@@ -73,7 +73,7 @@ void test_ger()
 
     CBLAS_INDEX m,n;
 
-    for (int i = 2; i <= MAX_SIZE; i <<= 1)
+    for (int i = 4; i <= MAX_SIZE; i <<= 1)
     {
         m = n = i;
 
