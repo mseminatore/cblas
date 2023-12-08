@@ -34,37 +34,43 @@ or the [AMD Optimizing CPU Libraries](https://www.amd.com/en/developer/aocl.html
 > If you are using the library and would like to request additional BLAS
 > function support please open an issue.
 
+# Which BLAS functions are supported
+
 The following BLAS library functions are currently supported by the library.
 
 ## Level 1 BLAS functions: vector-vector ops
 
-All library functions The BLAS standard defines function prefixes to
+The BLAS standard defines function prefixes to
 distinguish between variations of the same function. The prefix *s*
-denotes single-precision and *d* denotes double-precision.
+denotes single-precision and *d* denotes double-precision. An *x* is used as a
+placeholder for *s* or *d* variants in the tables below.
 
-function | description
+All library functions are prefixed with *cblas_* so, for example, the
+function for a single-precision vector-vector copy would be *cblas_scopy()*.
+
+Function | Description
 -------- | -----------
-xrotg | generate plane rotation
+xrotg | generate a plane rotation
 xrot | apply plane rotation
-xswap | swap to vectors
+xswap | swap two vectors x and y
 xcopy | copy one vector to another
 xaxpy | compute y = a * *x* + *y*
-xaxpby | compute = y = a * *x* + b * *y*
+xaxpby | compute y = a * *x* + b * *y*
 xdot | compute dot product of two vectors
 xnrm2 | euclidean norm of a vector
 xasum | sum of absolute value of vector elements
-ixamax | index of max absolute value
+ixamax | index of max absolute value of a vector
 
 ## Level 2 BLAS functions: matrix-vector ops
 
-function | description
+Function | Description
 -------- | -----------
 ger | rank 1 update A = a * x * y' + A
-gemv | matrix vector multiply
+gemv | matrix-vector multiply
 
 ## Level 3 BLAS functions: matrix-matrix ops
 
-function | description
+function | Description
 -------- | -----------
 xgemm | general matrix multiply
 
