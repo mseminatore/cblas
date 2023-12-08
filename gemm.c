@@ -104,6 +104,7 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
     float32x4_t b_row;
     float32x4_t a_p0, a_p1, a_p2, a_p3;
     
+    // 4 x 4 floats into SIMD regs
     c_row1 = vld1q_f32(&C(0,0));
     c_row2 = vld1q_f32(&C(0,1));
     c_row3 = vld1q_f32(&C(0,2));
@@ -111,6 +112,7 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
 
 	for (int p = 0; p < k; p++) 
     {
+        // load 1 float and duplicate to 4 SIMD elements 
         a_p0 = vld1q_dup_f32(a);
         a_p1 = vld1q_dup_f32(a + 1);
         a_p2 = vld1q_dup_f32(a + 2);
@@ -118,19 +120,20 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
 
         a += 4;
 
+        // load 4 floats
         b_row = vld1q_f32(b);
 
         b += 4;
 
 #ifdef __ARM_FEATURE_FMA
-        // rows 1 - 4 using NEON FMAD
+        // rows 1 - 4 using NEON FMAD C += A * B
         c_row1 = vfmaq_f32(c_row1, a_p0, b_row);
         c_row2 = vfmaq_f32(c_row2, a_p1, b_row);
         c_row3 = vfmaq_f32(c_row3, a_p2, b_row);
         c_row4 = vfmaq_f32(c_row4, a_p3, b_row);
 
 #else
-        // rows 1 - 4 using NEON
+        // rows 1 - 4 using NEON MUL and ADD C += A * B
         c_row1 = vaddq_f32(c_row1, vmulq_f32(a_p0, b_row));
         c_row2 = vaddq_f32(c_row2, vmulq_f32(a_p1, b_row));
         c_row3 = vaddq_f32(c_row3, vmulq_f32(a_p2, b_row));
@@ -138,6 +141,7 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
 #endif
     }
 
+    // store 4 x 4 floats
     vst1q_f32(&C(0, 0), c_row1);
     vst1q_f32(&C(0, 1), c_row2);
     vst1q_f32(&C(0, 2), c_row3);
