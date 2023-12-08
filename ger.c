@@ -5,6 +5,19 @@
 
 #include "cblas.h"
 
+#define X(i) x[(i) * incx]
+#define Y(i) y[(i) * incy]
+#define A(col, row) a[(row) * lda + (col)]
+
+//
+static void AddProd(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda)
+{
+	for (int p = 0; p < k; p++)
+	{
+		*a++ += *x++ * *y++;
+	}
+}
+
 //------------------------------------------------------
 // single-precision rank-1 update
 //------------------------------------------------------
@@ -31,6 +44,7 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 		{
 			for (int row = 0; row < m; row ++)
 			{
+				// AddProd(n, &X(row), 1, &Y(col), 1, &A(0, row), lda);
 				for (int col = 0; col < n; col++)
 				{
 					a[row * n + col] += x[row] * y[col];

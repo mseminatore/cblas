@@ -16,7 +16,7 @@ int cblas_set_threads = 1;
 // info - position of the invalid parameter in the parameter list
 // len - length of the name in bytes
 //------------------------------------------------------
-void xerbla(char *srcname, int info, int len)
+void xerbla(const char *srcname, int info, int len)
 {
     printf("\nCBLAS error: parameter %d was invalid in call to %s()\n",info, srcname);
 }

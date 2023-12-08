@@ -2,6 +2,8 @@
 blas_test
 blas_stress
 blas_perf
+ger_perf
+gemm_perf
 build/
 
 # Prerequisites

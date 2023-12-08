@@ -198,7 +198,7 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
 const char *cblas_get_config();
 const char *cblas_get_corename();
 int cblas_get_num_procs();
-void xerbla(char *srcname, int info, int len);
+void xerbla(const char *srcname, int info, int len);
 
 //------------------------------------------------------
 // cpu ID functions
