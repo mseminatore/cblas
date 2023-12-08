@@ -386,7 +386,6 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     assert(layout == CblasRowMajor || layout == CblasColMajor);
     assert(transa == CblasTrans || transa == CblasNoTrans);
     assert(transb == CblasTrans || transb == CblasNoTrans);
-    assert(transc == CblasTrans || transc == CblasNoTrans);
     assert(m > 0 && n > 0 && k > 0);
     assert(a && b && c);
     assert(alpha != 0.0f && beta != 0.0f);
@@ -415,7 +414,6 @@ void cblas_sgemm_naive(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSP
     assert(layout == CblasRowMajor || layout == CblasColMajor);
     assert(transa == CblasTrans || transa == CblasNoTrans);
     assert(transb == CblasTrans || transb == CblasNoTrans);
-    assert(transc == CblasTrans || transc == CblasNoTrans);
     assert(m > 0 && n > 0 && k > 0);
     assert(a && b && c);
     assert(alpha != 0.0f && beta != 0.0f);
@@ -434,7 +432,6 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     assert(layout == CblasRowMajor || layout == CblasColMajor);
     assert(transa == CblasTrans || transa == CblasNoTrans);
     assert(transb == CblasTrans || transb == CblasNoTrans);
-    assert(transc == CblasTrans || transc == CblasNoTrans);
     assert(m > 0 && n > 0 && k > 0);
     assert(a && b && c);
     assert(alpha != 0.0 && beta != 0.0);
