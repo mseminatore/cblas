@@ -383,6 +383,14 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
 //------------------------------------------------------
 void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float alpha, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float beta, float *c, CBLAS_INDEX ldc)
 {
+    assert(layout == CblasRowMajor || layout == CblasColMajor);
+    assert(transa == CblasTrans || transa == CblasNoTrans);
+    assert(transb == CblasTrans || transb == CblasNoTrans);
+    assert(transc == CblasTrans || transc == CblasNoTrans);
+    assert(m > 0 && n > 0 && k > 0);
+    assert(a && b && c);
+    assert(alpha != 0.0f && beta != 0.0f);
+
     CBLAS_INDEX pb, ib;
 
     // Compute an mc x n block of C by a call to the InnerKernel
@@ -404,6 +412,14 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 //------------------------------------------------------
 void cblas_sgemm_naive(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float alpha, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float beta, float* c, CBLAS_INDEX ldc)
 {
+    assert(layout == CblasRowMajor || layout == CblasColMajor);
+    assert(transa == CblasTrans || transa == CblasNoTrans);
+    assert(transb == CblasTrans || transb == CblasNoTrans);
+    assert(transc == CblasTrans || transc == CblasNoTrans);
+    assert(m > 0 && n > 0 && k > 0);
+    assert(a && b && c);
+    assert(alpha != 0.0f && beta != 0.0f);
+
     for (int row = 0; row < m; row++)
         for (int col = 0; col < n; col++)
             for (int p = 0; p < k; p++)
@@ -415,6 +431,14 @@ void cblas_sgemm_naive(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSP
 //------------------------------------------------------
 void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, double alpha, double *a, CBLAS_INDEX lda, double *b, CBLAS_INDEX ldb, double beta, double *c, CBLAS_INDEX ldc)
 {
+    assert(layout == CblasRowMajor || layout == CblasColMajor);
+    assert(transa == CblasTrans || transa == CblasNoTrans);
+    assert(transb == CblasTrans || transb == CblasNoTrans);
+    assert(transc == CblasTrans || transc == CblasNoTrans);
+    assert(m > 0 && n > 0 && k > 0);
+    assert(a && b && c);
+    assert(alpha != 0.0 && beta != 0.0);
+
     for (int row = 0; row < m; row++)
         for (int col = 0; col < n; col++)
             for (int p = 0; p < k; p++)
