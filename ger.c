@@ -19,7 +19,10 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 		return;
 
 	if (layout != CblasRowMajor && layout != CblasColMajor)
+	{
+		XERBLA(1);
 		return;
+	}
 
 	// TODO - handle incx == 1 special case
     if (layout == CblasRowMajor)

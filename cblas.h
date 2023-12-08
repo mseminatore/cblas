@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <math.h>
 #include <assert.h>
+#include <string.h>
 
 #ifdef __cplusplus
     extern "C" {
@@ -30,10 +31,14 @@
 // #   define MT_DEBUG
 
 #ifdef MT_DEBUG
-#   define MT_TRACE printf
+#   define MT_TRACE(...) printf(__VA_ARGS__)
 #else
-#   define MT_TRACE
+#   define MT_TRACE(...)
 // #   define MT_TRACE __noop
+#endif
+
+#ifndef XERBLA
+#   define XERBLA(param) xerbla(__func__, (param), strlen(__func__))
 #endif
 
 #ifndef MAX
@@ -193,6 +198,7 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
 const char *cblas_get_config();
 const char *cblas_get_corename();
 int cblas_get_num_procs();
+void xerbla(char *srcname, int info, int len);
 
 //------------------------------------------------------
 // cpu ID functions

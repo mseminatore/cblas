@@ -10,6 +10,18 @@ int cblas_max_threads = MAX_THREADS;
 int cblas_set_threads = 1;
 
 //------------------------------------------------------
+// standard BLAS error handler
+//
+// srcname - name of the function that called xerbla
+// info - position of the invalid parameter in the parameter list
+// len - length of the name in bytes
+//------------------------------------------------------
+void xerbla(char *srcname, int info, int len)
+{
+    printf("\nCBLAS error: parameter %d was invalid in call to %s()\n",info, srcname);
+}
+
+//------------------------------------------------------
 // return the current config
 //------------------------------------------------------
 const char *cblas_get_config()
