@@ -65,21 +65,40 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 	assert(layout == CblasRowMajor || layout == CblasColMajor);
 	assert(lda >= MAX(1, m));
 
-	if (m <= 0 || n <= 0 || alpha == 0.0f)
-		return;
-
+	int info = 0;
 	if (layout != CblasRowMajor && layout != CblasColMajor)
-	{
-		XERBLA(1);
+		info = 1;
+	else if (m < 0)
+		info = 2;
+	else if (n < 0)
+		info = 3;
+	else if (!x)
+		info = 5;
+	else if (incx == 0)
+		info = 6;
+	else if (!y)
+		info = 7;
+	else if (incy == 0)
+		info = 8;
+	else if (!a)
+		info = 9;
+	else if (lda < MAX(1, m))
+		info = 10;
+	
+	if (info)  {
+		XERBLA(info);
 		return;
 	}
+
+	if (m == 0 ||  n == 0 || alpha == 0.0f)
+		return;
 
 	// TODO - handle incx == 1 special case
     if (layout == CblasRowMajor)
     {
 		if (alpha == 1.0f)
 		{
-			sger_row_noalpha(m, n,  x, incx, y, incy, a, lda);
+			sger_row_noalpha_plain(m, n,  x, incx, y, incy, a, lda);
 		}
 		else
 		{
@@ -126,10 +145,32 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
 	assert(layout == CblasRowMajor || layout == CblasColMajor);
 	assert(lda >= MAX(1, m));
 
-	if (m <= 0 || n <= 0 || alpha == 0.0f)
-		return;
-
+	int info = 0;
 	if (layout != CblasRowMajor && layout != CblasColMajor)
+		info = 1;
+	else if (m < 0)
+		info = 2;
+	else if (n < 0)
+		info = 3;
+	else if (!x)
+		info = 5;
+	else if (incx == 0)
+		info = 6;
+	else if (!y)
+		info = 7;
+	else if (incy == 0)
+		info = 8;
+	else if (!a)
+		info = 9;
+	else if (lda < MAX(1, m))
+		info = 10;
+	
+	if (info)  {
+		XERBLA(info);
+		return;
+	}
+
+	if (m == 0 ||  n == 0 || alpha == 0.0f)
 		return;
 
     if (layout == CblasRowMajor)
