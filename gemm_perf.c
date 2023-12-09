@@ -121,7 +121,7 @@ void test_ger()
 //------------------------------------------------------
 int main(int argc, char *argv[])
 {
-	cblas_init();
+	cblas_init(CBLAS_DEFAULT_THREADS);
 
     printf( "%s\n", cblas_get_config());
     printf("    CPU uArch: %s\n", cblas_get_corename());

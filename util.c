@@ -90,16 +90,17 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
 //------------------------------------------------------
 // initialize the CBLAS library
 //------------------------------------------------------
-void cblas_init()
+void cblas_init(int threads)
 {
-    cblas_set_num_threads(cpu_get_core_count());
-    // printf("%s\n", cblas_get_config());
-    // printf("Cores/Threads: %d/%d\n", cblas_get_num_procs(), cblas_get_num_threads());
+    if (CBLAS_DEFAULT_THREADS == threads)
+        threads = cpu_get_core_count();
+
+    cblas_set_num_threads(threads);
 
     // TODO - detect cache sizes?
     // TODO - detect cpu features?
 
-    // start server
+    // start thread server
     cblas_init_server();
 }
 

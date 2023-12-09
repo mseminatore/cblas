@@ -110,7 +110,10 @@ typedef struct
     void *x, *y, *c, *alpha, *beta;
 } cblas_args_t;
 
+// kernel operation for MT tasks
 typedef void (*kernel_function)(cblas_args_t* args);
+
+#define CBLAS_DEFAULT_THREADS -1
 
 //------------------------------------------------------
 // structure defining the work queue format
@@ -185,7 +188,7 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 //------------------------------------------------------
 // Utility functions
 //------------------------------------------------------
-void cblas_init();
+void cblas_init(int threads);
 void cblas_shutdown();
 void cblas_set_num_threads(int threads);
 int cblas_get_num_threads(void);
