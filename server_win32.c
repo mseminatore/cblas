@@ -6,7 +6,7 @@
 #include <windows.h>
 #include "cblas.h"
 
-extern int cblas_max_threads;
+extern volatile int cblas_max_threads;
 
 static HANDLE cblas_threads[MAX_THREADS];
 static DWORD cblas_thread_ids[MAX_THREADS];
@@ -85,7 +85,15 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
         // event raised when work is added to the queue
         WaitForSingleObject(kickoff_event, INFINITE);
 
-        MT_TRACE("thread [%d] woke up.\n", thread_num);
+        MT_TRACE("thread [%d] is awake.\n", thread_num);
+  
+        if (thread_num > cblas_max_threads - 2)
+        {
+            MT_TRACE("thread [%d] exiting.\n", thread_num);
+
+            // excess thread, so worker thread exits
+            break;
+        }
 
         // check for more work, if so remove it from queue
 #if 0

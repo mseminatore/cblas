@@ -6,24 +6,23 @@
 #include <pthread.h>
 #include "cblas.h"
 
-extern int cblas_max_threads;
+extern volatile int cblas_max_threads;
 
 static work_queue_t *work_queue = NULL;
 static pthread_t cblas_thread_ids[MAX_THREADS];
 
 static void *cblas_worker_thread(void* pvoid);
-static pthread_mutex_t queue_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static pthread_mutex_t queue_lock   = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t kickoff_event = PTHREAD_COND_INITIALIZER;
-static pthread_mutex_t event_lock = PTHREAD_MUTEX_INITIALIZER;
 
 //------------------------------------------------------
 // initialize the thread server system
 //------------------------------------------------------
 void cblas_init_server()
 {
-    pthread_mutex_init(&queue_lock, NULL);
-    pthread_mutex_init(&event_lock, NULL);
-    pthread_cond_init(&kickoff_event, NULL);
+    // pthread_mutex_init(&queue_lock, NULL);
+    // pthread_cond_init(&kickoff_event, NULL);
 
     // create the worker threads
     for (int i = 0; i < cblas_max_threads - 1; i++)
@@ -38,14 +37,13 @@ void cblas_init_server()
 void cblas_shutdown()
 {
     pthread_mutex_destroy(&queue_lock);
-    pthread_mutex_destroy(&event_lock);
     pthread_cond_destroy(&kickoff_event);
 
     // TODO - delete threads?
 }
 
 //------------------------------------------------------
-//
+// thread server worker thread
 //------------------------------------------------------
 static void *cblas_worker_thread(void *pvoid)
 {
@@ -59,51 +57,54 @@ static void *cblas_worker_thread(void *pvoid)
     {
         MT_TRACE("thread [%d] waits.\n", thread_num);
 
-        pthread_mutex_lock(&event_lock);
+        // the lock is released if/when this thread sleeps on the condition variable
+        pthread_mutex_lock(&queue_lock);
         
         while (!work_queue)
-            pthread_cond_wait(&kickoff_event, &event_lock);
+            pthread_cond_wait(&kickoff_event, &queue_lock);
         
-        pthread_mutex_unlock(&event_lock);
+        MT_TRACE("thread [%d] is awake.\n", thread_num);
 
-        MT_TRACE("thread [%d] woke up.\n", thread_num);
-
-        while(1)
+        if (thread_num > cblas_max_threads - 2)
         {
-            pthread_mutex_lock(&queue_lock);
-
-            work_item = work_queue;
-            if (work_item)
-                work_queue = work_queue->next;
-
+            MT_TRACE("thread [%d] exiting.\n", thread_num);
             pthread_mutex_unlock(&queue_lock);
 
-            // if no work, reset event and then go to sleep to wait for more work
-            if (!work_item)
-            {
-                MT_TRACE("thread [%d] no work, trying again.\n", thread_num);
-                break;
-            }
-
-            work_item->thread_num = thread_num;
-
-            MT_TRACE("thread [%d] executing a task.\n", thread_num);
-
-            // execute the task
-            work_item->kernel(work_item->args);
-
-            assert(work_item->finished == 0);
-            
-            work_item->finished = 1;
-            // MB;
-
-            MT_TRACE("thread [%d] task completed.\n", thread_num);
+            // excess thread, so worker thread exits
+            break;
         }
+
+        work_item = work_queue;
+        if (work_item)
+            work_queue = work_queue->next;
+
+        // release the queue lock acquired via cond_wait
+        pthread_mutex_unlock(&queue_lock);
+
+        // if no work, reset event and then go to sleep to wait for more work
+        if (!work_item)
+        {
+            MT_TRACE("thread [%d] no work, trying again.\n", thread_num);
+            continue;
+        }
+
+        work_item->thread_num = thread_num;
+
+        MT_TRACE("thread [%d] executing a task.\n", thread_num);
+
+        // execute the task
+        work_item->kernel(work_item->args);
+
+        assert(work_item->finished == 0);
+        
+        work_item->finished = 1;
+        // MB;
+
+        MT_TRACE("thread [%d] task completed.\n", thread_num);
     }
 
     return NULL;
 }
-
 
 //------------------------------------------------------
 // execute a work queue synchronously
