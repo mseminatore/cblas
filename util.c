@@ -117,6 +117,10 @@ void cblas_set_num_threads(int threads)
     if (threads > MAX_THREADS)
         threads = MAX_THREADS;
 
+    int cores = cpu_get_core_count();
+    if (threads > cores)
+        threads = cores;
+
     // TODO - need code for if we are adding more threads!!
     // if (threads > cblas_max_threads)
     //     ;
