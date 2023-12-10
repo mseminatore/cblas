@@ -36,5 +36,5 @@ jobs:
       # Execute tests defined by the CMake configuration.
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       # NB: add -V to see full test output
-      run: ctest --timeout 120 -C ${{env.BUILD_TYPE}}
+      run: ctest -V --timeout 120 -C ${{env.BUILD_TYPE}}
 
