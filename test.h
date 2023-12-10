@@ -48,11 +48,11 @@
 #endif
 
 // simple test harness
-#define BEGIN_TESTS()   puts("Beginning test pass...")
+#define BEGIN_TESTS()   printf("%sBegin test pass%s...", TERM_BRIGHT_MAGENTA, TERM_RESET)
 #define TEST(s)         printf("\t%d test case: %s" #s "%s ", ++test_number, TERM_CYAN, TERM_RESET); TEST_ASSERT(s)
 #define SUITE(s)        printf("\nTesting suite %s" s "%s...\n", TERM_YELLOW, TERM_RESET); test_suites++
 #define MODULE(s)       printf("\nModule %s" s "%s...\n", TERM_BRIGHT_MAGENTA, TERM_RESET); test_modules++
-#define END_TESTS()     printf("\nTest pass completed.\nEvaluated %s%d%s modules / %s%d%s suites / %s%d%s tests with %s%d%s failed test cases.\n\n", TERM_GREEN, test_modules, TERM_RESET, TERM_GREEN, test_suites, TERM_RESET, TERM_GREEN, test_number, TERM_RESET, test_failures ? TERM_BRIGHT_RED : TERM_GREEN, test_failures, TERM_RESET); return test_failures
+#define END_TESTS()     printf("\n%sTest pass completed%s.\nEvaluated %s%d%s modules / %s%d%s suites / %s%d%s tests with %s%d%s failed test cases.\n\n", TERM_BRIGHT_MAGENTA, TERM_RESET, TERM_GREEN, test_modules, TERM_RESET, TERM_GREEN, test_suites, TERM_RESET, TERM_GREEN, test_number, TERM_RESET, test_failures ? TERM_BRIGHT_RED : TERM_GREEN, test_failures, TERM_RESET); return test_failures
 
 #ifndef TRUE
 #	define TRUE 1

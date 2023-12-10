@@ -159,7 +159,7 @@ int cpu_get_core_count()
 			puts("Error: Unknown CPU vendor, defaulting to 1 core");
 		}
 
-		printf("Detected %d cores\n", core_count);
+		// printf("Detected %d cores\n", core_count);
 		return core_count;
 	#endif
 #endif
