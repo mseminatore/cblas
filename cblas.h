@@ -28,7 +28,7 @@
 #define USE_STATIC_BUFFERS
 
 #   define MT_ENABLED
-// #   define MT_DEBUG
+#   define MT_DEBUG
 
 #ifdef MT_DEBUG
 #   define MT_TRACE(...) printf(__VA_ARGS__)
