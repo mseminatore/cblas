@@ -490,8 +490,6 @@ int test_main(int argc, char *argv[])
 {
 	cblas_init(CBLAS_DEFAULT_THREADS);
 
-	cblas_set_num_threads(3);
-
 	printf( "%s\n", cblas_get_config());
 	printf("      CPU uArch: %s\n", cblas_get_corename());
 	printf("  Cores/Threads: %d/%d\n", cblas_get_num_procs(), cblas_get_num_threads());
