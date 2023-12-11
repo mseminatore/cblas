@@ -202,7 +202,7 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
 
 const char *cblas_get_config();
 const char *cblas_get_corename();
-int cblas_get_num_procs();
+int  cblas_get_num_procs();
 void xerbla(const char *srcname, int info, size_t len);
 
 //------------------------------------------------------
