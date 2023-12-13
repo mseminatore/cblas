@@ -17,6 +17,21 @@ static pthread_mutex_t queue_lock   = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t kickoff_event = PTHREAD_COND_INITIALIZER;
 
 //------------------------------------------------------
+//
+//------------------------------------------------------
+void _cblas_add_threads(int threads_to_add)
+{
+    MT_TRACE("_cblas_add_threads() adding %d threads.\n", threads_to_add);
+
+    for (int i = 0; i < threads_to_add; i++)
+    {
+        pthread_create(&cblas_thread_ids[i + cblas_max_threads - 1], NULL, cblas_worker_thread, (void*)i) + cblas_max_threads - 1;
+    }
+
+    cblas_max_threads += threads_to_add;
+}
+
+//------------------------------------------------------
 // initialize the thread server system
 //------------------------------------------------------
 void cblas_init_server()

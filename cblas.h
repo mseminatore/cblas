@@ -27,8 +27,8 @@
 //#define USE_INTEL_FMA
 #define USE_STATIC_BUFFERS
 
-#   define MT_ENABLED
-#   define MT_DEBUG
+#define MT_ENABLED
+#define MT_DEBUG
 
 #ifdef MT_DEBUG
 #   define MT_TRACE(...) printf(__VA_ARGS__)
@@ -212,6 +212,11 @@ int cpu_get_core_count();
 const char *cpu_get_core_name();
 int cpu_get_cacheline_size();
 unsigned int cpu_get_features();
+
+//------------------------------------------------------
+// internal functions
+//------------------------------------------------------
+void _cblas_add_threads(int threads_to_add);
 
 #ifdef __cplusplus
     }

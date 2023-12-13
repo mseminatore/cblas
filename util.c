@@ -95,13 +95,19 @@ void cblas_init(int threads)
     if (CBLAS_DEFAULT_THREADS == threads)
         threads = cpu_get_core_count();
 
+#ifndef MT_ENABLED
+    threads = 1;
+#endif
+
     cblas_set_num_threads(threads);
 
     // TODO - detect cache sizes?
     // TODO - detect cpu features?
 
     // start thread server
+#ifdef MT_ENABLED
     cblas_init_server();
+#endif
 }
 
 //------------------------------------------------------
@@ -121,9 +127,9 @@ void cblas_set_num_threads(int threads)
     if (threads > cores)
         threads = cores;
 
-    // TODO - need code for if we are adding more threads!!
-    // if (threads > cblas_max_threads)
-    //     ;
+    // add more threads if needed
+    if (threads > cblas_max_threads)
+        _cblas_add_threads(threads - cblas_max_threads);
 
     cblas_max_threads = threads;
 }
