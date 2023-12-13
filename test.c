@@ -390,6 +390,7 @@ static void test_gemm()
 {
 	SUITE("cblas_sgemm");
 
+#if 1
 	float samtx[16] = {
 		1, 2, 3, 4, 
 		5, 6, 7, 8, 
@@ -403,9 +404,26 @@ static void test_gemm()
 		0,0,1,0,
 		0,0,0,1
 	};
+#else
+	float samtx[] = {
+		1, 2, 3, 4, 5,
+		6, 7, 8, 9, 10,
+		11, 12, 13, 14, 15,
+		16, 17, 18, 29, 20,
+		21, 22, 23, 24, 25
+	};
+
+	float sbmtx[] = {
+		1,0,0,0,0,
+		0,1,0,0,0,
+		0,0,1,0,0,
+		0,0,0,1,0,
+		0,0,0,0,1
+	};
+#endif
 
 	{
-		float scmtx[16] = { 0 };
+		float scmtx[25] = { 0 };
 		// 	1,1,1,1,
 		// 	1,1,1,1,
 		// 	1,1,1,1,
@@ -490,8 +508,6 @@ int test_main(int argc, char *argv[])
 {
 	cblas_init(CBLAS_DEFAULT_THREADS);
 
-	cblas_set_num_threads(2);
-	
 	printf( "%s\n", cblas_get_config());
 	printf("      CPU uArch: %s\n", cblas_get_corename());
 	printf("  Cores/Threads: %d/%d\n", cblas_get_num_procs(), cblas_get_num_threads());

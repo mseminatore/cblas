@@ -96,7 +96,7 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
         }
 
         // check for more work, if so remove it from queue
-#if 0
+#if 1
         EnterCriticalSection(&queue_lock);
 
         work_item = work_queue;
@@ -121,7 +121,7 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
         // if no work, reset event and then go to sleep to wait for more work
         if (!work_item)
         {
-            MT_TRACE("thread [%d] no work, trying again.\n", thread_num);
+            MT_TRACE("thread [%d] no work, trying again.\n", thread_num); 
             continue;
         }
 

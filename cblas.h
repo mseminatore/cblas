@@ -28,10 +28,10 @@
 #define USE_STATIC_BUFFERS
 
 #define MT_ENABLED
-#define MT_DEBUG
+// #define MT_DEBUG
 
 #ifdef MT_DEBUG
-#   define MT_TRACE(...) printf(__VA_ARGS__)
+#   define MT_TRACE(...) fprintf(stderr, __VA_ARGS__)
 #else
 #   define MT_TRACE(...)
 // #   define MT_TRACE __noop
@@ -202,8 +202,8 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
 
 const char *cblas_get_config();
 const char *cblas_get_corename();
-int cblas_get_num_procs();
-void xerbla(const char *srcname, int info, int len);
+int  cblas_get_num_procs();
+void xerbla(const char *srcname, int info, size_t len);
 
 //------------------------------------------------------
 // cpu ID functions

@@ -73,6 +73,8 @@ int cpu_get_core_count()
     return entry;
 #endif
 
+    // TODO - implement this!
+    puts("warning: cpu_get_core_count() not implemented!");
     return 1;
 }
 

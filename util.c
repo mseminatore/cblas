@@ -16,7 +16,7 @@ int cblas_set_threads = 1;
 // info - position of the invalid parameter in the parameter list
 // len - length of the name in bytes
 //------------------------------------------------------
-void xerbla(const char *srcname, int info, int len)
+void xerbla(const char *srcname, int info, size_t len)
 {
     printf("\nCBLAS error: parameter %d was invalid in call to %s()\n",info, srcname);
 }
@@ -27,7 +27,13 @@ void xerbla(const char *srcname, int info, int len)
 const char *cblas_get_config()
 {
     static char buf[256];
+
+#ifdef _WIN32
+    sprintf_s(buf, sizeof(buf), "\nCBLAS 0.1 %s MAX_THREADS=%d", cpu_get_core_name(), MAX_THREADS);
+#else
     sprintf(buf, "\nCBLAS 0.1 %s MAX_THREADS=%d", cpu_get_core_name(), MAX_THREADS);
+#endif
+
     return buf;
 }
 
