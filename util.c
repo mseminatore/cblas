@@ -8,6 +8,7 @@
 //
 int cblas_max_threads = MAX_THREADS;
 int cblas_set_threads = 1;
+int server_alive = 0;
 
 //------------------------------------------------------
 // standard BLAS error handler
@@ -112,7 +113,8 @@ void cblas_init(int threads)
 
     // start thread server
 #ifdef MT_ENABLED
-    cblas_init_server();
+    if (!server_alive && cblas_init_server())
+        server_alive = 1;
 #endif
 }
 
@@ -121,7 +123,7 @@ void cblas_init(int threads)
 //------------------------------------------------------
 void cblas_set_num_threads(int threads)
 {
-//    printf("set threads = %d\n", threads);
+    MT_TRACE("set threads = %d\n", threads);
 
     if (threads < 1)
         threads = 1;
@@ -131,7 +133,9 @@ void cblas_set_num_threads(int threads)
 
     int cores = cpu_get_core_count();
     if (threads > cores)
+    {
         threads = cores;
+    }
 
     // add more threads if needed
     if (threads > cblas_max_threads)

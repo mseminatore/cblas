@@ -28,7 +28,7 @@
 #define USE_STATIC_BUFFERS
 
 #define MT_ENABLED
-// #define MT_DEBUG
+#define MT_DEBUG
 
 #ifdef MT_DEBUG
 #   define MT_TRACE(...) fprintf(stderr, __VA_ARGS__)
@@ -41,12 +41,24 @@
 #   define XERBLA(param) xerbla(__func__, (param), strlen(__func__))
 #endif
 
+#ifndef TRUE
+#   define TRUE 1
+#endif
+
+#ifndef FALSE
+#   define FALSE 0
+#endif
+
 #ifndef MAX
     #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
 
 #ifndef MIN
     #define MIN(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
+#ifndef CLAMP
+#   define CLAMP(value, min, max)  ((value) < (min) ? (min) : ((value) > (max) ? (max) : (value)))
 #endif
 
 #define CHECK_ALIGN(p, align) assert(!((p) & ((align) - 1)))
@@ -192,7 +204,7 @@ void cblas_init(int threads);
 void cblas_shutdown();
 void cblas_set_num_threads(int threads);
 int cblas_get_num_threads(void);
-void cblas_init_server();
+int cblas_init_server();
 
 void cblas_execute(int items, work_queue_t* queue);
 void cblas_execute_async(int items, work_queue_t* queue);
