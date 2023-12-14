@@ -14,7 +14,7 @@
 #define MAX_SIZE 1024
 
 float x[MAX_SIZE], y[MAX_SIZE];
-float a[MAX_SIZE * MAX_SIZE];
+float a[MAX_SIZE * MAX_SIZE], b[MAX_SIZE * MAX_SIZE];
 
 struct timer
 {
@@ -64,6 +64,27 @@ float timer_get_delta(struct timer *t1, struct timer *t2)
 //------------------------------------------------------
 //
 //------------------------------------------------------
+void test_copy()
+{
+    struct timer t1, t2;
+    float dt;
+
+    printf("Testing performance of cblas_scopy()\n\n");
+
+    CBLAS_INDEX n = MAX_SIZE * MAX_SIZE;
+
+    timer_get_time(&t1);
+        cblas_scopy(n, a, 1, b, 1);
+    timer_get_time(&t2);
+
+    dt = timer_get_delta(&t1, &t2);
+
+    printf("copied %dMB at %5.2f MB/s\n", 1, (float)1 / dt);
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
 void test_ger()
 {
     struct timer t1, t2;
@@ -101,6 +122,7 @@ int main(int argc, char *argv[])
     printf("Cores/Threads: %d/%d\n\n", cblas_get_num_procs(), cblas_get_num_threads());
 	
     test_ger();
+    //test_copy();
 
 	return 0;
 }
