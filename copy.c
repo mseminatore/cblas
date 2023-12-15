@@ -171,8 +171,8 @@ void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
 
 #ifdef MT_ENABLED
     kernel_function kernel = cblas_scopy_k;
-    if (incx == 1 && incy == 1)
-        kernel = cblas_scopy_k_noinc;
+    // if (incx == 1 && incy == 1)
+    //     kernel = cblas_scopy_k_noinc;
 
     cblas_level1_exec(sizeof(float), kernel, n, x, incx, y, incy);
 #else
