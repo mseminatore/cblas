@@ -52,6 +52,45 @@ static void cblas_scopy_k_noinc_sse(cblas_args_t* args)
 
 #endif
 
+#if defined(__aarch64__) && defined(__ARM_NEON)
+
+//------------------------------------------------------
+// single-precision copy kernel incx == incy == 1
+//------------------------------------------------------
+static void cblas_scopy_k_noinc_neon(cblas_args_t* args)
+{
+    float* x = args->x;
+    float* y = args->y;
+    register CBLAS_INDEX n = args->n;
+
+    float32x4_t a, b, c, d;
+
+    register CBLAS_INDEX i = 0;
+
+    for (; i + 16 < n; i += 16)
+    {
+        a = vld1q_f32(y);
+        b = vld1q_f32(y + 4);
+        c = vld1q_f32(y + 8);
+        d = vld1q_f32(y + 12);
+
+        y += 16;
+
+        vst1q_f32(x, a);
+        vst1q_f32(x + 4, b);
+        vst1q_f32(x + 8, c);
+        vst1q_f32(x + 12, d);
+
+        x += 16;
+    }
+
+    // TODO - possibly use switch with fall-through here?
+    for (; i < n; i++)
+        *x++ = *y++;
+}
+
+#endif
+
 //------------------------------------------------------
 // single-precision copy kernel incx == incy == 1
 //------------------------------------------------------
@@ -171,8 +210,8 @@ void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
 
 #ifdef MT_ENABLED
     kernel_function kernel = cblas_scopy_k;
-    // if (incx == 1 && incy == 1)
-    //     kernel = cblas_scopy_k_noinc;
+    if (incx == 1 && incy == 1)
+        kernel = cblas_scopy_k_noinc;
 
     cblas_level1_exec(sizeof(float), kernel, n, x, incx, y, incy);
 #else
