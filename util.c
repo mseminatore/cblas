@@ -62,7 +62,7 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
     work_queue_t queue[MAX_THREADS];
     cblas_args_t args[MAX_THREADS];
 
-    int thread_count = cblas_get_num_threads();
+    int thread_count = CLAMP(cblas_get_num_threads(), 1, MAX_THREADS);
 
     for (int i = 0; i < thread_count; i++)
     {
@@ -121,28 +121,28 @@ void cblas_init(int threads)
 //------------------------------------------------------
 // set the active number of threads
 //------------------------------------------------------
-void cblas_set_num_threads(int threads)
-{
-    MT_TRACE("set threads = %d\n", threads);
-
-    if (threads < 1)
-        threads = 1;
-        
-    if (threads > MAX_THREADS)
-        threads = MAX_THREADS;
-
-    int cores = cpu_get_core_count();
-    if (threads > cores)
-    {
-        threads = cores;
-    }
-
-    // add more threads if needed
-    if (threads > cblas_max_threads)
-        _cblas_add_threads(threads - cblas_max_threads);
-
-    cblas_max_threads = threads;
-}
+//void cblas_set_num_threads(int threads)
+//{
+//    MT_TRACE("set threads = %d\n", threads);
+//
+//    if (threads < 1)
+//        threads = 1;
+//        
+//    if (threads > MAX_THREADS)
+//        threads = MAX_THREADS;
+//
+//    int cores = cpu_get_core_count();
+//    if (threads > cores)
+//    {
+//        threads = cores;
+//    }
+//
+//    // add more threads if needed
+//    if (threads > cblas_max_threads)
+//        _cblas_add_threads(threads - cblas_max_threads);
+//
+//    cblas_max_threads = threads;
+//}
 
 //------------------------------------------------------
 // return the active number of cblas threads

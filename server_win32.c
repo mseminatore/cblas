@@ -15,6 +15,7 @@ static DWORD cblas_thread_ids[MAX_THREADS];
 static HANDLE kickoff_event = NULL;
 
 static CRITICAL_SECTION queue_lock;
+static CRITICAL_SECTION server_lock;
 
 static work_queue_t *work_queue = NULL;
 
@@ -31,25 +32,74 @@ DWORD WINAPI cblas_worker_thread(void* pvoid);
 #endif
 
 //------------------------------------------------------
-//
+// set the active number of threads [1..cores]
 //------------------------------------------------------
-void _cblas_add_threads(int threads_to_add)
+void cblas_set_num_threads(int threads)
 {
-    MT_TRACE("_cblas_add_threads() adding %d threads.\n", threads_to_add);
+    MT_TRACE("set threads = %d\n", threads);
 
-    for (int i = 0; i < threads_to_add; i++)
+    if (threads < 1)
+        threads = 1;
+
+    if (threads > MAX_THREADS)
+        threads = MAX_THREADS;
+
+    int cores = cpu_get_core_count();
+    if (threads > cores)
     {
-        cblas_threads[i + cblas_max_threads - 1] = CreateThread(
-            NULL,
-            0,
-            cblas_worker_thread,
-            (void*)(i + cblas_max_threads - 1),
-            0,
-            &cblas_thread_ids[i + cblas_max_threads - 1]
-        );
+        threads = cores;
     }
 
-    cblas_max_threads += threads_to_add;
+    // reduce threads
+    if (server_alive && threads < cblas_max_threads)
+    {
+        EnterCriticalSection(&server_lock);
+
+        int thread_count = cblas_max_threads;
+        cblas_max_threads = threads;
+
+        SetEvent(kickoff_event);
+
+        for (int i = threads - 1; i < thread_count - 1; i++)
+        {
+            MT_TRACE("set_num_threads: waiting on thread [%d] to quit.\n", i);
+
+            WaitForSingleObject(cblas_threads[i], INFINITE);
+
+            MT_TRACE("set_num_threads: thread [%d] has quit.\n", i);
+
+            CloseHandle(cblas_threads[i]);
+        }
+
+        ResetEvent(kickoff_event);
+
+        LeaveCriticalSection(&server_lock);
+    }
+
+    // add more threads if needed
+    if (server_alive && threads > cblas_max_threads)
+    {
+        EnterCriticalSection(&server_lock);
+
+        int threads_to_add = threads - cblas_max_threads;
+        int start = cblas_max_threads > 0 ? cblas_max_threads - 1 : 0;
+
+        for (int i = start; i < threads - 1; i++)
+        {
+            cblas_threads[i] = CreateThread(
+                NULL,
+                0,
+                cblas_worker_thread,
+                (void*)(i),
+                0,
+                &cblas_thread_ids[i]
+            );
+        }
+
+        LeaveCriticalSection(&server_lock);
+    }
+
+    cblas_max_threads = threads;
 }
 
 //------------------------------------------------------
@@ -57,7 +107,7 @@ void _cblas_add_threads(int threads_to_add)
 //------------------------------------------------------
 int cblas_init_server()
 {
-    if (server_alive)
+    if (server_alive || cblas_max_threads <= 1)
         return FALSE;
 
     // create the kickoff Event
@@ -65,6 +115,9 @@ int cblas_init_server()
     
     // initialize the queue lock
     InitializeCriticalSection(&queue_lock);
+    InitializeCriticalSection(&server_lock);
+
+    EnterCriticalSection(&server_lock);
 
     // create the worker threads
     for (INT_PTR i = 0; i < cblas_max_threads - 1; i++)
@@ -80,6 +133,9 @@ int cblas_init_server()
     }
 
     server_alive = TRUE;
+
+    LeaveCriticalSection(&server_lock);
+
     return TRUE;
 }
 
@@ -88,12 +144,18 @@ int cblas_init_server()
 //------------------------------------------------------
 void cblas_shutdown()
 {
-    // TODO - shutdown threads?
+    if (server_alive)
+        server_alive = FALSE;
+    else
+        return;
 
-    // cleanup event
+    // TODO - shutdown threads? set thread count to 1, wake threads and let them die gracefully
+
+    // cleanup event and locks
     CloseHandle(kickoff_event);
 
     DeleteCriticalSection(&queue_lock);
+    DeleteCriticalSection(&server_lock);
 }
 
 //------------------------------------------------------
@@ -109,12 +171,12 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
 
     while(1)
     {
-        MT_TRACE("thread [%d] waits.\n", thread_num);
+        //MT_TRACE("thread [%d] waits.\n", thread_num);
 
         // event raised when work is added to the queue
         WaitForSingleObject(kickoff_event, INFINITE);
 
-        MT_TRACE("thread [%d] is awake.\n", thread_num);
+        //MT_TRACE("thread [%d] is awake.\n", thread_num);
   
         if (thread_num > cblas_max_threads - 2)
         {
@@ -150,7 +212,8 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
         // if no work, reset event and then go to sleep to wait for more work
         if (!work_item)
         {
-            MT_TRACE("thread [%d] no work, trying again.\n", thread_num); 
+            //MT_TRACE("thread [%d] no work, trying again.\n", thread_num);
+            YieldProcessor();
             continue;
         }
 
