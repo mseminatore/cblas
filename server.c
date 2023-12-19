@@ -64,8 +64,8 @@ void cblas_set_num_threads(int threads)
     {
         pthread_mutex_lock(&server_lock);
 
-        int threads_to_add = threads - cblas_max_threads;
         int start = cblas_max_threads > 0 ? cblas_max_threads - 1 : 0;
+        cblas_max_threads = threads;
 
         for (int i = start; i < threads - 1; i++)
         {
@@ -134,7 +134,7 @@ static void *cblas_worker_thread(void *pvoid)
         // the lock is released if/when this thread sleeps on the condition variable
         pthread_mutex_lock(&queue_lock);
         
-        while (!work_queue)
+        while (!work_queue && thread_num <= cblas_max_threads - 2)
             pthread_cond_wait(&kickoff_event, &queue_lock);
         
         MT_TRACE("thread [%d] is awake.\n", thread_num);
