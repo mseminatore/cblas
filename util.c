@@ -10,6 +10,11 @@ int cblas_max_threads = MAX_THREADS;
 int cblas_set_threads = 1;
 int server_alive = 0;
 
+#ifdef _WIN32
+#   define strcat(s1, s2) strcat_s((s1), sizeof(s1), (s2))
+#endif
+
+
 //------------------------------------------------------
 // standard BLAS error handler
 //
