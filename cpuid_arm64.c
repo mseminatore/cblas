@@ -5,6 +5,10 @@
 #include <stdio.h>
 #include "cblas.h"
 
+#if !defined(_WIN32)
+#   include <unistd.h>
+#endif
+
 #ifdef __APPLE__
 #   include <sys/sysctl.h>
 //#include <mach/machine.h>
@@ -73,7 +77,15 @@ int cpu_get_core_count()
     return entry;
 #endif
 
-    // TODO - implement this!
+#ifndef _WIN32
+    int cores = (int)sysconf(_SC_NPROCESSORS_ONLN);
+    if (cores == -1)
+        cores = 1;
+
+    return cores;
+#endif
+
+    // catch all
     puts("warning: cpu_get_core_count() not implemented!");
     return 1;
 }
