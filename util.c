@@ -34,6 +34,39 @@ const char *cblas_get_config()
 #else
     sprintf(buf, "\nCBLAS 0.1 %s MAX_THREADS=%d", cpu_get_core_name(), MAX_THREADS);
 #endif
+    
+    return buf;
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+const char *cblas_get_isa_features()
+{
+    static char buf[256];
+
+    unsigned int cpu = cpu_get_features();
+
+    buf[0] = 0;
+
+#ifdef __APPLE__
+    if (cpu & CPU_NEON)
+        strcat(buf, "NEON");
+
+    if (cpu & CPU_NEON_FMA)
+        strcat(buf, ", FMA");
+#endif
+
+#if defined(__x86_64__) || defined(_M_X64)
+    if (cpu & CPU_SSE)
+        strcat(buf, "SSE");
+    if (cpu & CPU_AVX)
+        strcat(buf, ", AVX");
+    if (cpu & CPU_AVX2)
+        strcat(buf, ", AVX2");
+    if (cpu & CPU_x64_FMA3)
+        strcat(buf, ", FMA");
+#endif
 
     return buf;
 }
@@ -52,6 +85,17 @@ const char *cblas_get_corename()
 int cblas_get_num_procs()
 {
     return cpu_get_core_count();
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+void cblas_print_configuration()
+{
+    printf("%s\n", cblas_get_config());
+    printf("     CPU uArch: %s\n", cblas_get_corename());
+	printf("ISA Extensions: %s\n", cblas_get_isa_features());
+    printf(" Cores/Threads: %d/%d\n\n", cblas_get_num_procs(), cblas_get_num_threads());
 }
 
 //------------------------------------------------------
@@ -117,32 +161,6 @@ void cblas_init(int threads)
         server_alive = 1;
 #endif
 }
-
-//------------------------------------------------------
-// set the active number of threads
-//------------------------------------------------------
-//void cblas_set_num_threads(int threads)
-//{
-//    MT_TRACE("set threads = %d\n", threads);
-//
-//    if (threads < 1)
-//        threads = 1;
-//        
-//    if (threads > MAX_THREADS)
-//        threads = MAX_THREADS;
-//
-//    int cores = cpu_get_core_count();
-//    if (threads > cores)
-//    {
-//        threads = cores;
-//    }
-//
-//    // add more threads if needed
-//    if (threads > cblas_max_threads)
-//        _cblas_add_threads(threads - cblas_max_threads);
-//
-//    cblas_max_threads = threads;
-//}
 
 //------------------------------------------------------
 // return the active number of cblas threads

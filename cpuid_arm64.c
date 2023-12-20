@@ -54,11 +54,16 @@ const char *cpu_get_core_name()
 }
 
 //------------------------------------------------------
-//
+// return any ISA features of this CPU
 //------------------------------------------------------
 unsigned int cpu_get_features()
 {
 	unsigned int features = CPU_NONE;
+
+#ifdef __APPLE__
+    features |= CPU_NEON;
+    features |= CPU_NEON_FMA;
+#endif
 
     return features;
 }

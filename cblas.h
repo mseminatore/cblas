@@ -221,17 +221,18 @@ int  cblas_get_num_procs();
 void xerbla(const char *srcname, int info, size_t len);
 
 //------------------------------------------------------
-// cpu ID functions
+// CPU ID functions
 //------------------------------------------------------
 int cpu_get_core_count();
 const char *cpu_get_core_name();
 int cpu_get_cacheline_size();
 unsigned int cpu_get_features();
+const char *cblas_get_isa_features();
+void cblas_print_configuration();
 
 //------------------------------------------------------
 // internal functions
 //------------------------------------------------------
-void _cblas_add_threads(int threads_to_add);
 
 #ifdef __cplusplus
     }
