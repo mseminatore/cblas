@@ -6,6 +6,10 @@
 #include <string.h>
 #include "cblas.h"
 
+#ifdef _WIN32
+#	include <Windows.h>
+#endif
+
 #if defined(__clang__) || defined(__GNUC__)
 #	include <cpuid.h>
 #endif
@@ -118,6 +122,14 @@ int cpu_get_core_count()
 	// use cached value if it exists
 	if (-1 != cores)
 		return cores;
+
+#ifdef _WIN32
+	SYSTEM_INFO si;
+	GetSystemInfo(&si);
+
+	cores = si.dwNumberOfProcessors;
+	return cores;
+#endif
 
 #if defined(_MSC_VER)
 	int info[4];
