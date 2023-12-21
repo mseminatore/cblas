@@ -6,14 +6,13 @@
 #include "cblas.h"
 
 //
-int cblas_max_threads = MAX_THREADS;
-int cblas_set_threads = 1;
-int server_alive = 0;
+int cblas_max_threads = MAX_THREADS;    // max system supported threads
+int cblas_set_threads = 1;              // set number of threads
+int server_alive = 0;                   // has thread server been initialized
 
 #ifdef _WIN32
 #   define strcat(s1, s2) strcat_s((s1), sizeof(s1), (s2))
 #endif
-
 
 //------------------------------------------------------
 // standard BLAS error handler
@@ -32,7 +31,7 @@ void xerbla(const char *srcname, int info, size_t len)
 //------------------------------------------------------
 const char *cblas_get_config()
 {
-    static char buf[256];
+    static char buf[CBLAS_SMALL_BUF];
 
 #ifdef _WIN32
     sprintf_s(buf, sizeof(buf), "\nCBLAS 0.1 %s MAX_THREADS=%d", cpu_get_core_name(), MAX_THREADS);
@@ -44,11 +43,11 @@ const char *cblas_get_config()
 }
 
 //------------------------------------------------------
-//
+// return bit flags defining available ISA extensions 
 //------------------------------------------------------
 const char *cblas_get_isa_features()
 {
-    static char buf[256];
+    static char buf[CBLAS_SMALL_BUF];
 
     unsigned int cpu = cpu_get_features();
 

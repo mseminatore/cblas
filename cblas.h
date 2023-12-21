@@ -23,6 +23,9 @@
 #define CBLAS_LEVEL_2_THREADING
 #define CBLAS_LEVEL_3_THREADING
 
+#define CBLAS_SMALL_BUF 256
+#define CBLAS_LARGE_BUF 1024
+
 #define CBLAS_CHECK_INPUTS
 #define CBLAS_XERBLA_INPUTS
 
@@ -64,7 +67,9 @@
 #   define CLAMP(value, min, max)  ((value) < (min) ? (min) : ((value) > (max) ? (max) : (value)))
 #endif
 
-#define CHECK_ALIGN(p, align) assert(!((p) & ((align) - 1)))
+#ifndef CHECK_ALIGN
+#   define CHECK_ALIGN(p, align) assert(!((p) & ((align) - 1)))
+#endif
 
 //#if !defined(__STDC_NO_ATOMICS__)
 //#   include <stdatomic.h>

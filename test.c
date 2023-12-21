@@ -59,7 +59,7 @@ static void print_darray(int n, double* x)
 }
 
 //------------------------------------------------------
-//
+// test cases for s/dswap()
 //------------------------------------------------------
 static void test_swap()
 {
@@ -89,7 +89,7 @@ static void test_swap()
 }
 
 //------------------------------------------------------
-//
+// test cases for s/ddot()
 //------------------------------------------------------
 static void test_dot()
 {
@@ -117,103 +117,103 @@ static void test_dot()
 }
 
 //------------------------------------------------------
-//
+// test cases for s/dcopy()
 //------------------------------------------------------
 static void test_copy()
 {
 	SUITE("cblas_scopy");
 
-	float sr[ARRAY_SIZE(sones)];
+		float sr[ARRAY_SIZE(sones)];
 
-	cblas_scopy(ARRAY_SIZE(sones), sr, 1, sones, 1);
-	TEST(EQUAL_ARRAY(sones, sr));
+		cblas_scopy(ARRAY_SIZE(sones), sr, 1, sones, 1);
+		TEST(EQUAL_ARRAY(sones, sr));
 
-	float sr1[ARRAY_SIZE(sbig_ones)];
+		float sr1[ARRAY_SIZE(sbig_ones)];
 
-	cblas_scopy(ARRAY_SIZE(sbig_ones), sr1, 1, sbig_ones, 1);
-	TEST(EQUAL_ARRAY(sbig_ones, sr1));
+		cblas_scopy(ARRAY_SIZE(sbig_ones), sr1, 1, sbig_ones, 1);
+		TEST(EQUAL_ARRAY(sbig_ones, sr1));
 
 	SUITE("cblas_dcopy");
 
-	double dr[ARRAY_SIZE(dones)];
+		double dr[ARRAY_SIZE(dones)];
 
-	cblas_dcopy(ARRAY_SIZE(dones), dr, 1, dones, 1);
-	TEST(EQUAL_ARRAY(dones, dr));
+		cblas_dcopy(ARRAY_SIZE(dones), dr, 1, dones, 1);
+		TEST(EQUAL_ARRAY(dones, dr));
 
-	double dr1[ARRAY_SIZE(dbig_ones)];
+		double dr1[ARRAY_SIZE(dbig_ones)];
 
-	cblas_dcopy(ARRAY_SIZE(dbig_ones), dr1, 1, dbig_ones, 1);
-	TEST(EQUAL_ARRAY(dbig_ones, dr1));
+		cblas_dcopy(ARRAY_SIZE(dbig_ones), dr1, 1, dbig_ones, 1);
+		TEST(EQUAL_ARRAY(dbig_ones, dr1));
 }
 
 //------------------------------------------------------
-//
+// test cases for s/daxpy()
 //------------------------------------------------------
 static void test_axpy()
 {
 	SUITE("cblas_saxpy");
 
-	float sr[ARRAY_SIZE(sones)];
+		float sr[ARRAY_SIZE(sones)];
 
-	cblas_scopy(ARRAY_SIZE(szeros), sr, 1, szeros, 1);
-	cblas_saxpy(ARRAY_SIZE(sones), 1.0f, sones, 1, sr, 1);
-	TEST(EQUAL_ARRAY(sr, sones));
+		cblas_scopy(ARRAY_SIZE(szeros), sr, 1, szeros, 1);
+		cblas_saxpy(ARRAY_SIZE(sones), 1.0f, sones, 1, sr, 1);
+		TEST(EQUAL_ARRAY(sr, sones));
 
 	SUITE("cblas_daxpy");
 
-	double dr[ARRAY_SIZE(dones)];
+		double dr[ARRAY_SIZE(dones)];
 
-	cblas_dcopy(ARRAY_SIZE(dzeros), dr, 1, dzeros, 1);
-	cblas_daxpy(ARRAY_SIZE(dones), 1.0, dones, 1, dr, 1);
-	TEST(EQUAL_ARRAY(dr, dones));
+		cblas_dcopy(ARRAY_SIZE(dzeros), dr, 1, dzeros, 1);
+		cblas_daxpy(ARRAY_SIZE(dones), 1.0, dones, 1, dr, 1);
+		TEST(EQUAL_ARRAY(dr, dones));
 }
 
 //------------------------------------------------------
-//
+// test cases for s/daxpby()
 //------------------------------------------------------
 static void test_axpby()
 {
 	SUITE("cblas_saxpby");
 
-	float sr[ARRAY_SIZE(sones)];
+		float sr[ARRAY_SIZE(sones)];
 
-	cblas_scopy(ARRAY_SIZE(szeros), sr, 1, szeros, 1);
-	cblas_saxpby(ARRAY_SIZE(sones), 1.0f, sones, 1, 1.0f, sr, 1);
-	TEST(EQUAL_ARRAY(sr, sones));
+		cblas_scopy(ARRAY_SIZE(szeros), sr, 1, szeros, 1);
+		cblas_saxpby(ARRAY_SIZE(sones), 1.0f, sones, 1, 1.0f, sr, 1);
+		TEST(EQUAL_ARRAY(sr, sones));
 
 	SUITE("cblas_daxpby");
 
-	double dr[ARRAY_SIZE(dones)];
+		double dr[ARRAY_SIZE(dones)];
 
-	cblas_dcopy(ARRAY_SIZE(dzeros), dr, 1, dzeros, 1);
-	cblas_daxpby(ARRAY_SIZE(dones), 1.0, dones, 1, 1.0, dr, 1);
-	TEST(EQUAL_ARRAY(dr, dones));
+		cblas_dcopy(ARRAY_SIZE(dzeros), dr, 1, dzeros, 1);
+		cblas_daxpby(ARRAY_SIZE(dones), 1.0, dones, 1, 1.0, dr, 1);
+		TEST(EQUAL_ARRAY(dr, dones));
 }
 
 //------------------------------------------------------
-//
+// test cases for s/dscal()
 //------------------------------------------------------
 static void test_scal()
 {
 	SUITE("cblas_sscal");
 
-	float sr[ARRAY_SIZE(sones)];
+		float sr[ARRAY_SIZE(sones)];
 
-	cblas_scopy(ARRAY_SIZE(sones), sr, 1, sones, 1);
-	cblas_sscal(ARRAY_SIZE(sr), 1.0, sr, 1);
-	TEST(EQUAL_ARRAY(sr, sones));
+		cblas_scopy(ARRAY_SIZE(sones), sr, 1, sones, 1);
+		cblas_sscal(ARRAY_SIZE(sr), 1.0, sr, 1);
+		TEST(EQUAL_ARRAY(sr, sones));
 
 	SUITE("cblas_dscal");
 
-	double dr[ARRAY_SIZE(dones)];
+		double dr[ARRAY_SIZE(dones)];
 
-	cblas_dcopy(ARRAY_SIZE(dones), dr, 1, dones, 1);
-	cblas_dscal(ARRAY_SIZE(dr), 1.0, dr, 1);
-	TEST(EQUAL_ARRAY(dr, dones));
+		cblas_dcopy(ARRAY_SIZE(dones), dr, 1, dones, 1);
+		cblas_dscal(ARRAY_SIZE(dr), 1.0, dr, 1);
+		TEST(EQUAL_ARRAY(dr, dones));
 }
 
 //------------------------------------------------------
-//
+// test cases for s/drot()
 //------------------------------------------------------
 static void test_rot()
 {
@@ -223,63 +223,63 @@ static void test_rot()
 }
 
 //------------------------------------------------------
-//
+// test cases for s/dasum()
 //------------------------------------------------------
 static void test_asum()
 {
 	SUITE("cblas_sasum");
 
-	// sum of zeros is zero
-	float sr = cblas_sasum(ARRAY_SIZE(szeros), szeros, 1);
-	TEST(sr == 0.0f);
+		// sum of zeros is zero
+		float sr = cblas_sasum(ARRAY_SIZE(szeros), szeros, 1);
+		TEST(sr == 0.0f);
 
-	// sum of ones is count(ones)
-	sr = cblas_sasum(ARRAY_SIZE(sones), sones, 1);
-	TEST(sr == ARRAY_SIZE(sones) * 1.0f);
+		// sum of ones is count(ones)
+		sr = cblas_sasum(ARRAY_SIZE(sones), sones, 1);
+		TEST(sr == ARRAY_SIZE(sones) * 1.0f);
 
-	sr = cblas_sasum(ARRAY_SIZE(sa), sa, 1);
-	TEST(sr == 45.0f);
+		sr = cblas_sasum(ARRAY_SIZE(sa), sa, 1);
+		TEST(sr == 45.0f);
 
 	SUITE("cblas_dasum");
 
-	// sum of zeros is zero
-	double dr = cblas_dasum(ARRAY_SIZE(dzeros), dzeros, 1);
-	TEST(dr == 0.0);
+		// sum of zeros is zero
+		double dr = cblas_dasum(ARRAY_SIZE(dzeros), dzeros, 1);
+		TEST(dr == 0.0);
 
-	// sum of ones is count(ones)
-	dr = cblas_dasum(ARRAY_SIZE(dones), dones, 1);
-	TEST(dr == ARRAY_SIZE(dones) * 1.0f);
+		// sum of ones is count(ones)
+		dr = cblas_dasum(ARRAY_SIZE(dones), dones, 1);
+		TEST(dr == ARRAY_SIZE(dones) * 1.0f);
 
-	dr = cblas_dasum(ARRAY_SIZE(da), da, 1);
-	TEST(sr == 45.0);
+		dr = cblas_dasum(ARRAY_SIZE(da), da, 1);
+		TEST(sr == 45.0);
 }
 
 //------------------------------------------------------
-//
+// test cases for s/dnrm2()
 //------------------------------------------------------
 static void test_nrm2()
 {
 	SUITE("cblas_snrm2");
 
-	float sr = cblas_snrm2(ARRAY_SIZE(szeros), szeros, 1);
-	TEST(sr == 0.0f);
+		float sr = cblas_snrm2(ARRAY_SIZE(szeros), szeros, 1);
+		TEST(sr == 0.0f);
 
-	sr = cblas_snrm2(ARRAY_SIZE(sones), sones, 1);
-	TEST(sr * sr == 10.0f);
+		sr = cblas_snrm2(ARRAY_SIZE(sones), sones, 1);
+		TEST(sr * sr == 10.0f);
 
-	sr = cblas_snrm2(ARRAY_SIZE(sa), sa, 1);
-	TEST(sr * sr == 285.0f);
+		sr = cblas_snrm2(ARRAY_SIZE(sa), sa, 1);
+		TEST(sr * sr == 285.0f);
 
 	SUITE("cblas_dnrm2");
 
-	double dr = cblas_dnrm2(ARRAY_SIZE(dzeros), dzeros, 1);
-	TEST(dr == 0.0);
+		double dr = cblas_dnrm2(ARRAY_SIZE(dzeros), dzeros, 1);
+		TEST(dr == 0.0);
 
-	dr = cblas_dnrm2(ARRAY_SIZE(dones), dones, 1);
-	TEST(EQUAL_EPSILON(dr * dr, 10.0));
+		dr = cblas_dnrm2(ARRAY_SIZE(dones), dones, 1);
+		TEST(EQUAL_EPSILON(dr * dr, 10.0));
 
-	dr = cblas_dnrm2(ARRAY_SIZE(da), da, 1);
-	TEST(EQUAL_EPSILON(dr * dr, 285.0));
+		dr = cblas_dnrm2(ARRAY_SIZE(da), da, 1);
+		TEST(EQUAL_EPSILON(dr * dr, 285.0));
 }
 
 //------------------------------------------------------
@@ -289,31 +289,31 @@ static void test_ger()
 {
 	SUITE("cblas_sger");
 
-	float sx[3] = {1,1,1};
-	float sy[3] = {1,1,1};
-	float sa[9] = {0,0,0,0,0,0,0,0,0};
-	float sr[9] = {1,1,1,1,1,1,1,1,1};
+		float sx[3] = {1,1,1};
+		float sy[3] = {1,1,1};
+		float sa[9] = {0,0,0,0,0,0,0,0,0};
+		float sr[9] = {1,1,1,1,1,1,1,1,1};
 
-	cblas_sger(CblasRowMajor, 3, 3, 1.0f, sx, 1, sy, 1, sa, 3);
-	TEST(EQUAL_ARRAY(sa, sr));
+		cblas_sger(CblasRowMajor, 3, 3, 1.0f, sx, 1, sy, 1, sa, 3);
+		TEST(EQUAL_ARRAY(sa, sr));
 
-	cblas_sscal(9, 3.0f, sr, 1);
-	cblas_sger(CblasColMajor, 3, 3, 2.0f, sx, 1, sy, 1, sa, 3);
-	TEST(EQUAL_ARRAY(sa, sr));
+		cblas_sscal(9, 3.0f, sr, 1);
+		cblas_sger(CblasColMajor, 3, 3, 2.0f, sx, 1, sy, 1, sa, 3);
+		TEST(EQUAL_ARRAY(sa, sr));
 
 	SUITE("cblas_dger");
 
-	double dx[3] = {1,1,1};
-	double dy[3] = {1,1,1};
-	double da[9] = {0,0,0,0,0,0,0,0,0};
-	double dr[9] = {1,1,1,1,1,1,1,1,1};
+		double dx[3] = {1,1,1};
+		double dy[3] = {1,1,1};
+		double da[9] = {0,0,0,0,0,0,0,0,0};
+		double dr[9] = {1,1,1,1,1,1,1,1,1};
 
-	cblas_dger(CblasRowMajor, 3, 3, 1.0, dx, 1, dy, 1, da, 3);
-	TEST(EQUAL_ARRAY(da, dr));
+		cblas_dger(CblasRowMajor, 3, 3, 1.0, dx, 1, dy, 1, da, 3);
+		TEST(EQUAL_ARRAY(da, dr));
 
-	cblas_dscal(9, 3.0f, dr, 1);
-	cblas_dger(CblasColMajor, 3, 3, 2.0, dx, 1, dy, 1, da, 3);
-	TEST(EQUAL_ARRAY(da, dr));
+		cblas_dscal(9, 3.0f, dr, 1);
+		cblas_dger(CblasColMajor, 3, 3, 2.0, dx, 1, dy, 1, da, 3);
+		TEST(EQUAL_ARRAY(da, dr));
 }
 
 //------------------------------------------------------
@@ -323,57 +323,57 @@ static void test_gemv()
 {
 	SUITE("cblas_sgemv");
 
-	float smtx[9] = {1,0,0,0,1,0,0,0,1};
-	float sx[3] = {2,2,2};
-	float sy[3] = {0,0,0};
-	float sz[3] = {4, 4, 4};
+		float smtx[9] = {1,0,0,0,1,0,0,0,1};
+		float sx[3] = {2,2,2};
+		float sy[3] = {0,0,0};
+		float sz[3] = {4, 4, 4};
 
-	{
-		float sy[3] = {0};
-		cblas_sgemv(CblasRowMajor, CblasNoTrans, 3, 3, 1.0f, smtx, 1, sx, 1, 1.0f, sy, 1);
-		TEST(EQUAL_ARRAY(sx, sy));
-	}
+		{
+			float sy[3] = {0};
+			cblas_sgemv(CblasRowMajor, CblasNoTrans, 3, 3, 1.0f, smtx, 1, sx, 1, 1.0f, sy, 1);
+			TEST(EQUAL_ARRAY(sx, sy));
+		}
 
-	{
-		float sy[3] = {0};
-		cblas_sgemv(CblasRowMajor, CblasNoTrans, 3, 3, 2.0f, smtx, 1, sx, 1, 1.0f, sy, 1);
-		TEST(EQUAL_ARRAY(sz, sy));
-	}
+		{
+			float sy[3] = {0};
+			cblas_sgemv(CblasRowMajor, CblasNoTrans, 3, 3, 2.0f, smtx, 1, sx, 1, 1.0f, sy, 1);
+			TEST(EQUAL_ARRAY(sz, sy));
+		}
 
-	{
-		float sy[3] = {0};
-		cblas_sgemv(CblasColMajor, CblasTrans, 3, 3, 1.0f, smtx, 1, sx, 1, 1.0f, sy, 1);
-		TEST(EQUAL_ARRAY(sx, sy));
-	}
+		{
+			float sy[3] = {0};
+			cblas_sgemv(CblasColMajor, CblasTrans, 3, 3, 1.0f, smtx, 1, sx, 1, 1.0f, sy, 1);
+			TEST(EQUAL_ARRAY(sx, sy));
+		}
 
 	SUITE("cblas_dgemv");
 
-	double dmtx[9] = {1,0,0,0,1,0,0,0,1};
-	double dx[3] = {2,2,2};
-	double dy[3] = {0,0,0};
-	double dz[3] = {4,4,4};
+		double dmtx[9] = {1,0,0,0,1,0,0,0,1};
+		double dx[3] = {2,2,2};
+		double dy[3] = {0,0,0};
+		double dz[3] = {4,4,4};
 
-	{
-		double dy[3] = {0};
-		cblas_dgemv(CblasRowMajor, CblasNoTrans, 3, 3, 1.0, dmtx, 1, dx, 1, 1.0, dy, 1);
-		TEST(EQUAL_ARRAY(dx, dy));
-	}
+		{
+			double dy[3] = {0};
+			cblas_dgemv(CblasRowMajor, CblasNoTrans, 3, 3, 1.0, dmtx, 1, dx, 1, 1.0, dy, 1);
+			TEST(EQUAL_ARRAY(dx, dy));
+		}
 
-	{
-		double dy[3] = {0};
-		cblas_dgemv(CblasRowMajor, CblasNoTrans, 3, 3, 2.0, dmtx, 1, dx, 1, 1.0, dy, 1);
-		TEST(EQUAL_ARRAY(dz, dy));
-	}
+		{
+			double dy[3] = {0};
+			cblas_dgemv(CblasRowMajor, CblasNoTrans, 3, 3, 2.0, dmtx, 1, dx, 1, 1.0, dy, 1);
+			TEST(EQUAL_ARRAY(dz, dy));
+		}
 
-	{
-		double dy[3] = {0};
-		cblas_dgemv(CblasColMajor, CblasTrans, 3, 3, 1.0, dmtx, 1, dx, 1, 1.0, dy, 1);
-		TEST(EQUAL_ARRAY(dx, dy));
-	}
+		{
+			double dy[3] = {0};
+			cblas_dgemv(CblasColMajor, CblasTrans, 3, 3, 1.0, dmtx, 1, dx, 1, 1.0, dy, 1);
+			TEST(EQUAL_ARRAY(dx, dy));
+		}
 }
 
 //------------------------------------------------------
-//
+// test cases for s/drotg()
 //------------------------------------------------------
 static void test_rotg()
 {
@@ -384,7 +384,7 @@ static void test_rotg()
 }
 
 //------------------------------------------------------
-//
+// test cases for s/dgemm()
 //------------------------------------------------------
 static void test_gemm()
 {
@@ -462,7 +462,7 @@ static void test_gemm()
 }
 
 //------------------------------------------------------
-//
+// BLAS level 1 
 //------------------------------------------------------
 static void test_level1()
 {
@@ -481,7 +481,7 @@ static void test_level1()
 }
 
 //------------------------------------------------------
-//
+// BLAS level 2 testing
 //------------------------------------------------------
 static void test_level2()
 {
@@ -492,7 +492,7 @@ static void test_level2()
 }
 
 //------------------------------------------------------
-//
+// BLAS level 3 testing
 //------------------------------------------------------
 static void test_level3()
 {
