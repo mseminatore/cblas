@@ -106,6 +106,23 @@ unsigned int cpu_get_features()
 		features |= CPU_AVX512;
 	
 #else
+	unsigned int eax, ebx, ecx, edx;
+
+	__cpuid(1, eax, ebx, ecx, edx);
+	if (ecx & (1 << 20))
+		features |= CPU_SSE;
+
+	if (ecx & (1 << 28))
+		features |= CPU_AVX;
+
+	__cpuid(7, eax, ebx, ecx, edx);
+
+	if (ebx & (1 << 5))
+		features |= CPU_AVX2;
+
+	if (ebx & (1 << 16))
+		features |= CPU_AVX512;
+
 #endif
 
 	return features;
