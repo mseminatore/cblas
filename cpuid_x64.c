@@ -146,6 +146,12 @@ int cpu_get_core_count()
 
 	cores = si.dwNumberOfProcessors;
 	return cores;
+#else
+    int cores = (int)sysconf(_SC_NPROCESSORS_ONLN);
+    if (cores == -1)
+        cores = 1;
+
+    return cores;
 #endif
 
 #if defined(_MSC_VER)
