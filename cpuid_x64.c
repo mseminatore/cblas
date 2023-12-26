@@ -8,6 +8,8 @@
 
 #ifdef _WIN32
 #	include <Windows.h>
+#else
+#   include <unistd.h>
 #endif
 
 #if defined(__clang__) || defined(__GNUC__)
@@ -147,7 +149,7 @@ int cpu_get_core_count()
 	cores = si.dwNumberOfProcessors;
 	return cores;
 #else
-    int cores = (int)sysconf(_SC_NPROCESSORS_ONLN);
+    cores = (int)sysconf(_SC_NPROCESSORS_ONLN);
     if (cores == -1)
         cores = 1;
 
