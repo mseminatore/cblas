@@ -364,8 +364,7 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
             AddDot4x4(k, &packedA[row * k], 4, &packedB[col * k], k, &C(col, row), ldc);
         }
 
-        // use Duff's device to handle leftover columns
-        // printf("col_leftover = %d, col = %d\n", col_leftover, col);
+        // handle leftover columns
         switch(n - col)
         {
             case 3:     
@@ -387,13 +386,14 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
         }
     }
 
-     switch(m - row)
-     {
-         case 3:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 2), lda, &B(col, 0), &C(col, row + 2));
-         case 2:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 1), lda, &B(col, 0), &C(col, row + 1));
-         case 1:    for (col = 0; col < n; col++) AddDot(k, &A(0, row), lda, &B(col, 0), &C(col, row));
-         case 0: ;   // nothing to do!
-     }
+    // handle leftover rows    
+    switch(m - row)
+    {
+        case 3:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 2), lda, &B(col, 0), &C(col, row + 2));
+        case 2:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 1), lda, &B(col, 0), &C(col, row + 1));
+        case 1:    for (col = 0; col < n; col++) AddDot(k, &A(0, row), lda, &B(col, 0), &C(col, row));
+        case 0: ;   // nothing to do!
+    }
 }
 
 //------------------------------------------------------
