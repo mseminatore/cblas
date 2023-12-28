@@ -81,8 +81,8 @@ cblas_srotg | generate a plane rotation
 cblas_srot | apply plane rotation
 cblas_sswap | swap two vectors **x** and **y**
 cblas_scopy | copy one vector to another **y** = **x** 
-cblas_saxpy | computes y = alpha * **x** + **y**
-cblas_saxpby | computes y = alpha * **x** + beta * **y**
+cblas_saxpy | computes **y** = alpha * **x** + **y**
+cblas_saxpby | computes **y** = alpha * **x** + beta * **y**
 cblas_sdot | computes dot product of two vectors **y** = **x** dot **y**
 cblas_snrm2 | euclidean norm of a vector
 cblas_sasum | sum of absolute value of vector elements
@@ -92,7 +92,7 @@ cblas_isamax | index of max absolute value of a vector
 
 Function | Description
 -------- | -----------
-cblas_sger | rank 1 update **A** = alpha * **x** * **y'** + **A**
+cblas_sger | rank-1 update **A** = alpha * **x** * **y'** + **A**
 cblas_sgemv | matrix-vector multiply **C** = alpha * **A** * **x** + beta * **y**
 
 ## Level 3 BLAS functions: matrix-matrix ops
