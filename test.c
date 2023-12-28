@@ -390,7 +390,8 @@ static void test_gemm()
 {
 	SUITE("cblas_sgemm");
 
-#if 1
+#if 0
+#define S 4
 	float samtx[16] = {
 		1, 2, 3, 4, 
 		5, 6, 7, 8, 
@@ -405,6 +406,7 @@ static void test_gemm()
 		0,0,0,1
 	};
 #else
+#define S 5
 	float samtx[] = {
 		1, 2, 3, 4, 5,
 		6, 7, 8, 9, 10,
@@ -432,7 +434,7 @@ static void test_gemm()
 
 		// print_sarray(16, samtx);
 		// print_sarray(16, scmtx);
-		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 4, 4, 4, 1.0f, samtx, 4, sbmtx, 4, 1.0f, scmtx, 4);
+		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, S, S, S, 1.0f, samtx, S, sbmtx, S, 1.0f, scmtx, S);
 		// print_sarray(16, scmtx);
 
 		TEST(EQUAL_ARRAY(samtx, scmtx));
@@ -462,7 +464,7 @@ static void test_gemm()
 }
 
 //------------------------------------------------------
-// BLAS level 1 
+// BLAS level 1 testing
 //------------------------------------------------------
 static void test_level1()
 {

@@ -333,7 +333,7 @@ static void PackMatrixA(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
 }
 
 //------------------------------------------------------
-//
+// GEMM kernel
 //------------------------------------------------------
 static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float* c, CBLAS_INDEX ldc)
 {
@@ -341,6 +341,8 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
     float* packedA = _malloca(m * k * sizeof(float));
     float* packedB = _malloca(kc * nb * sizeof(float));
 #endif
+
+printf("tile: (%d, %d) x (%d, %d)\n", k, m, n, k);
 
     //int row_leftover    = m % 4; 
     //int col_leftover    = n % 4;
