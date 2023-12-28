@@ -35,14 +35,14 @@
 
 #ifdef _WIN32
 #   define CHECK_MARK TERM_GREEN "\xFB" TERM_RESET
-#   define X_MARK TERM_RED "X" TERM_RESET
+#   define X_MARK TERM_BRIGHT_RED "X" TERM_RESET
 #else
 #   define CHECK_MARK TERM_GREEN "\u2713" TERM_RESET
-#   define X_MARK TERM_RED "\u274C" TERM_RESET
+#   define X_MARK TERM_BRIGHT_RED "\u274C" TERM_RESET
 #endif
 
 #if 1
-#   define TEST_ASSERT(expr, f, l) if ((expr)) { puts(CHECK_MARK);} else { puts(X_MARK); test_failures++; printf("\tTest %sfailed%s at [%s%s:%d%s]\n", TERM_RED, TERM_RESET, TERM_RED, (f), (l), TERM_RESET); } 
+#   define TEST_ASSERT(expr, f, l) if ((expr)) { puts(CHECK_MARK);} else { puts(X_MARK); test_failures++; printf("\tTest %sfailed%s at [%s%s:%d%s]\n", TERM_BRIGHT_RED, TERM_RESET, TERM_BRIGHT_RED, (f), (l), TERM_RESET); } 
 #else
 #   define TEST_ASSERT(expr) assert(expr); printf(CHECK_MARK); putchar('\n')
 #endif

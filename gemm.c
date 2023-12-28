@@ -342,7 +342,7 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
     float* packedB = _malloca(kc * nb * sizeof(float));
 #endif
 
-printf("tile: (%d, %d) x (%d, %d)\n", k, m, n, k);
+//printf("tile: (%ld, %ld) x (%ld, %ld)\n", k, m, n, k);
 
     //int row_leftover    = m % 4; 
     //int col_leftover    = n % 4;
@@ -366,22 +366,34 @@ printf("tile: (%d, %d) x (%d, %d)\n", k, m, n, k);
 
         // use Duff's device to handle leftover columns
         // printf("col_leftover = %d, col = %d\n", col_leftover, col);
-        //switch(n - col)
-        //{
-        //    case 3:     AddDot(k, &A(0, row), lda, &B(col + 2, 0), &C(col + 2, row));
-        //    case 2:     AddDot(k, &A(0, row), lda, &B(col + 1, 0), &C(col + 1, row));
-        //    case 1:     AddDot(k, &A(0, row), lda, &B(col, 0), &C(col, row));
-        //    case 0: ;   // nothing to do!
-        //}
+        switch(n - col)
+        {
+            case 3:     
+                AddDot(k, &A(0, row), lda, &B(col + 2, 0), &C(col + 2, row));
+                AddDot(k, &A(0, row+1), lda, &B(col + 2, 0), &C(col + 2, row+1));
+                AddDot(k, &A(0, row+2), lda, &B(col + 2, 0), &C(col + 2, row+2));
+                AddDot(k, &A(0, row+3), lda, &B(col + 2, 0), &C(col + 2, row+3));
+            case 2:
+                AddDot(k, &A(0, row), lda, &B(col + 1, 0), &C(col + 1, row));
+                AddDot(k, &A(0, row+1), lda, &B(col + 1, 0), &C(col + 1, row+1));
+                AddDot(k, &A(0, row+2), lda, &B(col + 1, 0), &C(col + 1, row+2));
+                AddDot(k, &A(0, row+3), lda, &B(col + 1, 0), &C(col + 1, row+3));
+            case 1:
+                AddDot(k, &A(0, row), lda, &B(col, 0), &C(col, row));
+                AddDot(k, &A(0, row+1), lda, &B(col, 0), &C(col, row+1));
+                AddDot(k, &A(0, row+2), lda, &B(col, 0), &C(col, row+2));
+                AddDot(k, &A(0, row+3), lda, &B(col, 0), &C(col, row+3));
+            case 0: ;   // nothing to do!
+        }
     }
 
-     //switch(m - row)
-     //{
-     //    case 3:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 2), lda, &B(col, 0), &C(col, row + 2));
-     //    case 2:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 1), lda, &B(col, 0), &C(col, row + 1));
-     //    case 1:    for (col = 0; col < n; col++) AddDot(k, &A(0, row), lda, &B(col, 0), &C(col, row));
-     //    case 0: ;   // nothing to do!
-     //}
+     switch(m - row)
+     {
+         case 3:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 2), lda, &B(col, 0), &C(col, row + 2));
+         case 2:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 1), lda, &B(col, 0), &C(col, row + 1));
+         case 1:    for (col = 0; col < n; col++) AddDot(k, &A(0, row), lda, &B(col, 0), &C(col, row));
+         case 0: ;   // nothing to do!
+     }
 }
 
 //------------------------------------------------------
