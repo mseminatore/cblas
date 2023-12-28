@@ -8,16 +8,20 @@ CBLAS is an experimental implementation of a subset of the full BLAS (Basic
 Linear Algebra Subprograms) library standard. You can find the documentation
 and reference implementations [here](https://www.netlib.org/blas/).
 
-The library is currently built and tested on Windows (MSVC and Clang), MacOS,
-and Ubuntu Linux. The library supports multi-threading for performance, however
-not all functions currently support threading. It is a not yet fully realized
-goal that if advanced SIMD instructions for a platform are available
-(AVX, AVX2, NEON, FMA) that they will be leveraged.
+The library is built and tested on Windows (MSVC and Clang), MacOS (Clang),
+and Ubuntu Linux (gcc). The library supports SIMD and multi-threading for 
+performance. However, not all functions have been optimized to take advantage 
+of these features. The primary focus for SIMD and Multi-threading work will be
+on the level-3 functions, followed by level-2, etc.
+
+> It is a not yet fully realized goal that, if advanced SIMD instructions for
+> a particular platform are available (AVX, AVX2, NEON, FMA), that they will 
+> be leveraged. This is a work in progress.
 
 This project started as a basic implementation of the BLAS
-routines needed for my [libann](https://www.github.com/mseminatore/ann) neural
-networking library. Curiosity about performance differences evolved the project
-into an exploration of deep optimization for modern CPU architectures.
+routines required for my [libann](https://www.github.com/mseminatore/ann) neural
+networking library. Curiosity about performance evolved the project
+into an exploratory playground for deep optimization for modern CPU architectures.
 
 If you are curious to learn more about how BLAS-like libraries can be optimized
 I highly recommend 
@@ -26,17 +30,18 @@ tutorial from the authors of GotoBLAS/BLIS/Flame.
 
 # What CBLAS is not
 
-This library is not intended to be complete. There are many portions of the
-BLAS standard that are intentionally left as unimplemented. For example,
-there is no complex number support. Nor does the library intend to compete
-with commercial offerings like [OpenBLAS](https://www.openblas.net), 
+This library is not intended to be a fully complete BLAS implementation. There 
+are many portions of the BLAS standard that are intentionally left as 
+unimplemented. For example, there is no complex number support. Nor does the 
+library intend to compete with commercial offerings like [OpenBLAS](https://www.openblas.net), 
 [Intel MKL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html),
 or the [AMD Optimizing CPU Libraries](https://www.amd.com/en/developer/aocl.html).
 
-> If you are using the library and would like to request additional BLAS
-> function support please open an issue.
+> If you are using the CBLAS library and would like to request additional BLAS
+> function support please open an 
+> [issue](https://github.com/mseminatore/cblas/issues) or vote up an existing issue.
 
-# Building CBLAS
+# Building CBLAS from source
 
 If you do not already have a pre-built version of **libcblas** then you can
 build from source using `make` as follow:
