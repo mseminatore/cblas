@@ -3,6 +3,7 @@
 // Copyright 2023 Mark Seminatore. All rights reserved.
 //------------------------------------------------------
 #include <stdio.h>
+#include <stdlib.h>
 #include "cblas.h"
 
 //
@@ -126,13 +127,14 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
 
         n -= partition_size;
 
+        // TODO - the x/y is wrong when incx/incy is > 1
         x = (void*)((CBLAS_INDEX)x + partition_size * incx * stride);
         y = (void*)((CBLAS_INDEX)y + partition_size * incy * stride);
 
-        queue[i].finished = 0;
-        queue[i].args = &args[i];
-        queue[i].kernel = kernel;
-        queue[i].next = &queue[i + 1];
+        queue[i].finished   = 0;
+        queue[i].args       = &args[i];
+        queue[i].kernel     = kernel;
+        queue[i].next       = &queue[i + 1];
     }
 
     // mark end of task queue
@@ -149,6 +151,17 @@ void cblas_init(int threads)
 {
     if (CBLAS_DEFAULT_THREADS == threads)
         threads = cpu_get_core_count();
+
+    char *s_env_threads = getenv("CBLAS_THREADS");
+    int env_threads = threads;
+
+    if (s_env_threads)
+        env_threads = atoi(s_env_threads);
+
+    // make sure env_threads is valid;
+    env_threads = MAX(env_threads, 1);
+
+    threads = MIN(threads, env_threads);
 
 #ifndef MT_ENABLED
     threads = 1;

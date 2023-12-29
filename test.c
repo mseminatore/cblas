@@ -67,13 +67,27 @@ static void test_swap()
 
 	// swap two vectors
 	cblas_sswap(ARRAY_SIZE(sa), sa, 1, sc, 1);
+	// COMMENT("Swap two vectors");
 	TEST(EQUAL_ARRAY(sa, sd));
 	TEST(EQUAL_ARRAY(sb, sc));
 
 	// swap them back
 	cblas_sswap(ARRAY_SIZE(sa), sa, 1, sc, 1);
+	// COMMENT("Swap them back");
 	TEST(EQUAL_ARRAY(sa, sb));
 	TEST(EQUAL_ARRAY(sc, sd));
+
+	// TODO - swap using incx/incy > 1
+// print_sarray(ARRAY_SIZE(sa), sa);
+// print_sarray(ARRAY_SIZE(sa), sc);
+// 	cblas_sswap(ARRAY_SIZE(sa), sa, 2, sc, 2);
+// print_sarray(ARRAY_SIZE(sa), sa);
+// print_sarray(ARRAY_SIZE(sa), sc);
+
+// 	cblas_sswap(ARRAY_SIZE(sa), sa, 2, sc, 2);
+// 	TEST(EQUAL_ARRAY(sa, sb));
+// print_sarray(ARRAY_SIZE(sa), sa);
+// print_sarray(ARRAY_SIZE(sa), sc);
 
 	SUITE("cblas_dswap");
 
