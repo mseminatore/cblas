@@ -145,6 +145,22 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
 }
 
 //------------------------------------------------------
+// level 2 dispatch
+//------------------------------------------------------
+void cblas_level2_exec()
+{
+
+}
+
+//------------------------------------------------------
+// level 3 dispatch
+//------------------------------------------------------
+void cblas_level3_exec()
+{
+
+}
+
+//------------------------------------------------------
 // initialize the CBLAS library
 //------------------------------------------------------
 void cblas_init(int threads)

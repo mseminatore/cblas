@@ -378,6 +378,7 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
                 AddDot(k, &A(0, row+2), lda, &B(col + 1, 0), &C(col + 1, row+2));
                 AddDot(k, &A(0, row+3), lda, &B(col + 1, 0), &C(col + 1, row+3));
             case 1:
+                //AddDot1x4(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
                 AddDot(k, &A(0, row), lda, &B(col, 0), &C(col, row));
                 AddDot(k, &A(0, row+1), lda, &B(col, 0), &C(col, row+1));
                 AddDot(k, &A(0, row+2), lda, &B(col, 0), &C(col, row+2));
