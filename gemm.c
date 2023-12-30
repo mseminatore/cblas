@@ -5,6 +5,7 @@
 
 #include "cblas.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 #if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 #   include <immintrin.h>
@@ -403,23 +404,18 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
 }
 
 //------------------------------------------------------
+//
+//------------------------------------------------------
+static void sgemm_k(cblas_args_t* args)
+{
+    InnerKernel(args->ib, args->n, args->pb, args->a, args->lda, args->b, args->ldb, args->c, args->ldc);
+}
+
+//------------------------------------------------------
 // single-precision general matrix multiply
 //------------------------------------------------------
 void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float alpha, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float beta, float *c, CBLAS_INDEX ldc)
 {
-    int horiz_tiles = k / kc + 1;
-    int vert_tiles = m / mc + 1;
-    int tile_count = horiz_tiles * vert_tiles;
-
-// printf("tile count = %d\n", tile_count);
-#ifdef _WIN32
-    work_queue_t *queue = _malloca(tile_count * sizeof(work_queue_t));
-    cblas_args_t *args = _malloca(tile_count * sizeof(cblas_args_t));
-#else
-    work_queue_t *queue = alloca(tile_count * sizeof(work_queue_t));
-    cblas_args_t *args = alloca(tile_count * sizeof(cblas_args_t));
-#endif
-
     assert(layout == CblasRowMajor || layout == CblasColMajor);
     assert(transa == CblasTrans || transa == CblasNoTrans);
     assert(transb == CblasTrans || transb == CblasNoTrans);
@@ -429,6 +425,62 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 
     CBLAS_INDEX pb, ib;
 
+#if 0 // defined(MT_ENABLED)
+    int horiz_tiles = k / kc + 1;
+    int vert_tiles = m / mc + 1;
+    int total_tiles = horiz_tiles * vert_tiles;
+    int tile_count = 0;
+
+    printf("tile count = %d\n", total_tiles);
+    #ifdef _WIN32
+        work_queue_t *queue = _malloca(tile_count * sizeof(work_queue_t));
+        cblas_args_t *args = _malloca(tile_count * sizeof(cblas_args_t));
+    #else
+        work_queue_t *queue = alloca(tile_count * sizeof(work_queue_t));
+        cblas_args_t *args = alloca(tile_count * sizeof(cblas_args_t));
+    #endif
+
+    // Compute an mc x n block of C by a call to the InnerKernel
+    for (int p = 0; p < k; p += kc) 
+    {
+        pb = MIN(k - p, kc);
+        for (int row = 0; row < m; row += mc) 
+        {
+            ib = MIN(m - row, mc);
+
+            args[tile_count].incx = 1;
+            args[tile_count].incy = 1;
+            args[tile_count].n = n;
+            args[tile_count].lda = lda;
+            args[tile_count].ldb = ldb;
+            args[tile_count].ldc = ldc;
+            args[tile_count].a = &A(p, row);
+            args[tile_count].b = &B(0, p);
+            args[tile_count].c = &C(0, row);
+            args[tile_count].lda = lda;
+            args[tile_count].lda = lda;
+            args[tile_count].ib = ib;
+            args[tile_count].pb = pb;
+        
+            queue[tile_count].finished   = 0;
+            queue[tile_count].args       = &args[tile_count];
+            queue[tile_count].kernel     = sgemm_k;
+            queue[tile_count].next       = &queue[tile_count + 1];
+
+            tile_count++;
+            // InnerKernel(ib, n, pb, &A(p, row), lda, &B(0, p), ldb, &C(0, row), ldc);
+        }
+    }
+
+    assert(tile_count == total_tiles);
+
+    // mark end of task queue
+    queue[tile_count - 1].next = NULL;
+
+    // synchronously execute task queue
+    cblas_execute(tile_count, queue);
+
+#else
     // Compute an mc x n block of C by a call to the InnerKernel
     for (int p = 0; p < k; p += kc) 
     {
@@ -439,8 +491,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
             InnerKernel(ib, n, pb, &A(p, row), lda, &B(0, p), ldb, &C(0, row), ldc);
         }
     }
-
-    // TODO - handle remainder for matrices that are not multiples of 4 in size!
+#endif
 }
 
 //------------------------------------------------------

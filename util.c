@@ -6,11 +6,16 @@
 #include <stdlib.h>
 #include "cblas.h"
 
-//
-int cblas_max_threads = MAX_THREADS;    // max system supported threads
-int cblas_set_threads = 1;              // set number of threads
-int server_alive = 0;                   // has thread server been initialized
+//------------------------------------------------------
+// state variables
+//------------------------------------------------------
+int cblas_max_threads   = MAX_THREADS;    // max system supported threads
+int cblas_set_threads   = 1;              // set number of threads
+int cblas_server_alive        = 0;              // has thread server been initialized
 
+//------------------------------------------------------
+// use secure run-time calls if available
+//------------------------------------------------------
 #ifdef _WIN32
 #   define strcat(s1, s2) strcat_s((s1), sizeof(s1), (s2))
 #endif
@@ -93,7 +98,7 @@ int cblas_get_num_procs()
 }
 
 //------------------------------------------------------
-//
+// standard configuration print banner
 //------------------------------------------------------
 void cblas_print_configuration()
 {
@@ -190,8 +195,8 @@ void cblas_init(int threads)
 
     // start thread server
 #ifdef MT_ENABLED
-    if (!server_alive && cblas_init_server())
-        server_alive = 1;
+    if (!cblas_server_alive && cblas_init_server())
+        cblas_server_alive = 1;
 #endif
 }
 

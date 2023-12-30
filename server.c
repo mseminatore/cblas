@@ -7,7 +7,7 @@
 #include "cblas.h"
 
 extern volatile int cblas_max_threads;
-extern int server_alive;
+extern int cblas_server_alive;
 
 static work_queue_t *work_queue = NULL;
 static pthread_t cblas_thread_ids[MAX_THREADS];
@@ -38,7 +38,7 @@ void cblas_set_num_threads(int threads)
     }
 
     // reduce threads
-    if (server_alive && threads < cblas_max_threads)
+    if (cblas_server_alive && threads < cblas_max_threads)
     {
         pthread_mutex_lock(&server_lock);
 
@@ -60,7 +60,7 @@ void cblas_set_num_threads(int threads)
     }
 
     // add more threads if needed
-    if (server_alive && threads > cblas_max_threads)
+    if (cblas_server_alive && threads > cblas_max_threads)
     {
         pthread_mutex_lock(&server_lock);
 
@@ -83,7 +83,7 @@ void cblas_set_num_threads(int threads)
 //------------------------------------------------------
 int cblas_init_server()
 {
-    if (server_alive || cblas_max_threads <= 1)
+    if (cblas_server_alive || cblas_max_threads <= 1)
         return FALSE;
 
     // pthread_mutex_init(&queue_lock, NULL);
@@ -97,7 +97,7 @@ int cblas_init_server()
         pthread_create(&cblas_thread_ids[i], NULL, cblas_worker_thread, (void*)i);
     }
 
-    server_alive = TRUE;
+    cblas_server_alive = TRUE;
 
     pthread_mutex_unlock(&server_lock);
 

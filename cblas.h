@@ -147,8 +147,8 @@ enum {
 //------------------------------------------------------
 typedef struct
 {
-    CBLAS_INDEX m, n, k, incx, incy, lda, ldb, ldc;
-    void *x, *y, *c, *alpha, *beta;
+    CBLAS_INDEX m, n, k, incx, incy, lda, ldb, ldc, ib, pb;
+    void *x, *y, *c, *alpha, *beta, *a, *b;
 } cblas_args_t;
 
 // kernel operation for MT tasks
