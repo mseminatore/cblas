@@ -338,8 +338,13 @@ static void PackMatrixA(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
 static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float* c, CBLAS_INDEX ldc)
 {
 #if !defined(USE_STATIC_BUFFERS)
-    float* packedA = _malloca(m * k * sizeof(float));
-    float* packedB = _malloca(kc * nb * sizeof(float));
+    #ifdef _WIN32
+        float* packedA = _malloca(mc * kc * sizeof(float));
+        float* packedB = _malloca(kc * nb * sizeof(float));
+    #else
+        float* packedA = alloca(mc * kc * sizeof(float));
+        float* packedB = alloca(kc * nb * sizeof(float));
+    #endif
 #endif
 
 //printf("tile: (%ld, %ld) x (%ld, %ld)\n", k, m, n, k);
