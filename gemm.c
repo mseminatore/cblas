@@ -407,6 +407,19 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
 //------------------------------------------------------
 void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float alpha, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float beta, float *c, CBLAS_INDEX ldc)
 {
+    int horiz_tiles = k / kc + 1;
+    int vert_tiles = m / mc + 1;
+    int tile_count = horiz_tiles * vert_tiles;
+
+// printf("tile count = %d\n", tile_count);
+#ifdef _WIN32
+    work_queue_t *queue = _malloca(tile_count * sizeof(work_queue_t));
+    cblas_args_t *args = _malloca(tile_count * sizeof(cblas_args_t));
+#else
+    work_queue_t *queue = alloca(tile_count * sizeof(work_queue_t));
+    cblas_args_t *args = alloca(tile_count * sizeof(cblas_args_t));
+#endif
+
     assert(layout == CblasRowMajor || layout == CblasColMajor);
     assert(transa == CblasTrans || transa == CblasNoTrans);
     assert(transb == CblasTrans || transb == CblasNoTrans);
