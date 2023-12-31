@@ -433,11 +433,11 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 
     printf("tile count = %d\n", total_tiles);
     #ifdef _WIN32
-        work_queue_t *queue = _malloca(tile_count * sizeof(work_queue_t));
-        cblas_args_t *args = _malloca(tile_count * sizeof(cblas_args_t));
+        work_queue_t *queue = _malloca(total_tiles * sizeof(work_queue_t));
+        cblas_args_t *args = _malloca(total_tiles * sizeof(cblas_args_t));
     #else
-        work_queue_t *queue = alloca(tile_count * sizeof(work_queue_t));
-        cblas_args_t *args = alloca(tile_count * sizeof(cblas_args_t));
+        work_queue_t *queue = alloca(total_tiles * sizeof(work_queue_t));
+        cblas_args_t *args = alloca(total_tiles * sizeof(cblas_args_t));
     #endif
 
     // Compute an mc x n block of C by a call to the InnerKernel
@@ -457,8 +457,6 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
             args[tile_count].a = &A(p, row);
             args[tile_count].b = &B(0, p);
             args[tile_count].c = &C(0, row);
-            args[tile_count].lda = lda;
-            args[tile_count].lda = lda;
             args[tile_count].ib = ib;
             args[tile_count].pb = pb;
         
@@ -472,7 +470,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         }
     }
 
-    assert(tile_count == total_tiles);
+    assert(tile_count <= total_tiles);
 
     // mark end of task queue
     queue[tile_count - 1].next = NULL;
