@@ -18,7 +18,7 @@
 // Matrix sub-tile block sizes for caching data in contiguous memory
 #define mc 256
 #define kc 128
-#define nb 1000
+#define nb 1024
 
 // macros to simpify matrix element access
 #define A(col, row) a[((row) * lda + (col))]
@@ -416,8 +416,6 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
     }
 
     CHECK_GUARDS();
-#ifdef USE_STATIC_BUFFERS
-#endif
 }
 
 //------------------------------------------------------
@@ -442,7 +440,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 
     CBLAS_INDEX pb, ib;
 
-#if 0 // defined(MT_ENABLED)
+#if 1 // defined(MT_ENABLED)
     int horiz_tiles = k / kc + 1;
     int vert_tiles = m / mc + 1;
     int total_tiles = horiz_tiles * vert_tiles;
