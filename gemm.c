@@ -28,9 +28,14 @@
 //#define X(i) x[(i) * incx]
 #define Y(i) y[(i) * incx]
 
+#define CHECK_GUARDS()  assert(aguard == 0xbaadf00d && bguard == 0xbaadf00d && cguard == 0xbaadf00d)
+
 #ifdef USE_STATIC_BUFFERS
+    static int aguard = 0xbaadf00d;
     static float packedA[mc * kc];
+    static int bguard = 0xbaadf00d;
     static float packedB[kc * nb];
+    static int cguard = 0xbaadf00d;
 #endif
 
 //------------------------------------------------------
@@ -71,6 +76,8 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
         a_p3 = _mm_load_ps1(a + 3);
 
         a += 4;
+
+        CHECK_ALIGN(b, 16);
 
         b_row = _mm_load_ps(b);
 
@@ -340,13 +347,19 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
 {
 #if !defined(USE_STATIC_BUFFERS)
     #ifdef _WIN32
+        int aguard = 0xbaadf00d;
         float* packedA = _malloca(mc * kc * sizeof(float));
+        int bguard = 0xbaadf00d;
         float* packedB = _malloca(kc * nb * sizeof(float));
+        int cguard = 0xbaadf00d;
     #else
+        int aguard = 0xbaadf00d;
         float* packedA = alloca(mc * kc * sizeof(float));
+        int bguard = 0xbaadf00d;
         float* packedB = alloca(kc * nb * sizeof(float));
     #endif
 #endif
+    CHECK_GUARDS();
 
 //printf("tile: (%ld, %ld) x (%ld, %ld)\n", k, m, n, k);
 
@@ -401,6 +414,10 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
         case 1:    for (col = 0; col < n; col++) AddDot(k, &A(0, row), lda, &B(col, 0), &C(col, row));
         case 0: ;   // nothing to do!
     }
+
+    CHECK_GUARDS();
+#ifdef USE_STATIC_BUFFERS
+#endif
 }
 
 //------------------------------------------------------
@@ -431,7 +448,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     int total_tiles = horiz_tiles * vert_tiles;
     int tile_count = 0;
 
-    printf("tile count = %d\n", total_tiles);
+    //printf("tile count = %d\n", total_tiles);
     #ifdef _WIN32
         work_queue_t *queue = _malloca(total_tiles * sizeof(work_queue_t));
         cblas_args_t *args = _malloca(total_tiles * sizeof(cblas_args_t));

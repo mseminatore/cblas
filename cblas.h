@@ -45,7 +45,7 @@
 //#define USE_INTEL_FMA
 
 // uncomment to enable use of static vs. stack-based buffers
-// #define USE_STATIC_BUFFERS
+#define USE_STATIC_BUFFERS
 
 // uncomment to enable multi-threading
 #define MT_ENABLED
@@ -82,11 +82,11 @@ typedef size_t CBLAS_INDEX;
 #endif
 
 #ifndef MAX
-    #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#   define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
 
 #ifndef MIN
-    #define MIN(a, b) ((a) < (b) ? (a) : (b))
+#   define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 #ifndef CLAMP
@@ -94,7 +94,11 @@ typedef size_t CBLAS_INDEX;
 #endif
 
 #ifndef CHECK_ALIGN
-#   define CHECK_ALIGN(p, align) assert(!((p) & ((align) - 1)))
+    #ifdef NDEBUG
+    #   define CHECK_ALIGN(p, align)
+    #else
+    #   define CHECK_ALIGN(p, align) assert(!(((int)p) & ((align) - 1)))
+    #endif
 #endif
 
 //#if !defined(__STDC_NO_ATOMICS__)
