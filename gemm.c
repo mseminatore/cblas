@@ -357,6 +357,7 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
         float* packedA = alloca(mc * kc * sizeof(float));
         int bguard = 0xbaadf00d;
         float* packedB = alloca(kc * nb * sizeof(float));
+        int cguard = 0xbaadf00d;
     #endif
 #endif
     CHECK_GUARDS();

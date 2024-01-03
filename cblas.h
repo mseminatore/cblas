@@ -45,7 +45,7 @@
 //#define USE_INTEL_FMA
 
 // uncomment to enable use of static vs. stack-based buffers
-//#define USE_STATIC_BUFFERS
+#define USE_STATIC_BUFFERS
 
 // uncomment to enable multi-threading
 #define MT_ENABLED
