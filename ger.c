@@ -31,7 +31,7 @@ static void AddProd(float x, float y, float *a)
 //------------------------------------------------------
 static void AddProd4x1(float x, float *y, float *a)
 {
-#if 1
+#if 0
 
 #if defined(__aarch64__)
 	float32x4_t xr, yr, ar;
