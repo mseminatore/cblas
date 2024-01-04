@@ -3,6 +3,7 @@
 // Copyright 2023 Mark Seminatore. All rights reserved.
 //------------------------------------------------------
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include "test.h"
@@ -328,18 +329,42 @@ static void test_nrm2()
 static void test_ger()
 {
 	SUITE("cblas_sger");
+		{
+			float sx[3] = {1,1,1};
+			float sy[3] = {1,1,1};
+			float sa[9] = {0,0,0,0,0,0,0,0,0};
+			float sr[9] = {1,1,1,1,1,1,1,1,1};
 
-		float sx[3] = {1,1,1};
-		float sy[3] = {1,1,1};
-		float sa[9] = {0,0,0,0,0,0,0,0,0};
-		float sr[9] = {1,1,1,1,1,1,1,1,1};
+			cblas_sger(CblasRowMajor, 3, 3, 1.0f, sx, 1, sy, 1, sa, 3);
+			TEST(EQUAL_ARRAY(sa, sr));
 
-		cblas_sger(CblasRowMajor, 3, 3, 1.0f, sx, 1, sy, 1, sa, 3);
-		TEST(EQUAL_ARRAY(sa, sr));
+			cblas_sscal(9, 3.0f, sr, 1);
+			cblas_sger(CblasColMajor, 3, 3, 2.0f, sx, 1, sy, 1, sa, 3);
+			TEST(EQUAL_ARRAY(sa, sr));
+		}
 
-		cblas_sscal(9, 3.0f, sr, 1);
-		cblas_sger(CblasColMajor, 3, 3, 2.0f, sx, 1, sy, 1, sa, 3);
-		TEST(EQUAL_ARRAY(sa, sr));
+		{
+			float sx[4] = {1,1,1,1};
+			float sy[4] = {1,1,1,1};
+			float sa[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+			float sr[16] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+
+			cblas_sger(CblasRowMajor, 4, 4, 1.0f, sx, 1, sy, 1, sa, 4);
+			TEST(EQUAL_ARRAY(sa, sr));
+		}
+
+		{
+			float sx[5] = {1,1,1,1,1};
+			float sy[5] = {1,1,1,1,1};
+			float sa[25];
+			float sr[25];
+
+			set_vector(25, sa, 0.0f);
+			set_vector(25, sr, 1.0f);
+
+			cblas_sger(CblasRowMajor, 5, 5, 1.0f, sx, 1, sy, 1, sa, 5);
+			TEST(EQUAL_ARRAY(sa, sr));
+		}
 
 	SUITE("cblas_dger");
 

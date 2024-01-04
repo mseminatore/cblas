@@ -5,6 +5,14 @@
 
 #include "cblas.h"
 
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
+#   include <immintrin.h>
+#endif
+
+#if defined(__aarch64__) && defined(__ARM_NEON)
+#   include <arm_neon.h>
+#endif
+
 // helpful macros
 #define X(i) x[(i) * incx]
 #define Y(i) y[(i) * incy]
@@ -23,10 +31,27 @@ static void AddProd(float x, float y, float *a)
 //------------------------------------------------------
 static void AddProd4x1(float x, float *y, float *a)
 {
+#if 0 //defined(__aarch64__)
+	float32x4_t xr, yr, ar;
+
+	// load and dup x
+	xr = vld1q_dup_f32(&x);
+
+	// load 4 floats of Y and A
+	yr = vld1q_f32(y);
+	ar = vld1q_f32(a);
+	
+	// A += x * y
+	ar = vfmaq_f32(ar, xr, yr);
+	
+	// store 4 float
+	vst1q_f32(a, ar);
+#else
 	*a = x * *y;
 	*(a + 1) = x * *(y + 1);
 	*(a + 2) = x * *(y + 2);
 	*(a + 3) = x * *(y + 3);
+#endif
 }
 
 //------------------------------------------------------
@@ -51,7 +76,7 @@ static void sger_row_noalpha(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS_INDEX
 		xr = X(row);
 		yc = y;
 		ap = &A(0, row);
-		for (col = 0; col + 4 < n; col += 4)
+		for (col = 0; col + 4 <= n; col += 4)
 		{
 //			yc = &Y(col);
 //			ap = &A(col, row);
@@ -134,7 +159,7 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
     {
 		if (alpha == 1.0f)
 		{
-			sger_row_noalpha_plain(m, n,  x, incx, y, incy, a, lda);
+			sger_row_noalpha(m, n,  x, incx, y, incy, a, lda);
 		}
 		else
 		{
