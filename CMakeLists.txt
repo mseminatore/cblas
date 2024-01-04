@@ -51,6 +51,7 @@ message("CPUID_FILE: " ${CPUID_FILE})
 
 # add the library
 add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c rot.c asum.c nrm2.c ger.c gemv.c gemm.c rotg.c util.c ${SERVER_FILE} ${CPUID_FILE})
+target_sources(cblas PUBLIC FILE_SET HEADERS FILES cblas.h)
 
 #
 # add the executables
@@ -66,3 +67,6 @@ target_link_libraries(gemm_perf cblas ${MATH_LIB})
 
 add_executable(ger_perf ger_perf.c)
 target_link_libraries(ger_perf cblas ${MATH_LIB})
+
+# install targets
+install(TARGETS cblas FILE_SET HEADERS COMPONENT Development)
