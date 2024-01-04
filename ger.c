@@ -5,45 +5,80 @@
 
 #include "cblas.h"
 
+// helpful macros
 #define X(i) x[(i) * incx]
 #define Y(i) y[(i) * incy]
 #define A(col, row) a[(row) * lda + (col)]
 
-//
+//------------------------------------------------------
+// compute single element product
+//------------------------------------------------------
 static void AddProd(float x, float y, float *a)
 {
 	*a += x * y;
 }
 
-//
-static void AddProd4x1(float *x, float *y, float *a)
+//------------------------------------------------------
+// compute 4 cols by 1 row product
+//------------------------------------------------------
+static void AddProd4x1(float x, float *y, float *a)
+{
+	*a = x * *y;
+	*(a + 1) = x * *(y + 1);
+	*(a + 2) = x * *(y + 2);
+	*(a + 3) = x * *(y + 3);
+}
+
+//------------------------------------------------------
+// compute 4 cols x 4 rows product
+//------------------------------------------------------
+static void AddProd4x4(float* x, float* y, float* a)
 {
 
 }
 
+//------------------------------------------------------
 //
+//------------------------------------------------------
 static void sger_row_noalpha(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda)
 {
 	register float xr;
 	float *yc, *ap;
+	int col;
 
 	for (int row = 0; row < m; row++)
 	{
 		xr = X(row);
-		for (int col = 0; col < n; col += 4)
+		yc = y;
+		ap = &A(0, row);
+		for (col = 0; col + 4 < n; col += 4)
 		{
-			yc = &Y(col);
-			ap = &A(col, row);
+//			yc = &Y(col);
+//			ap = &A(col, row);
 
-			AddProd(xr, *yc, ap);
-			AddProd(xr, *(yc + 1), ap + 1);
-			AddProd(xr, *(yc + 2), ap + 2);
-			AddProd(xr, *(yc + 3), ap + 3);
+			AddProd4x1(xr, yc, ap);
+			yc += 4;
+			ap += 4;
+			//AddProd(xr, *yc, ap);
+			//AddProd(xr, *(yc + 1), ap + 1);
+			//AddProd(xr, *(yc + 2), ap + 2);
+			//AddProd(xr, *(yc + 3), ap + 3);
+		}
+
+		// handle leftover cols
+		switch (n - col)
+		{
+		case 3: AddProd(xr, Y(col + 2), &A(col + 2, row));
+		case 2: AddProd(xr, Y(col + 1), &A(col + 1, row));
+		case 1: AddProd(xr, Y(col), &A(col, row));
+		case 0: ;	// do nothing!
 		}
 	}
 }
 
-//
+//------------------------------------------------------
+// 
+//------------------------------------------------------
 static void sger_row_noalpha_plain(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda)
 {
 	for (int row = 0; row < m; row++)
@@ -90,6 +125,7 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 		return;
 	}
 
+	// fast reject case
 	if (m == 0 ||  n == 0 || alpha == 0.0f)
 		return;
 
