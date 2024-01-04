@@ -363,6 +363,8 @@ static void test_ger()
 			set_vector(25, sr, 1.0f);
 
 			cblas_sger(CblasRowMajor, 5, 5, 1.0f, sx, 1, sy, 1, sa, 5);
+//print_sarray(25, sa);
+//print_sarray(25, sr);
 			TEST(EQUAL_ARRAY(sa, sr));
 		}
 

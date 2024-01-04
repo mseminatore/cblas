@@ -70,19 +70,128 @@ static void AddProd4x1(float x, float *y, float *a)
 #endif
 
 #else
-	*a = x * *y;
-	*(a + 1) = x * *(y + 1);
-	*(a + 2) = x * *(y + 2);
-	*(a + 3) = x * *(y + 3);
+	*a += x * *y;
+	*(a + 1) += x * *(y + 1);
+	*(a + 2) += x * *(y + 2);
+	*(a + 3) += x * *(y + 3);
 #endif
 }
 
 //------------------------------------------------------
 // compute 4 cols x 4 rows product
 //------------------------------------------------------
-static void AddProd4x4(float* x, float* y, float* a)
+static void AddProd4x4_SSE(float* x, float* y, float* a, CBLAS_INDEX lda)
 {
+	__m128 x0, x1, x2, x3, y0, a0, a1, a2, a3;
+	float* ap1, *ap2, *ap3;
 
+	ap1 = a + lda;
+	ap2 = ap1 + lda;
+	ap3 = ap2 + lda;
+
+	x0 = _mm_load_ps1(x);
+	x1 = _mm_load_ps1(x + 1);
+	x2 = _mm_load_ps1(x + 2);
+	x3 = _mm_load_ps1(x + 3);
+	
+	y0 = _mm_load_ps(y);
+	
+	a0 = _mm_load_ps(a);
+	a1 = _mm_load_ps(ap1);
+	a2 = _mm_load_ps(ap2);
+	a3 = _mm_load_ps(ap3);
+
+	// compute 4x4 product
+	a0 = _mm_add_ps(a0, _mm_mul_ps(x0, y0));
+	a1 = _mm_add_ps(a1, _mm_mul_ps(x1, y0));
+	a2 = _mm_add_ps(a2, _mm_mul_ps(x2, y0));
+	a3 = _mm_add_ps(a3, _mm_mul_ps(x3, y0));
+
+	// store results
+	_mm_store_ps(a, a0);
+	_mm_store_ps(a, a1);
+	_mm_store_ps(a, a2);
+	_mm_store_ps(a, a3);
+}
+
+//------------------------------------------------------
+// compute 4 cols x 4 rows product
+//------------------------------------------------------
+static void AddProd4x4(float* x, float* y, float* a, CBLAS_INDEX lda)
+{
+	// first row
+	*a = *x * *y;
+	*(a + 1) = *x * *(y + 1);
+	*(a + 2) = *x * *(y + 2);
+	*(a + 3) = *x * *(y + 3);
+
+	a += lda;
+	x++;
+
+	// second row
+	*a = *x * *y;
+	*(a + 1) = *x * *(y + 1);
+	*(a + 2) = *x * *(y + 2);
+	*(a + 3) = *x * *(y + 3);
+
+	a += lda;
+	x++;
+
+	// third row
+	*a = *x * *y;
+	*(a + 1) = *x * *(y + 1);
+	*(a + 2) = *x * *(y + 2);
+	*(a + 3) = *x * *(y + 3);
+
+	a += lda;
+	x++;
+
+	// fourth row
+	*a = *x * *y;
+	*(a + 1) = *x * *(y + 1);
+	*(a + 2) = *x * *(y + 2);
+	*(a + 3) = *x * *(y + 3);
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_INDEX incx, float* y, CBLAS_INDEX incy, float* a, CBLAS_INDEX lda)
+{
+	float*xr, * yc, * ap;
+	int col, row;
+
+	for (row = 0; row + 4 <= m; row += 4)
+	{
+		xr = &X(row);
+		yc = y;
+		ap = &A(0, row);
+
+		for (col = 0; col + 4 <= n; col += 4)
+		{
+			AddProd4x4(xr, yc, ap, lda);
+			yc += 4;
+			ap += 4;
+		}
+
+		// handle leftover cols
+		switch (n - col)
+		{
+		case 3: AddProd(*xr, Y(col + 2), &A(col + 2, row));
+		case 2: AddProd(*xr, Y(col + 1), &A(col + 1, row));
+		case 1: AddProd(*xr, Y(col), &A(col, row));
+		case 0:;	// do nothing!
+		}
+	}
+
+	// handle leftover rows
+	switch (m - row)
+	{
+	case 3: for (col = 0; col < n; col++) AddProd(X(row + 2), Y(col), &A(col, row + 2));
+	case 2: for (col = 0; col < n; col++) AddProd(X(row + 1), Y(col), &A(col, row + 1));
+	case 1: for (col = 0; col < n; col++) AddProd(X(row), Y(col), &A(col, row));
+	case 0:;	// do nothing!
+	}
 }
 
 //------------------------------------------------------
@@ -99,18 +208,12 @@ static void sger_row_noalpha(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS_INDEX
 		xr = X(row);
 		yc = y;
 		ap = &A(0, row);
+
 		for (col = 0; col + 4 <= n; col += 4)
 		{
-//			yc = &Y(col);
-//			ap = &A(col, row);
-
 			AddProd4x1(xr, yc, ap);
 			yc += 4;
 			ap += 4;
-			//AddProd(xr, *yc, ap);
-			//AddProd(xr, *(yc + 1), ap + 1);
-			//AddProd(xr, *(yc + 2), ap + 2);
-			//AddProd(xr, *(yc + 3), ap + 3);
 		}
 
 		// handle leftover cols
