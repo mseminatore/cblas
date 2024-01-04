@@ -31,7 +31,9 @@ static void AddProd(float x, float y, float *a)
 //------------------------------------------------------
 static void AddProd4x1(float x, float *y, float *a)
 {
-#if 0 //defined(__aarch64__)
+#if 1
+
+#if defined(__aarch64__)
 	float32x4_t xr, yr, ar;
 
 	// load and dup x
@@ -44,8 +46,29 @@ static void AddProd4x1(float x, float *y, float *a)
 	// A += x * y
 	ar = vfmaq_f32(ar, xr, yr);
 	
-	// store 4 float
+	// store 4 floats
 	vst1q_f32(a, ar);
+#else
+	__m128 xr, yr, ar;
+
+	// load and dup x
+	xr = _mm_load_ps1(&x);
+
+	// load 4 floats of Y and A
+	yr = _mm_load_ps(y);
+	ar = _mm_load_ps(a);
+
+	// A += x * y
+#ifdef USE_INTEL_FMA
+	ar = _mm_fmadd_ps(ar, xr, yr);
+#else
+	ar = _mm_add_ps(ar, _mm_mul_ps(xr, yr));
+#endif
+
+	// store 4 floats
+	_mm_store_ps(a, ar);
+#endif
+
 #else
 	*a = x * *y;
 	*(a + 1) = x * *(y + 1);
