@@ -80,8 +80,10 @@ static void AddProd4x1(float x, float *y, float *a)
 //------------------------------------------------------
 // compute 4 cols x 4 rows product
 //------------------------------------------------------
-static void AddProd4x4_SSE(float* x, float* y, float* a, CBLAS_INDEX lda)
+static void AddProd4x4_SIMD(float* x, float* y, float* a, CBLAS_INDEX lda)
 {
+#if defined(__aarch64__)
+#else
 	__m128 x0, x1, x2, x3, y0, a0, a1, a2, a3;
 	float* ap1, *ap2, *ap3;
 
@@ -112,6 +114,7 @@ static void AddProd4x4_SSE(float* x, float* y, float* a, CBLAS_INDEX lda)
 	_mm_store_ps(a, a1);
 	_mm_store_ps(a, a2);
 	_mm_store_ps(a, a3);
+#endif
 }
 
 //------------------------------------------------------
