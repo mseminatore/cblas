@@ -40,6 +40,11 @@ ger_perf: $(LIBNAME) ger_perf.o
 %.o: %.c $(DEPS)
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
+install:
+	sudo mkdir -p /opt/cblas/lib /opt/cblas/include
+	sudo cp libcblas.a /opt/cblas/lib
+	sudo cp cblas.h /opt/cblas/include
+
 clean:
 	rm $(TARGET) $(OBJS) test.o test_stress.o blas_perf.o blas_stress blas_test gemm_perf ger_perf
 
