@@ -32,15 +32,6 @@ static double dd[] = {9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0};
 //------------------------------------------------------
 //
 //------------------------------------------------------
-static void set_vector(int n, float *x, float val)
-{
-	for (int i = 0; i < n; i++)
-		*x++ = val;
-}
-
-//------------------------------------------------------
-//
-//------------------------------------------------------
 static float *make_identity(int cols, int rows)
 {
 	float *mtx = malloc(cols * rows * sizeof(float));
@@ -359,8 +350,8 @@ static void test_ger()
 			float sa[25];
 			float sr[25];
 
-			set_vector(25, sa, 0.0f);
-			set_vector(25, sr, 1.0f);
+			cblas_ssetv(25, sa, 0.0f);
+			cblas_ssetv(25, sr, 1.0f);
 
 			cblas_sger(CblasRowMajor, 5, 5, 1.0f, sx, 1, sy, 1, sa, 5);
 //print_sarray(25, sa);

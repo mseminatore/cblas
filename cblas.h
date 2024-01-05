@@ -196,9 +196,6 @@ void cblas_dscal(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx);
 void cblas_saxpy(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy);
 void cblas_daxpy(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy);
 
-void cblas_saxpby(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float beta, float *y, CBLAS_INDEX incy);
-void cblas_daxpby(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, double beta, double *y, CBLAS_INDEX incy);
-
 void cblas_sswap(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy);
 void cblas_dswap(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy);
 
@@ -213,6 +210,13 @@ double cblas_dnrm2(CBLAS_INDEX n, double *x, CBLAS_INDEX incx);
 
 void cblas_srotg(float *a, float *b, float *c, float *s);
 void cblas_drotg(double *a, double *b, double *c, double *s);
+
+// non-standard extensions
+void cblas_ssetv(CBLAS_INDEX n, float *x, float v);
+void cblas_dsetv(CBLAS_INDEX n, double *x, double v);
+
+void cblas_saxpby(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float beta, float *y, CBLAS_INDEX incy);
+void cblas_daxpby(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, double beta, double *y, CBLAS_INDEX incy);
 
 //------------------------------------------------------
 // BLAS Level 2 functions
