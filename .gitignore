@@ -6,6 +6,8 @@ ger_perf
 gemm_perf
 build/
 
+.DS_Store
+
 # Prerequisites
 *.d
 
