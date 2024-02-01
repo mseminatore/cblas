@@ -254,6 +254,7 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 	assert(layout == CblasRowMajor || layout == CblasColMajor);
 	assert(lda >= MAX(1, m));
 
+#ifdef CBLAS_XERBLA_INPUTS
 	int info = 0;
 	if (layout != CblasRowMajor && layout != CblasColMajor)
 		info = 1;
@@ -278,6 +279,7 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 		XERBLA(info);
 		return;
 	}
+#endif
 
 	// fast reject case
 	if (m == 0 ||  n == 0 || alpha == 0.0f)
@@ -335,6 +337,7 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
 	assert(layout == CblasRowMajor || layout == CblasColMajor);
 	assert(lda >= MAX(1, m));
 
+#ifdef CBLAS_XERBLA_INPUTS
 	int info = 0;
 	if (layout != CblasRowMajor && layout != CblasColMajor)
 		info = 1;
@@ -359,6 +362,7 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
 		XERBLA(info);
 		return;
 	}
+#endif
 
 	if (m == 0 ||  n == 0 || alpha == 0.0f)
 		return;
