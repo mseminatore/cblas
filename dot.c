@@ -6,7 +6,7 @@
 #include "cblas.h"
 
 //------------------------------------------------------
-//
+// Level-1 single-precision vector dot product
 //------------------------------------------------------
 float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy)
 {
@@ -48,7 +48,7 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
 }
 
 //------------------------------------------------------
-//
+// Level-1 double-precision vector dot product
 //------------------------------------------------------
 double cblas_ddot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy)
 {
