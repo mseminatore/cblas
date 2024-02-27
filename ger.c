@@ -247,12 +247,9 @@ static void sger_row_noalpha_plain(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS
 //------------------------------------------------------
 // single-precision rank-1 update
 //------------------------------------------------------
-void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda)
+void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, float* x, CBLAS_INDEX incx, float* y, CBLAS_INDEX incy, float* a, CBLAS_INDEX lda)
 {
-	assert(m > 0 && n > 0 && incx != 0 && incy != 0 && alpha != 0.0f);
-	assert(x && y && a);
-	assert(layout == CblasRowMajor || layout == CblasColMajor);
-	assert(lda >= MAX(1, m));
+#ifdef CBLAS_CHECK_INPUTS
 
 #ifdef CBLAS_XERBLA_INPUTS
 	int info = 0;
@@ -274,11 +271,21 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 		info = 9;
 	else if (lda < MAX(1, m))
 		info = 10;
-	
-	if (info)  {
+
+	if (info) {
 		XERBLA(info);
 		return;
 	}
+#else
+	if (M < 0 || n < 0 || !x || incx == 0 || incy == 0 || !a || lda < MAX(1, m))
+	{
+		assert(m > 0 && n > 0 && incx != 0 && incy != 0 && alpha != 0.0f);
+		assert(x && y && a);
+		assert(layout == CblasRowMajor || layout == CblasColMajor);
+		assert(lda >= MAX(1, m));
+		return;
+	}
+#endif
 #endif
 
 	// fast reject case
@@ -332,10 +339,7 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 //------------------------------------------------------
 void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy, double *a, CBLAS_INDEX lda)
 {
-	assert(m > 0 && n > 0 && incx != 0 && incy != 0 && alpha != 0.0f);
-	assert(x && y && a);
-	assert(layout == CblasRowMajor || layout == CblasColMajor);
-	assert(lda >= MAX(1, m));
+#ifdef CBLAS_CHECK_INPUTS
 
 #ifdef CBLAS_XERBLA_INPUTS
 	int info = 0;
@@ -362,6 +366,16 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
 		XERBLA(info);
 		return;
 	}
+#else
+	if (M < 0 || n < 0 || !x || incx == 0 || incy == 0 || !a || lda < MAX(1,m))
+	{
+		assert(m > 0 && n > 0 && incx != 0 && incy != 0 && alpha != 0.0);
+		assert(x && y && a);
+		assert(layout == CblasRowMajor || layout == CblasColMajor);
+		assert(lda >= MAX(1, m));
+		return;
+	}
+#endif
 #endif
 
 	if (m == 0 ||  n == 0 || alpha == 0.0f)

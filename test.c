@@ -388,19 +388,19 @@ static void test_gemv()
 
 		{
 			float sy[3] = {0};
-			cblas_sgemv(CblasRowMajor, CblasNoTrans, 3, 3, 1.0f, smtx, 1, sx, 1, 1.0f, sy, 1);
+			cblas_sgemv(CblasRowMajor, CblasNoTrans, 3, 3, 1.0f, smtx, 3, sx, 1, 1.0f, sy, 1);
 			TEST(EQUAL_ARRAY(sx, sy));
 		}
 
 		{
 			float sy[3] = {0};
-			cblas_sgemv(CblasRowMajor, CblasNoTrans, 3, 3, 2.0f, smtx, 1, sx, 1, 1.0f, sy, 1);
+			cblas_sgemv(CblasRowMajor, CblasNoTrans, 3, 3, 2.0f, smtx, 3, sx, 1, 1.0f, sy, 1);
 			TEST(EQUAL_ARRAY(sz, sy));
 		}
 
 		{
 			float sy[3] = {0};
-			cblas_sgemv(CblasColMajor, CblasTrans, 3, 3, 1.0f, smtx, 1, sx, 1, 1.0f, sy, 1);
+			cblas_sgemv(CblasColMajor, CblasTrans, 3, 3, 1.0f, smtx, 3, sx, 1, 1.0f, sy, 1);
 			TEST(EQUAL_ARRAY(sx, sy));
 		}
 
@@ -413,19 +413,19 @@ static void test_gemv()
 
 		{
 			double dy[3] = {0};
-			cblas_dgemv(CblasRowMajor, CblasNoTrans, 3, 3, 1.0, dmtx, 1, dx, 1, 1.0, dy, 1);
+			cblas_dgemv(CblasRowMajor, CblasNoTrans, 3, 3, 1.0, dmtx, 3, dx, 1, 1.0, dy, 1);
 			TEST(EQUAL_ARRAY(dx, dy));
 		}
 
 		{
 			double dy[3] = {0};
-			cblas_dgemv(CblasRowMajor, CblasNoTrans, 3, 3, 2.0, dmtx, 1, dx, 1, 1.0, dy, 1);
+			cblas_dgemv(CblasRowMajor, CblasNoTrans, 3, 3, 2.0, dmtx, 3, dx, 1, 1.0, dy, 1);
 			TEST(EQUAL_ARRAY(dz, dy));
 		}
 
 		{
 			double dy[3] = {0};
-			cblas_dgemv(CblasColMajor, CblasTrans, 3, 3, 1.0, dmtx, 1, dx, 1, 1.0, dy, 1);
+			cblas_dgemv(CblasColMajor, CblasTrans, 3, 3, 1.0, dmtx, 3, dx, 1, 1.0, dy, 1);
 			TEST(EQUAL_ARRAY(dx, dy));
 		}
 }

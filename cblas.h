@@ -32,7 +32,7 @@
 #define CBLAS_SMALL_BUF 256
 #define CBLAS_LARGE_BUF 1024
 
-// library function check inputs for validity
+// library functions check inputs for validity
 #define CBLAS_CHECK_INPUTS
 
 // library functions use blas standard error reporting function

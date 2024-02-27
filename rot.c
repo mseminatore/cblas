@@ -6,15 +6,33 @@
 #include "cblas.h"
 
 //------------------------------------------------------
-// single-precision generate rotation
+// Level-1 single-precision generate rotation
 //------------------------------------------------------
 void cblas_srot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float c, float s)
 {
+#ifdef CBLAS_CHECK_INPUTS
+
+#ifdef CBLAS_XERBLA_INPUTS
+    int info = 0;
+    if (n <= 0)
+        info = 1;
+    else if (!x)
+        info = 2;
+    else if (!y)
+        info = 4;
+
+    if (info) {
+        XERBLA(info);
+        return;
+    }
+#else
     if (n <= 0 || !x || !y)
     {
         assert(n > 0 && x && y);
         return;
     }
+#endif
+#endif
 
     float temp;
 
@@ -30,15 +48,33 @@ void cblas_srot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX
 }
 
 //------------------------------------------------------
-// double-precision generate rotation
+// Level-1 double-precision generate rotation
 //------------------------------------------------------
 void cblas_drot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy, double c, double s)
 {
+#ifdef CBLAS_CHECK_INPUTS
+
+#ifdef CBLAS_XERBLA_INPUTS
+    int info = 0;
+    if (n <= 0)
+        info = 1;
+    else if (!x)
+        info = 2;
+    else if (!y)
+        info = 4;
+
+    if (info) {
+        XERBLA(info);
+        return;
+    }
+#else
     if (n <= 0 || !x || !y)
     {
         assert(n > 0 && x && y);
         return;
     }
+#endif
+#endif
 
     double temp;
 

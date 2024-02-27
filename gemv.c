@@ -8,11 +8,43 @@
 //------------------------------------------------------
 // y = alpha * A * x + beta * y
 //------------------------------------------------------
-void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, float *a, CBLAS_INDEX lda, float *x, CBLAS_INDEX incx, float beta, float *y, CBLAS_INDEX incy)
+void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, float* a, CBLAS_INDEX lda, float* x, CBLAS_INDEX incx, float beta, float* y, CBLAS_INDEX incy)
 {
 	float sum;
 
-    assert(m > 0 && n > 0);
+#ifdef CBLAS_CHECK_INPUTS
+
+#ifdef CBLAS_XERBLA_INPUTS
+	int info = 0;
+	if (m < 0)
+		info = 3;
+	else if (n < 0)
+		info = 4;
+	else if (!a)
+		info = 6;
+	else if (lda < MAX(1, m))
+		info = 7;
+	else if (!x)
+		info = 8;
+	else if (incx == 0)
+		info = 9;
+	else if (!y)
+		info = 11;
+	else if (incy == 0)
+		info = 12;
+
+	if (info) {
+		XERBLA(info);
+		return;
+	}
+#else
+	if (m < 0 || n < 0 || !a || lda < MAX(1, m) || !x || incx == 0 || !y || incy == 0)
+	{
+		assert(m >= 0 && n >= 0 && a && lda >= MAX(1, m) && x && y && incx != 0 && incy != 0);
+		return;
+	}
+#endif
+#endif
 
 	if ((trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor))
 	{
@@ -48,11 +80,42 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 //------------------------------------------------------
 //
 //------------------------------------------------------
-void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLAS_INDEX n, double alpha, double *a, CBLAS_INDEX lda, double *x, CBLAS_INDEX incx, double beta, double *y, CBLAS_INDEX incy)
+void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLAS_INDEX n, double alpha, double* a, CBLAS_INDEX lda, double* x, CBLAS_INDEX incx, double beta, double* y, CBLAS_INDEX incy)
 {
 	double sum;
+#ifdef CBLAS_CHECK_INPUTS
 
-    assert(m > 0 && n > 0);
+#ifdef CBLAS_XERBLA_INPUTS
+	int info = 0;
+	if (m < 0)
+		info = 3;
+	else if (n < 0)
+		info = 4;
+	else if (!a)
+		info = 6;
+	else if (lda < MAX(1, m))
+		info = 7;
+	else if (!x)
+		info = 8;
+	else if (incx == 0)
+		info = 9;
+	else if (!y)
+		info = 11;
+	else if (incy == 0)
+		info = 12;
+
+	if (info) {
+		XERBLA(info);
+		return;
+	}
+#else
+	if (m < 0 || n < 0 || !a || lda < MAX(1, m) || !x || incx == 0 || !y || incy == 0)
+	{
+		assert(m >= 0 && n >= 0 && a && lda >= MAX(1, m) && x && y && incx != 0 && incy != 0);
+		return;
+	}
+#endif
+#endif
 
 	if ((trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor))
 	{

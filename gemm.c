@@ -430,14 +430,48 @@ static void sgemm_k(cblas_args_t* args)
 //------------------------------------------------------
 // single-precision general matrix multiply
 //------------------------------------------------------
-void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float alpha, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float beta, float *c, CBLAS_INDEX ldc)
+void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float alpha, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float beta, float* c, CBLAS_INDEX ldc)
 {
-    assert(layout == CblasRowMajor || layout == CblasColMajor);
-    assert(transa == CblasTrans || transa == CblasNoTrans);
-    assert(transb == CblasTrans || transb == CblasNoTrans);
-    assert(m > 0 && n > 0 && k > 0);
-    assert(a && b && c);
-    assert(alpha != 0.0f && beta != 0.0f);
+#ifdef CBLAS_CHECK_INPUTS
+
+#ifdef CBLAS_XERBLA_INPUTS
+    int info = 0;
+    if (m < 0)
+        info = 4;
+    else if (n < 0)
+        info = 5;
+    else if (k < 0)
+        info = 6;
+    else if (!a)
+        info = 8;
+    else if (lda < MAX(1, m))
+        info = 9;
+    else if (!b)
+        info = 10;
+    else if (ldb < MAX(1, k))
+        info = 11;
+    else if (!c)
+        info = 12;
+    else if (ldc < MAX(1, m))
+        info = 13;
+
+    if (info) {
+        XERBLA(info);
+        return;
+    }
+#else
+    if (m < 0 || n < 0 || k < 0 || !a || !b || !c)
+    {
+        assert(layout == CblasRowMajor || layout == CblasColMajor);
+        assert(transa == CblasTrans || transa == CblasNoTrans);
+        assert(transb == CblasTrans || transb == CblasNoTrans);
+        assert(m > 0 && n > 0 && k > 0);
+        assert(a && b && c);
+        assert(alpha != 0.0f && beta != 0.0f);
+        return;
+    }
+#endif
+#endif
 
     CBLAS_INDEX pb, ib;
 
@@ -531,12 +565,46 @@ void cblas_sgemm_naive(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSP
 //------------------------------------------------------
 void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, double alpha, double *a, CBLAS_INDEX lda, double *b, CBLAS_INDEX ldb, double beta, double *c, CBLAS_INDEX ldc)
 {
-    assert(layout == CblasRowMajor || layout == CblasColMajor);
-    assert(transa == CblasTrans || transa == CblasNoTrans);
-    assert(transb == CblasTrans || transb == CblasNoTrans);
-    assert(m > 0 && n > 0 && k > 0);
-    assert(a && b && c);
-    assert(alpha != 0.0 && beta != 0.0);
+#ifdef CBLAS_CHECK_INPUTS
+
+#ifdef CBLAS_XERBLA_INPUTS
+    int info = 0;
+    if (m < 0)
+        info = 4;
+    else if (n < 0)
+        info = 5;
+    else if (k < 0)
+        info = 6;
+    else if (!a)
+        info = 8;
+    else if (lda < MAX(1, m))
+        info = 9;
+    else if (!b)
+        info = 10;
+    else if (ldb < MAX(1, k))
+        info = 11;
+    else if (!c)
+        info = 12;
+    else if (ldc < MAX(1, m))
+        info = 13;
+
+    if (info) {
+        XERBLA(info);
+        return;
+    }
+#else
+    if (m < 0 || n < 0 || k < 0 || !a || !b || !c)
+    {
+        assert(layout == CblasRowMajor || layout == CblasColMajor);
+        assert(transa == CblasTrans || transa == CblasNoTrans);
+        assert(transb == CblasTrans || transb == CblasNoTrans);
+        assert(m > 0 && n > 0 && k > 0);
+        assert(a && b && c);
+        assert(alpha != 0.0 && beta != 0.0);
+        return;
+    }
+#endif
+#endif
 
     for (int row = 0; row < m; row++)
         for (int col = 0; col < n; col++)

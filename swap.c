@@ -45,15 +45,33 @@ static void cblas_dswap_k(cblas_args_t* args)
     }
 }
 //------------------------------------------------------
-//
+// Level-1 single-precision swap
 //------------------------------------------------------
 void cblas_sswap(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy)
 {
-    if (n < 0 || !x || !y)
+#ifdef CBLAS_CHECK_INPUTS
+
+#ifdef CBLAS_XERBLA_INPUTS
+    int info = 0;
+    if (n <= 0)
+        info = 1;
+    else if (!x)
+        info = 2;
+    else if (!y)
+        info = 4;
+
+    if (info) {
+        XERBLA(info);
+        return;
+    }
+#else
+    if (n <= 0 || !x || !y)
     {
         assert(n > 0 && x && y);
         return;
     }
+#endif
+#endif
 
 #ifdef MT_ENABLED
     cblas_level1_exec(sizeof(float), cblas_sswap_k, n, x, incx, y, incy);
@@ -72,15 +90,33 @@ void cblas_sswap(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
 }
 
 //------------------------------------------------------
-//
+// Level-1 double-precision swap
 //------------------------------------------------------
 void cblas_dswap(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy)
 {
-    if (n < 0 || !x || !y)
+#ifdef CBLAS_CHECK_INPUTS
+
+#ifdef CBLAS_XERBLA_INPUTS
+    int info = 0;
+    if (n <= 0)
+        info = 1;
+    else if (!x)
+        info = 2;
+    else if (!y)
+        info = 4;
+
+    if (info) {
+        XERBLA(info);
+        return;
+    }
+#else
+    if (n <= 0 || !x || !y)
     {
         assert(n > 0 && x && y);
         return;
     }
+#endif
+#endif
 
 #ifdef MT_ENABLED
     cblas_level1_exec(sizeof(double), cblas_dswap_k, n, x, incx, y, incy);

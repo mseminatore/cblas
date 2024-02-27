@@ -12,26 +12,30 @@ float cblas_sasum(CBLAS_INDEX n, float *x, CBLAS_INDEX incx)
 {
     float sum = 0.0f;
 
+#ifdef CBLAS_CHECK_INPUTS
+
 #ifdef CBLAS_XERBLA_INPUTS
     int info = 0;
     if (n < 0)
         info = 1;
     else if (!x)
         info = 2;
-    else if (incx == 0)
+    else if (incx <= 0)
         info = 3;
 
     if (info) {
         XERBLA(info);
         return sum;
     }
-#endif
-
-    if (n < 0 || !x || incx == 0)
+#else
+    if (n < 0 || !x || incx <= 0)
     {
-        assert(n > 0 && x && incx != 0);
+        assert(n > 0 && x && incx > 0);
         return sum;
     }
+#endif  // CBLAS_XERBLA_INPUTS
+
+#endif  // CBLAS_CHECK_INPUTS
 
     for (CBLAS_INDEX i = 0; i < n; i++)
     {
@@ -49,26 +53,29 @@ double cblas_dasum(CBLAS_INDEX n, double *x, CBLAS_INDEX incx)
 {
     double sum = 0.0;
 
+#ifdef CBLAS_CHECK_INPUTS
+
 #ifdef CBLAS_XERBLA_INPUTS
     int info = 0;
     if (n < 0)
         info = 1;
     else if (!x)
         info = 2;
-    else if (incx == 0)
+    else if (incx <= 0)
         info = 3;
 
     if (info) {
         XERBLA(info);
         return sum;
     }
-#endif
-
-    if (n < 0 || !x || incx == 0)
+#else
+    if (n < 0 || !x || incx <= 0)
     {
-        assert(n > 0 && x && incx != 0);
+        assert(n > 0 && x && incx > 0);
         return sum;
     }
+#endif
+#endif
 
     for (CBLAS_INDEX i = 0; i < n; i++)
     {

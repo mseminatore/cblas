@@ -179,15 +179,11 @@ static void cblas_dcopy_k(cblas_args_t* args)
 }
 
 //------------------------------------------------------
-// single-precision copy
+// Level-1 single-precision copy
 //------------------------------------------------------
 void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy)
 {
-    if (n <= 0 || !x || !y)
-    {
-        assert(n > 0 && x && y);
-        return;
-    }
+#ifdef CBLAS_CHECK_INPUTS
 
 #ifdef CBLAS_XERBLA_INPUTS
     int info = 0;
@@ -195,17 +191,20 @@ void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
         info = 1;
     else if (!x)
         info = 2;
-    else if (incx == 0)
-        info = 3;
     else if (!y)
         info = 4;
-    else if (incy == 0)
-        info = 5;
 
     if (info) {
         XERBLA(info);
         return;
     }
+#else
+    if (n <= 0 || !x || !y)
+    {
+        assert(n > 0 && x && y);
+        return;
+    }
+#endif
 #endif
 
 #ifdef MT_ENABLED
@@ -217,6 +216,7 @@ void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
 #else
     if (incx == 1 && incy == 1)
     {
+        // TODO - unroll this loop
         for (CBLAS_INDEX i = 0; i < n; i++)
         {
             *x++ = *y++;
@@ -235,15 +235,11 @@ void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
 }
 
 //------------------------------------------------------
-// double-precision copy
+// Level-1 double-precision copy
 //------------------------------------------------------
 void cblas_dcopy(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy)
 {
-    if (n < 0 || !x || !y)
-    {
-        assert(n > 0 && x && y);
-        return;
-    }
+#ifdef CBLAS_CHECK_INPUTS
 
 #ifdef CBLAS_XERBLA_INPUTS
     int info = 0;
@@ -251,17 +247,21 @@ void cblas_dcopy(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IN
         info = 1;
     else if (!x)
         info = 2;
-    else if (incx == 0)
-        info = 3;
     else if (!y)
         info = 4;
-    else if (incy == 0)
-        info = 5;
 
     if (info) {
         XERBLA(info);
         return;
     }
+#else
+    if (n < 0 || !x || !y)
+    {
+        assert(n > 0 && x && y);
+        return;
+    }
+
+#endif
 #endif
 
 #ifdef MT_ENABLED
@@ -269,6 +269,7 @@ void cblas_dcopy(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IN
 #else
     if (incx == 1 && incy == 1)
     {
+        // TODO - unroll this loop
         for (CBLAS_INDEX i = 0; i < n; i++)
         {
             *x++ = *y++;

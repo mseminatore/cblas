@@ -11,7 +11,7 @@
 //------------------------------------------------------
 int cblas_max_threads   = MAX_THREADS;    // max system supported threads
 int cblas_set_threads   = 1;              // set number of threads
-int cblas_server_alive        = 0;              // has thread server been initialized
+int cblas_server_alive  = 0;              // has thread server been initialized
 
 //------------------------------------------------------
 // use secure run-time calls if available
