@@ -6,6 +6,7 @@
 #include "cblas.h"
 
 //------------------------------------------------------
+// Level-2 single-precision matrix-vector multiply
 // y = alpha * A * x + beta * y
 //------------------------------------------------------
 void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, float* a, CBLAS_INDEX lda, float* x, CBLAS_INDEX incx, float beta, float* y, CBLAS_INDEX incy)
@@ -45,40 +46,79 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 	}
 #endif
 #endif
+	// early returns
+	if (m == 0 || n == 0 || (alpha == 0.0f && beta == 1.0f))
+		return;
 
 	if ((trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor))
 	{
-		// for each row of the matrix
-		for (int row = 0; row < m; row++)
+		if (alpha == 1.0f && beta == 1.0f)
 		{
-			sum = 0.0f;
-
-			for (int col = 0; col < n; col++)
+			// for each row of the matrix
+			for (int row = 0; row < m; row++)
 			{
-				sum += alpha * a[row * n + col] * x[col];
-			}
+				sum = 0.0f;
 
-			y[row] = beta * y[row] + sum;
+				for (int col = 0; col < n; col++)
+				{
+					sum += a[row * n + col] * x[col];
+				}
+
+				y[row] = y[row] + sum;
+			}
+		}
+		else
+		{
+			// for each row of the matrix
+			for (int row = 0; row < m; row++)
+			{
+				sum = 0.0f;
+
+				for (int col = 0; col < n; col++)
+				{
+					sum += alpha * a[row * n + col] * x[col];
+				}
+
+				y[row] = beta * y[row] + sum;
+			}
 		}
 	}
 	else
 	{
-		for (int col = 0; col < n; col++)
+		if (alpha == 1.0f && beta == 1.0f)
 		{
-			sum = 0.0f;
-
-			for (int row = 0; row < m; row++)
+			for (int col = 0; col < n; col++)
 			{
-				sum += alpha * a[row * n + col] * x[row];
-			}
+				sum = 0.0f;
 
-			y[col] = beta * y[col] + sum;
+				for (int row = 0; row < m; row++)
+				{
+					sum += a[row * n + col] * x[row];
+				}
+
+				y[col] = y[col] + sum;
+			}
+		}
+		else
+		{
+			for (int col = 0; col < n; col++)
+			{
+				sum = 0.0f;
+
+				for (int row = 0; row < m; row++)
+				{
+					sum += alpha * a[row * n + col] * x[row];
+				}
+
+				y[col] = beta * y[col] + sum;
+			}
 		}
 	}
 }
 
 //------------------------------------------------------
-//
+// Level-2 double-precision matrix-vector multiply
+// y = alpha * A * x + beta * y
 //------------------------------------------------------
 void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLAS_INDEX n, double alpha, double* a, CBLAS_INDEX lda, double* x, CBLAS_INDEX incx, double beta, double* y, CBLAS_INDEX incy)
 {
@@ -116,34 +156,72 @@ void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 	}
 #endif
 #endif
+	// early returns
+	if (m == 0 || n == 0 || (alpha == 0.0 && beta == 1.0))
+		return;
 
 	if ((trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor))
 	{
-		// for each row of the matrix
-		for (int row = 0; row < m; row++)
+		if (alpha == 1.0f && beta == 1.0f)
 		{
-			sum = 0.0;
-
-			for (int col = 0; col < n; col++)
+			// for each row of the matrix
+			for (int row = 0; row < m; row++)
 			{
-				sum += alpha * a[row * n + col] * x[col];
-			}
+				sum = 0.0;
 
-			y[row] = beta * y[row] + sum;
+				for (int col = 0; col < n; col++)
+				{
+					sum += a[row * n + col] * x[col];
+				}
+
+				y[row] = y[row] + sum;
+			}
+		}
+		else
+		{
+			// for each row of the matrix
+			for (int row = 0; row < m; row++)
+			{
+				sum = 0.0;
+
+				for (int col = 0; col < n; col++)
+				{
+					sum += alpha * a[row * n + col] * x[col];
+				}
+
+				y[row] = beta * y[row] + sum;
+			}
 		}
 	}
 	else
 	{
-		for (int col = 0; col < n; col++)
+		if (alpha == 1.0 && beta == 1.0)
 		{
-			sum = 0.0;
-
-			for (int row = 0; row < m; row++)
+			for (int col = 0; col < n; col++)
 			{
-				sum += alpha * a[row * n + col] * x[row];
-			}
+				sum = 0.0;
 
-			y[col] = beta * y[col] + sum;
+				for (int row = 0; row < m; row++)
+				{
+					sum += a[row * n + col] * x[row];
+				}
+
+				y[col] = y[col] + sum;
+			}
+		}
+		else
+		{
+			for (int col = 0; col < n; col++)
+			{
+				sum = 0.0;
+
+				for (int row = 0; row < m; row++)
+				{
+					sum += alpha * a[row * n + col] * x[row];
+				}
+
+				y[col] = beta * y[col] + sum;
+			}
 		}
 	}
 }

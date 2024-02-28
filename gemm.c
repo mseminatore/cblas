@@ -433,6 +433,19 @@ static void sgemm_k(cblas_args_t* args)
 void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float alpha, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float beta, float* c, CBLAS_INDEX ldc)
 {
 #ifdef CBLAS_CHECK_INPUTS
+    int nota = transa == CblasNoTrans;
+    int notb = transb == CblasNoTrans;
+    int nrowa, nrowb;
+
+    if (nota)
+        nrowa = m;
+    else
+        nrowa = k;
+
+    if (notb)
+        nrowb = k;
+    else
+        nrowb = n;
 
 #ifdef CBLAS_XERBLA_INPUTS
     int info = 0;
@@ -444,11 +457,11 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         info = 6;
     else if (!a)
         info = 8;
-    else if (lda < MAX(1, m))
+    else if (lda < MAX(1, nrowa))
         info = 9;
     else if (!b)
         info = 10;
-    else if (ldb < MAX(1, k))
+    else if (ldb < MAX(1, nrowb))
         info = 11;
     else if (!c)
         info = 12;
@@ -460,7 +473,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         return;
     }
 #else
-    if (m < 0 || n < 0 || k < 0 || !a || !b || !c)
+    if (m < 0 || n < 0 || k < 0 || !a || !b || !c || lda < MAX(1, nrowa) || ldb < MAX(1, nrowb) || ldc < MAX(1, m))
     {
         assert(layout == CblasRowMajor || layout == CblasColMajor);
         assert(transa == CblasTrans || transa == CblasNoTrans);
@@ -566,6 +579,19 @@ void cblas_sgemm_naive(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSP
 void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, double alpha, double *a, CBLAS_INDEX lda, double *b, CBLAS_INDEX ldb, double beta, double *c, CBLAS_INDEX ldc)
 {
 #ifdef CBLAS_CHECK_INPUTS
+    int nota = transa == CblasNoTrans;
+    int notb = transb == CblasNoTrans;
+    int nrowa, nrowb;
+
+    if (nota)
+        nrowa = m;
+    else
+        nrowa = k;
+
+    if (notb)
+        nrowb = k;
+    else
+        nrowb = n;
 
 #ifdef CBLAS_XERBLA_INPUTS
     int info = 0;
@@ -593,7 +619,7 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         return;
     }
 #else
-    if (m < 0 || n < 0 || k < 0 || !a || !b || !c)
+    if (m < 0 || n < 0 || k < 0 || !a || !b || !c || lda < MAX(1, nrowa) || ldb < MAX(1, nrowb) || ldc < MAX(1, m))
     {
         assert(layout == CblasRowMajor || layout == CblasColMajor);
         assert(transa == CblasTrans || transa == CblasNoTrans);
