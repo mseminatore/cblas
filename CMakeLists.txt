@@ -71,3 +71,5 @@ target_link_libraries(ger_perf cblas ${MATH_LIB})
 # install targets
 install(TARGETS cblas DESTINATION lib)
 install(FILES cblas.h DESTINATION include)
+
+# cmake --install . --prefix c:\opt -v
