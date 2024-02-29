@@ -377,7 +377,7 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
 	}
 #endif
 #endif
-
+	// fast reject case
 	if (m == 0 ||  n == 0 || alpha == 0.0f)
 		return;
 
