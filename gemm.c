@@ -433,9 +433,9 @@ static void sgemm_k(cblas_args_t* args)
 void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float alpha, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float beta, float* c, CBLAS_INDEX ldc)
 {
 #ifdef CBLAS_CHECK_INPUTS
-    int nota = transa == CblasNoTrans;
-    int notb = transb == CblasNoTrans;
-    int nrowa, nrowb;
+    int nota = (transa == CblasNoTrans);
+    int notb = (transb == CblasNoTrans);
+    CBLAS_INDEX nrowa, nrowb;
 
     if (nota)
         nrowa = m;
@@ -489,12 +489,12 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     CBLAS_INDEX pb, ib;
 
 #if 1 // defined(MT_ENABLED)
-    int horiz_tiles = k / kc + 1;
-    int vert_tiles = m / mc + 1;
-    int total_tiles = horiz_tiles * vert_tiles;
+    CBLAS_INDEX horiz_tiles = k / kc + 1;
+    CBLAS_INDEX vert_tiles = m / mc + 1;
+    CBLAS_INDEX total_tiles = horiz_tiles * vert_tiles;
     int tile_count = 0;
 
-    //printf("tile count = %d\n", total_tiles);
+    //printf("tile count = %u\n", total_tiles);
     #ifdef _WIN32
         work_queue_t *queue = _malloca(total_tiles * sizeof(work_queue_t));
         cblas_args_t *args = _malloca(total_tiles * sizeof(cblas_args_t));
@@ -579,9 +579,9 @@ void cblas_sgemm_naive(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSP
 void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, double alpha, double *a, CBLAS_INDEX lda, double *b, CBLAS_INDEX ldb, double beta, double *c, CBLAS_INDEX ldc)
 {
 #ifdef CBLAS_CHECK_INPUTS
-    int nota = transa == CblasNoTrans;
-    int notb = transb == CblasNoTrans;
-    int nrowa, nrowb;
+    int nota = (transa == CblasNoTrans);
+    int notb = (transb == CblasNoTrans);
+    CBLAS_INDEX nrowa, nrowb;
 
     if (nota)
         nrowa = m;
