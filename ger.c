@@ -177,13 +177,18 @@ static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_IN
 			ap += 4;
 		}
 
-		// handle leftover cols
-		switch (n - col)
+		// handle leftover cols handling each of the 4 rows in this block
+		for (int i = 0; i < 4; i++)
 		{
-		case 3: AddProd(*xr, Y(col + 2), &A(col + 2, row));
-		case 2: AddProd(*xr, Y(col + 1), &A(col + 1, row));
-		case 1: AddProd(*xr, Y(col), &A(col, row));
-		case 0:;	// do nothing!
+			switch (n - col)
+			{
+			case 3: AddProd(*xr, Y(col + 2), &A(col + 2, row + i));
+			case 2: AddProd(*xr, Y(col + 1), &A(col + 1, row + i));
+			case 1: AddProd(*xr, Y(col), &A(col, row + i));
+			case 0:;	// do nothing!
+			}
+
+			xr = &X(row + i);
 		}
 	}
 
@@ -297,7 +302,7 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
     {
 		if (alpha == 1.0f)
 		{
-			sger_row_noalpha(m, n,  x, incx, y, incy, a, lda);
+			sger_row_noalpha4x4(m, n,  x, incx, y, incy, a, lda);
 		}
 		else
 		{
