@@ -154,7 +154,40 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
 //------------------------------------------------------
 void cblas_level2_exec()
 {
+    work_queue_t queue[MAX_THREADS];
+    cblas_args_t args[MAX_THREADS];
 
+    int thread_count = CLAMP(cblas_get_num_threads(), 1, MAX_THREADS);
+
+    //for (int i = 0; i < thread_count; i++)
+    //{
+    //    args[i].incx = incx;
+    //    args[i].incy = incy;
+
+    //    // compute partition starts based on remaining task size and remaining threads
+    //    CBLAS_INDEX partition_size = (n + thread_count - i - 1) / (thread_count - i);
+
+    //    args[i].n = partition_size;
+    //    args[i].x = x;
+    //    args[i].y = y;
+
+    //    n -= partition_size;
+
+    //    // TODO - the x/y is wrong when incx/incy is > 1
+    //    x = (void*)((CBLAS_INDEX)x + partition_size * incx * stride);
+    //    y = (void*)((CBLAS_INDEX)y + partition_size * incy * stride);
+
+    //    queue[i].finished = 0;
+    //    queue[i].args = &args[i];
+    //    queue[i].kernel = kernel;
+    //    queue[i].next = &queue[i + 1];
+    //}
+
+    //// mark end of task queue
+    //queue[thread_count - 1].next = NULL;
+
+    //// synchronously execute task queue
+    //cblas_execute(thread_count, queue);
 }
 
 //------------------------------------------------------
