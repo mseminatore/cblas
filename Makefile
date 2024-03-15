@@ -2,11 +2,11 @@
 ARCH = $(shell uname -m)
 TARGET = blas_test
 OBJS = swap.o dot.o copy.o axpy.o scal.o axpby.o asum.o nrm2.o rot.o ger.o \
-	gemv.o gemm.o rotg.o util.o server.o test_main.o setv.o
+	gemv.o gemm.o rotg.o util.o server.o setv.o
 DEPS = cblas.h test.h
 CFLAGS += -g -O2 #-DNDEBUG
 LIBNAME = libcblas.a
-LFLAGS += -L. -lm -lcblas
+LFLAGS += -L. -lcblas -lm
 
 # add Intel specific compiler flags
 ifeq ($(ARCH), x86_64)
@@ -29,10 +29,10 @@ all: $(LIBNAME) blas_stress blas_test gemm_perf ger_perf
 $(LIBNAME): $(OBJS)
 	ar rcs $(LIBNAME) $(OBJS)
 
-blas_stress: $(LIBNAME) test_stress.o
+blas_stress: $(LIBNAME) test_main.o test_stress.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-blas_test: $(LIBNAME) test.o
+blas_test: $(LIBNAME) test_main.o test.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 gemm_perf: $(LIBNAME) gemm_perf.o
@@ -50,5 +50,5 @@ install:
 	sudo cp cblas.h /opt/cblas/include
 
 clean:
-	rm $(TARGET) $(OBJS) $(LIBNAME) test.o blas_stress.o blas_stress blas_test.o blas_test gemm_perf.o gemm_perf ger_perf.o ger_perf
+	rm $(TARGET) $(OBJS) $(LIBNAME) test_main.o test.o test_stress.o blas_stress blas_test.o blas_test gemm_perf.o gemm_perf ger_perf.o ger_perf
 
