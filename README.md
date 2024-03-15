@@ -8,9 +8,12 @@ CBLAS is an experimental implementation of a subset of the full BLAS (Basic
 Linear Algebra Subprograms) library standard. You can find the documentation
 and reference implementations [here](https://www.netlib.org/blas/).
 
-The library is built and tested on Windows (MSVC and Clang), MacOS (Clang),
-and Ubuntu Linux (gcc). The library supports SIMD and multi-threading for 
-performance. However, not all functions have been optimized to take advantage 
+The library is built and tested on a wide range of platform and OS 
+combinations including Windows (MSVC and Clang), MacOS (Clang), 
+Ubuntu Linux (gcc), and Raspbian OS (gcc). 
+
+The library supports SIMD and multi-threading for performance. However, not 
+all functions have been optimized to take advantage 
 of these features. The primary focus for SIMD and Multi-threading work will be
 on the level-3 functions, followed by level-2, etc.
 

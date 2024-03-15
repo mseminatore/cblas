@@ -40,7 +40,7 @@ else()
 endif()
 
 # link with correct cpuid code
-if ( CMAKE_HOST_SYSTEM_PROCESSOR MATCHES arm64)
+if ( CMAKE_HOST_SYSTEM_PROCESSOR MATCHES arm64 OR CMAKE_HOST_SYSTEM_PROCESSOR MATCHES aarch64)
     set(CPUID_FILE "cpuid_arm64.c")
 else()
     set(CPUID_FILE "cpuid_x64.c")
