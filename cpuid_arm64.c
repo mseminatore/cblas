@@ -23,7 +23,7 @@ enum {
 
 static const char *cpu_names[] =
 {
-    "Generic",
+    "Generic ARM Core",
     "Vortex-M1",
     "Vortex-M2",
     "Vortex-M3"
@@ -60,7 +60,7 @@ unsigned int cpu_get_features()
 {
 	unsigned int features = CPU_NONE;
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__aarch64__)
     features |= CPU_NEON;
     features |= CPU_NEON_FMA;
 #endif
