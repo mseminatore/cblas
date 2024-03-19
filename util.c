@@ -59,7 +59,7 @@ const char *cblas_get_isa_features()
 
     buf[0] = 0;
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__aarch64__)
     if (cpu & CPU_NEON)
         strcat(buf, "NEON");
 

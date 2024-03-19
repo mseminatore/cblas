@@ -3,7 +3,7 @@
 // Copyright 2023 Mark Seminatore. All rights reserved.
 //------------------------------------------------------
 
-#include <math.h>
+//#include <math.h>
 #include "cblas.h"
 
 //------------------------------------------------------
