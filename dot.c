@@ -6,6 +6,48 @@
 #include "cblas.h"
 
 //------------------------------------------------------
+// single-precision vector dot product kernel
+//------------------------------------------------------
+static void cblas_sdot_k(cblas_args_t* args)
+{
+    float sum = 0.0f;
+    float* x = args->x;
+    float* y = args->y;
+    float* result = args->c;
+    register CBLAS_INDEX incx = args->incx, incy = args->incy, n = args->n;
+
+    for (CBLAS_INDEX i = 0; i < n; i++)
+    {
+        sum += *x * *y;
+        x += incx;
+        y += incy;
+    }
+
+    // set return value
+    *result = sum;
+}
+
+//------------------------------------------------------
+// single-precision vector dot product kernel inc=1
+//------------------------------------------------------
+static void cblas_sdot_k_noinc(cblas_args_t* args)
+{
+    float sum = 0.0f;
+    float* x = args->x;
+    float* y = args->y;
+    float* result = args->c;
+    register CBLAS_INDEX incx = args->incx, incy = args->incy, n = args->n;
+
+    for (CBLAS_INDEX i = 0; i < n; i++)
+    {
+        sum += *x++ * *y++;
+    }
+
+    // set return value
+    *result = sum;
+}
+
+//------------------------------------------------------
 // Level-1 single-precision vector dot product
 //------------------------------------------------------
 float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy)
@@ -31,17 +73,37 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
     if (n <= 0 || !x || !y)
     {
         assert(n > 0 && x && y);
-        return 0.0f;
+        return sum;
     }
 #endif  // CBLAS_XERBLA_INPUTS
 #endif  // CBLAS_CHECK_INPUTS
 
-    for (CBLAS_INDEX i = 0; i < n; i++)
+#if 0 // MT_ENABLED
+    kernel_function kernel = cblas_sdot_k;
+    if (incx == 1 && incy == 1)
+        kernel = cblas_sdot_k_noinc;
+
+    cblas_level1_exec(sizeof(float), kernel, n, x, incx, y, incy);
+
+    // accumulate results
+#else
+    if (incx == 1 && incy == 1)
     {
-        sum += *x * *y;
-        x += incx;
-        y += incy;
+        for (CBLAS_INDEX i = 0; i < n; i++)
+        {
+            sum += *x++ * *y++;
+        }
+    } 
+    else
+    {
+        for (CBLAS_INDEX i = 0; i < n; i++)
+        {
+            sum += *x * *y;
+            x += incx;
+            y += incy;
+        }
     }
+#endif
 
     return sum;
 }
