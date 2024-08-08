@@ -435,6 +435,15 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 #ifdef CBLAS_CHECK_INPUTS
     int nota = (transa == CblasNoTrans);
     int notb = (transb == CblasNoTrans);
+    int nrowc = m;
+
+    if (layout == CblasRowMajor)
+    {
+        nota = !nota;
+        notb = !notb;
+        nrowc = n;
+    }
+
     CBLAS_INDEX nrowa, nrowb;
 
     if (nota)
@@ -465,7 +474,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         info = 11;
     else if (!c)
         info = 12;
-    else if (ldc < MAX(1, m))
+    else if (ldc < MAX(1, nrowc))
         info = 13;
 
     if (info) {
@@ -581,6 +590,15 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 #ifdef CBLAS_CHECK_INPUTS
     int nota = (transa == CblasNoTrans);
     int notb = (transb == CblasNoTrans);
+    int nrowc = m;
+
+    if (layout == CblasRowMajor)
+    {
+        nota = !nota;
+        notb = !notb;
+        nrowc = n;
+    }
+
     CBLAS_INDEX nrowa, nrowb;
 
     if (nota)
@@ -603,15 +621,15 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         info = 6;
     else if (!a)
         info = 8;
-    else if (lda < MAX(1, m))
+    else if (lda < MAX(1, nrowa))
         info = 9;
     else if (!b)
         info = 10;
-    else if (ldb < MAX(1, k))
+    else if (ldb < MAX(1, nrowb))
         info = 11;
     else if (!c)
         info = 12;
-    else if (ldc < MAX(1, m))
+    else if (ldc < MAX(1, nrowc))
         info = 13;
 
     if (info) {
