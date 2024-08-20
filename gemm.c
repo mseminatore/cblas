@@ -497,7 +497,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 
     CBLAS_INDEX pb, ib;
 
-#if 1 // defined(MT_ENABLED)
+#if defined(MT_ENABLED)
     CBLAS_INDEX horiz_tiles = k / kc + 1;
     CBLAS_INDEX vert_tiles = m / mc + 1;
     CBLAS_INDEX total_tiles = horiz_tiles * vert_tiles;

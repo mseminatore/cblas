@@ -78,7 +78,7 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
 #endif  // CBLAS_XERBLA_INPUTS
 #endif  // CBLAS_CHECK_INPUTS
 
-#if 0 // MT_ENABLED
+#if 0 // defined(MT_ENABLED)
     kernel_function kernel = cblas_sdot_k;
     if (incx == 1 && incy == 1)
         kernel = cblas_sdot_k_noinc;
