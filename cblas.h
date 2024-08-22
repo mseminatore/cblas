@@ -41,6 +41,8 @@
 // uncomment to enable SSE SIMD instruction usage
 #define USE_SSE
 
+#define USE_SIMD
+
 // uncomment to enable FMA3 instruction usage
 //#define USE_INTEL_FMA
 
