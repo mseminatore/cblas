@@ -51,7 +51,7 @@ static void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, float *g
 	}
 }
 
-#if defined(USE_SSE) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
 
 //------------------------------------------------------
 // compute 16 dot products at a time, 4 cols x 4 rows
@@ -104,7 +104,7 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
     _mm_store_ps(&C(0, 3), c_row4);
 }
 
-#elif defined(__aarch64__)
+#elif defined(__aarch64__) && defined(USE_SIMD)
 
 static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
 {
@@ -324,19 +324,12 @@ static void PackMatrixA(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
     // loop over cols of A
     for (i = 0; i < k; i++)
     {
-#if 1
         *a_to       = *a_0i_pntr++;
         *(a_to + 1) = *a_1i_pntr++;
         *(a_to + 2) = *a_2i_pntr++;
         *(a_to + 3) = *a_3i_pntr++;
 
         a_to += 4;
-#else
-        *a_to++ = *a_0i_pntr++;
-        *a_to++ = *a_1i_pntr++;
-        *a_to++ = *a_2i_pntr++;
-        *a_to++ = *a_3i_pntr++;
-#endif
     }
 }
 
@@ -497,7 +490,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 
     CBLAS_INDEX pb, ib;
 
-#if 1 // defined(MT_ENABLED)
+#if defined(MT_ENABLED)
     CBLAS_INDEX horiz_tiles = k / kc + 1;
     CBLAS_INDEX vert_tiles = m / mc + 1;
     CBLAS_INDEX total_tiles = horiz_tiles * vert_tiles;

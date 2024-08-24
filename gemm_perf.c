@@ -11,7 +11,7 @@
 #   include <Windows.h>
 #endif
 
-#define MAX_SIZE 1024
+#define MAX_SIZE 8192
 
 float x[MAX_SIZE], y[MAX_SIZE];
 float a[MAX_SIZE * MAX_SIZE], b[MAX_SIZE * MAX_SIZE], c[MAX_SIZE * MAX_SIZE];
