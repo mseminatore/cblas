@@ -426,9 +426,9 @@ static void sgemm_k(cblas_args_t* args)
 void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float alpha, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float beta, float* c, CBLAS_INDEX ldc)
 {
 #ifdef CBLAS_CHECK_INPUTS
-    int nota = (transa == CblasNoTrans);
-    int notb = (transb == CblasNoTrans);
-    int nrowc = m;
+    CBLAS_INDEX nota = (transa == CblasNoTrans);
+    CBLAS_INDEX notb = (transb == CblasNoTrans);
+    CBLAS_INDEX nrowc = m;
 
     if (layout == CblasRowMajor)
     {
@@ -581,9 +581,9 @@ void cblas_sgemm_naive(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSP
 void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, double alpha, double *a, CBLAS_INDEX lda, double *b, CBLAS_INDEX ldb, double beta, double *c, CBLAS_INDEX ldc)
 {
 #ifdef CBLAS_CHECK_INPUTS
-    int nota = (transa == CblasNoTrans);
-    int notb = (transb == CblasNoTrans);
-    int nrowc = m;
+    CBLAS_INDEX nota = (transa == CblasNoTrans);
+    CBLAS_INDEX notb = (transb == CblasNoTrans);
+    CBLAS_INDEX nrowc = m;
 
     if (layout == CblasRowMajor)
     {

@@ -9,9 +9,24 @@
 //------------------------------------------------------
 // state variables
 //------------------------------------------------------
-int cblas_max_threads   = MAX_THREADS;    // max system supported threads
-int cblas_set_threads   = 1;              // set number of threads
-int cblas_server_alive  = 0;              // has thread server been initialized
+volatile int cblas_max_threads  = MAX_THREADS;  // max system supported threads
+static int cblas_server_alive   = FALSE;        // has thread server been initialized
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+int cblas_is_server_alive()
+{
+    return cblas_server_alive;
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+void cblas_set_server_alive(int yesno)
+{
+    cblas_server_alive = yesno;
+}
 
 //------------------------------------------------------
 // use secure run-time calls if available
@@ -154,8 +169,8 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
 //------------------------------------------------------
 void cblas_level2_exec()
 {
-    work_queue_t queue[MAX_THREADS];
-    cblas_args_t args[MAX_THREADS];
+    //work_queue_t queue[MAX_THREADS];
+    //cblas_args_t args[MAX_THREADS];
 
     int thread_count = CLAMP(cblas_get_num_threads(), 1, MAX_THREADS);
 
@@ -239,4 +254,38 @@ void cblas_init(int threads)
 int cblas_get_num_threads(void)
 {
     return cblas_max_threads;
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+void cblas_timer_get_time(struct cblas_timer* t)
+{
+#ifdef _WIN32
+    QueryPerformanceCounter(&t->t);
+#else
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t->t);
+#endif
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+float cblas_timer_get_delta(struct cblas_timer* t1, struct cblas_timer* t2)
+{
+    float dt;
+
+#ifdef _WIN32
+    LARGE_INTEGER freq;
+    QueryPerformanceFrequency(&freq);
+
+    dt = (t2->t.QuadPart - t1->t.QuadPart) / (float)freq.QuadPart;
+
+#else
+    int seconds = (int)(t2->t.tv_sec - t1->t.tv_sec);
+    long long ns = t2->t.tv_nsec - t1->t.tv_nsec;
+    dt = (float)seconds + (float)ns / (1000000000);
+#endif
+
+    return dt;
 }

@@ -11,6 +11,10 @@
 #include <assert.h>
 #include <string.h>
 
+#ifdef _WIN32
+#   include <Windows.h>
+#endif
+
 #ifdef __cplusplus
     extern "C" {
 #endif
@@ -99,7 +103,7 @@ typedef size_t CBLAS_INDEX;
     #ifdef NDEBUG
     #   define CHECK_ALIGN(p, align)
     #else
-    #   define CHECK_ALIGN(p, align) assert(!(((int)p) & ((align) - 1)))
+    #   define CHECK_ALIGN(p, align) assert(!(((intptr_t)p) & ((align) - 1)))
     #endif
 #endif
 
@@ -269,6 +273,22 @@ void cblas_print_configuration();
 //------------------------------------------------------
 // internal functions
 //------------------------------------------------------
+int cblas_is_server_alive();
+void cblas_set_server_alive(int yesno);
+void cblas_timer_get_time(struct cblas_timer* t);
+float cblas_timer_get_delta(struct cblas_timer* t1, struct cblas_timer* t2);
+
+//------------------------------------------------------
+// testing functions/structs
+//------------------------------------------------------
+struct cblas_timer
+{
+#ifdef WIN32
+    LARGE_INTEGER t;
+#else
+    struct timespec t;
+#endif
+};
 
 #ifdef __cplusplus
     }

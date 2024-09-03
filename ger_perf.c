@@ -7,77 +7,28 @@
 #include <time.h>
 #include "cblas.h"
 
-#ifdef WIN32
-#   include <Windows.h>
-#endif
-
 #define MAX_SIZE 8192
 
 float x[MAX_SIZE], y[MAX_SIZE];
 float a[MAX_SIZE * MAX_SIZE], b[MAX_SIZE * MAX_SIZE];
-
-struct timer
-{
-#ifdef WIN32
-    LARGE_INTEGER t;
-#else
-    struct timespec t;
-#endif
-
-};
-
-//------------------------------------------------------
-//
-//------------------------------------------------------
-void timer_get_time(struct timer* t)
-{
-#ifdef WIN32
-    QueryPerformanceCounter(&t->t);
-#else
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t->t);
-#endif
-
-}
-
-//------------------------------------------------------
-//
-//------------------------------------------------------
-float timer_get_delta(struct timer *t1, struct timer *t2)
-{
-    float dt;
-
-#ifdef WIN32
-    LARGE_INTEGER freq;
-    QueryPerformanceFrequency(&freq);
-
-    dt = (t2->t.QuadPart - t1->t.QuadPart) / (float)freq.QuadPart;
-
-#else
-    int seconds = (int)(t2->t.tv_sec - t1->t.tv_sec);
-    long long ns = t2->t.tv_nsec - t1->t.tv_nsec;
-    dt = (float)seconds + (float)ns / (1000000000);
-#endif
-
-    return dt;
-}
 
 //------------------------------------------------------
 //
 //------------------------------------------------------
 void test_copy()
 {
-    struct timer t1, t2;
+    struct cblas_timer t1, t2;
     float dt;
 
     printf("Testing performance of cblas_scopy()\n\n");
 
     CBLAS_INDEX n = MAX_SIZE * MAX_SIZE;
 
-    timer_get_time(&t1);
+    cblas_timer_get_time(&t1);
         cblas_scopy(n, a, 1, b, 1);
-    timer_get_time(&t2);
+    cblas_timer_get_time(&t2);
 
-    dt = timer_get_delta(&t1, &t2);
+    dt = cblas_timer_get_delta(&t1, &t2);
 
     printf("copied %dMB at %5.2f MB/s\n", 1, (float)1 / dt);
 }
@@ -87,7 +38,7 @@ void test_copy()
 //------------------------------------------------------
 void test_ger()
 {
-    struct timer t1, t2;
+    struct cblas_timer t1, t2;
     float dt;
 
     printf("Testing performance of cblas_sger()\n\n");
@@ -98,13 +49,13 @@ void test_ger()
     {
         m = n = i;
 
-        timer_get_time(&t1);
+        cblas_timer_get_time(&t1);
 
         cblas_sger(CblasRowMajor, m, n, 1.0f, x, 1, y, 1, a, m);
 
-        timer_get_time(&t2);
+        cblas_timer_get_time(&t2);
 
-        dt = timer_get_delta(&t1, &t2);
+        dt = cblas_timer_get_delta(&t1, &t2);
 
         printf("%4d: %5.2f GFlops in %5.2fs\n", i, (float)2 * m * n / 1000000000 / dt, dt);
     }

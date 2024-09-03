@@ -7,7 +7,6 @@
 #include "cblas.h"
 
 extern volatile int cblas_max_threads;
-extern int cblas_server_alive;
 
 static HANDLE cblas_threads[MAX_THREADS];
 static DWORD cblas_thread_ids[MAX_THREADS];
@@ -51,7 +50,7 @@ void cblas_set_num_threads(int threads)
     }
 
     // reduce threads
-    if (cblas_server_alive && threads < cblas_max_threads)
+    if (cblas_is_server_alive() && threads < cblas_max_threads)
     {
         EnterCriticalSection(&server_lock);
 
@@ -77,7 +76,7 @@ void cblas_set_num_threads(int threads)
     }
 
     // add more threads if needed
-    if (cblas_server_alive && threads > cblas_max_threads)
+    if (cblas_is_server_alive() && threads > cblas_max_threads)
     {
         EnterCriticalSection(&server_lock);
 
@@ -107,7 +106,7 @@ void cblas_set_num_threads(int threads)
 //------------------------------------------------------
 int cblas_init_server()
 {
-    if (cblas_server_alive || cblas_max_threads <= 1)
+    if (cblas_is_server_alive() || cblas_max_threads <= 1)
         return FALSE;
 
     // create the kickoff Event
@@ -132,7 +131,7 @@ int cblas_init_server()
         );
     }
 
-    cblas_server_alive = TRUE;
+    cblas_set_server_alive(TRUE);
 
     LeaveCriticalSection(&server_lock);
 
@@ -144,8 +143,8 @@ int cblas_init_server()
 //------------------------------------------------------
 void cblas_shutdown()
 {
-    if (cblas_server_alive)
-        cblas_server_alive = FALSE;
+    if (cblas_is_server_alive())
+        cblas_set_server_alive(FALSE);
     else
         return;
 
