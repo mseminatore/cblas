@@ -17,14 +17,14 @@ all functions have been optimized to take advantage
 of these features. The primary focus for SIMD and Multi-threading work will be
 on the level-3 functions, followed by level-2, etc.
 
-> It is a not yet fully realized goal that, if advanced SIMD instructions for
-> a particular platform are available (AVX, AVX2, NEON, FMA), that they will 
-> be leveraged. This is a work in progress.
+> It is a not yet fully realized goal that advanced SIMD instructions 
+> (AVX, AVX2, NEON, FMA) will be leveraged if they are available for a given
+> platform. SIMD support is a work in progress.
 
 This project started as a basic implementation of the BLAS
-routines required for my [libann](https://www.github.com/mseminatore/ann) neural
-networking library. Curiosity about performance evolved the project
-into an exploratory playground for deep optimization for modern CPU architectures.
+routines that were required for my [libann](https://www.github.com/mseminatore/ann) neural
+networking library. Curiosity about maximizing performance evolved the project
+into an exploratory playground for deep optimization on modern CPU architectures.
 
 If you are curious to learn more about how BLAS-like libraries can be optimized
 I highly recommend 
