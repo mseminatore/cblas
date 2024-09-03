@@ -10,6 +10,7 @@
 #include <math.h>
 #include <assert.h>
 #include <string.h>
+#include <time.h>
 
 #ifdef _WIN32
 #   include <Windows.h>
@@ -273,22 +274,23 @@ void cblas_print_configuration();
 //------------------------------------------------------
 // internal functions
 //------------------------------------------------------
-int cblas_is_server_alive();
-void cblas_set_server_alive(int yesno);
-void cblas_timer_get_time(struct cblas_timer* t);
-float cblas_timer_get_delta(struct cblas_timer* t1, struct cblas_timer* t2);
 
 //------------------------------------------------------
 // testing functions/structs
 //------------------------------------------------------
 struct cblas_timer
 {
-#ifdef WIN32
+#ifdef _WIN32
     LARGE_INTEGER t;
 #else
     struct timespec t;
 #endif
 };
+
+int cblas_is_server_alive();
+void cblas_set_server_alive(int yesno);
+void cblas_timer_get_time(struct cblas_timer* t);
+float cblas_timer_get_delta(struct cblas_timer* t1, struct cblas_timer* t2);
 
 #ifdef __cplusplus
     }

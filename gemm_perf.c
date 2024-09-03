@@ -4,7 +4,6 @@
 //------------------------------------------------------
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
 #include "cblas.h"
 
 #define MAX_SIZE 8192
