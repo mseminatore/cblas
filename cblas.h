@@ -291,6 +291,8 @@ int cblas_is_server_alive();
 void cblas_set_server_alive(int yesno);
 void cblas_timer_get_time(struct cblas_timer* t);
 float cblas_timer_get_delta(struct cblas_timer* t1, struct cblas_timer* t2);
+void cblas_set_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows);
+int cblas_is_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows);
 
 #ifdef __cplusplus
     }

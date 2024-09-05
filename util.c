@@ -289,3 +289,38 @@ float cblas_timer_get_delta(struct cblas_timer* t1, struct cblas_timer* t2)
 
     return dt;
 }
+
+//------------------------------------------------------
+// set given matrix to identity
+//------------------------------------------------------
+void cblas_set_identity(float *mtx, CBLAS_INDEX cols, CBLAS_INDEX rows)
+{
+    for (CBLAS_INDEX row = 0; row < rows; row++)
+        for (CBLAS_INDEX col = 0; col < cols; col++)
+            mtx[row * cols + col] = (row == col) ? 1.0f : 0.0f;
+}
+
+//------------------------------------------------------
+// test given matrix for identity
+//------------------------------------------------------
+int cblas_is_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows)
+{
+    for (CBLAS_INDEX row = 0; row < rows; row++)
+        for (CBLAS_INDEX col = 0; col < cols; col++)
+        {
+            float val = mtx[row * cols + col];
+            
+            if (row == col)
+            {
+                if (val != 1.0f)
+                    return FALSE;
+            }
+            else
+            {
+                if (val != 0.0f)
+                    return FALSE;
+            }
+        }
+
+    return TRUE;
+}

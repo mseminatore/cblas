@@ -386,6 +386,8 @@ static void test_gemv()
 		float sy[3] = {0,0,0};
 		float sz[3] = {4, 4, 4};
 
+		TEST(cblas_is_identity(smtx, 3, 3));
+
 		{
 			float sy[3] = {0};
 			cblas_sgemv(CblasRowMajor, CblasNoTrans, 3, 3, 1.0f, smtx, 3, sx, 1, 1.0f, sy, 1);
