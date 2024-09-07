@@ -259,7 +259,7 @@ int cblas_get_num_threads(void)
 //------------------------------------------------------
 //
 //------------------------------------------------------
-void cblas_timer_get_time(struct cblas_timer* t)
+void cbu_timer_get_time(struct cblas_timer* t)
 {
 #ifdef _WIN32
     QueryPerformanceCounter(&t->t);
@@ -271,7 +271,7 @@ void cblas_timer_get_time(struct cblas_timer* t)
 //------------------------------------------------------
 //
 //------------------------------------------------------
-float cblas_timer_get_delta(struct cblas_timer* t1, struct cblas_timer* t2)
+float cbu_timer_get_delta(struct cblas_timer* t1, struct cblas_timer* t2)
 {
     float dt;
 
@@ -323,4 +323,21 @@ int cbu_is_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows)
         }
 
     return CBLAS_TRUE;
+}
+
+//------------------------------------------------------
+// allocate and fill an identity matrix
+//------------------------------------------------------
+float *cbu_make_identity(int cols, int rows)
+{
+	float *mtx = malloc(cols * rows * sizeof(float));
+
+	if (!mtx)
+		return mtx;
+
+	for (int row = 0; row < rows; row++)
+		for (int col = 0; col < cols; cols++)
+			mtx[row * cols + col] = (row == col) ? 1.0f : 0.0f;
+
+	return mtx;
 }

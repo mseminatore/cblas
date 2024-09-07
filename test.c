@@ -32,23 +32,6 @@ static double dd[] = {9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0};
 //------------------------------------------------------
 //
 //------------------------------------------------------
-static float *make_identity(int cols, int rows)
-{
-	float *mtx = malloc(cols * rows * sizeof(float));
-
-	if (!mtx)
-		return mtx;
-
-	for (int row = 0; row < rows; row++)
-		for (int col = 0; col < cols; cols++)
-			mtx[row * cols + col] = (row == col) ? 1.0f : 0.0f;
-
-	return mtx;
-}
-
-//------------------------------------------------------
-//
-//------------------------------------------------------
 static void print_sarray(int n, float *x)
 {
 	putchar('{');

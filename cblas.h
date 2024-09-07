@@ -289,12 +289,13 @@ struct cblas_timer
 #endif
 };
 
-void cblas_timer_get_time(struct cblas_timer* t);
-float cblas_timer_get_delta(struct cblas_timer* t1, struct cblas_timer* t2);
+void cbu_timer_get_time(struct cblas_timer* t);
+float cbu_timer_get_delta(struct cblas_timer* t1, struct cblas_timer* t2);
 
 // Utility functions
 void cbu_set_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows);
 int cbu_is_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows);
+float *cbu_make_identity(int cols, int rows);
 
 #ifdef __cplusplus
     }

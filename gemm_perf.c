@@ -26,45 +26,17 @@ void test_gemm()
     {
         m = n = k = i;
 
-        cblas_timer_get_time(&t1);
+        cbu_timer_get_time(&t1);
 
         cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1.0f, a, m, b, k, 1.0f, c, k);
 
-        cblas_timer_get_time(&t2);
+        cbu_timer_get_time(&t2);
 
-        dt = cblas_timer_get_delta(&t1, &t2);
+        dt = cbu_timer_get_delta(&t1, &t2);
 
         printf("%4d: %5.2f GFlops in %5.2fs\n", i, (float)2 * m * n * k / 1000000000 / dt, dt);
     }
 }
-
-//------------------------------------------------------
-//
-//------------------------------------------------------
-//void test_ger()
-//{
-//    struct cblas_timer t1, t2;
-//    float dt;
-//
-//    printf("Testing performance of cblas_sger()\n\n");
-//
-//    CBLAS_INDEX m = MAX_SIZE, n = MAX_SIZE;
-//
-//    for (int i = 2; i <= MAX_SIZE; i <<= 1)
-//    {
-//        m = n = i;
-//
-//        cblas_timer_get_time(&t1);
-//
-//        cblas_sger(CblasRowMajor, m, n, 1.0f, x, 1, y, 1, a, m);
-//
-//        cblas_timer_get_time(&t2);
-//
-//        dt = cblas_timer_get_delta(&t1, &t2);
-//
-//        printf("%4d: %5.2f GFlops in %5.2fs\n", i, (float)2 * m * n / 1000000000 / dt, dt);
-//    }
-//}
 
 //------------------------------------------------------
 //
