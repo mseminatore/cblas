@@ -83,7 +83,7 @@ void cblas_set_num_threads(int threads)
 int cblas_init_server()
 {
     if (cblas_is_server_alive() || cblas_max_threads <= 1)
-        return FALSE;
+        return CBLAS_FALSE;
 
     // pthread_mutex_init(&queue_lock, NULL);
     // pthread_cond_init(&kickoff_event, NULL);
@@ -96,11 +96,11 @@ int cblas_init_server()
         pthread_create(&cblas_thread_ids[i], NULL, cblas_worker_thread, (void*)i);
     }
 
-    cblas_set_server_alive(TRUE);
+    cblas_set_server_alive(CBLAS_TRUE);
 
     pthread_mutex_unlock(&server_lock);
 
-    return TRUE;
+    return CBLAS_TRUE;
 }
 
 //------------------------------------------------------

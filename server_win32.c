@@ -107,7 +107,7 @@ void cblas_set_num_threads(int threads)
 int cblas_init_server()
 {
     if (cblas_is_server_alive() || cblas_max_threads <= 1)
-        return FALSE;
+        return CBLAS_FALSE;
 
     // create the kickoff Event
     kickoff_event = CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -131,11 +131,11 @@ int cblas_init_server()
         );
     }
 
-    cblas_set_server_alive(TRUE);
+    cblas_set_server_alive(CBLAS_TRUE);
 
     LeaveCriticalSection(&server_lock);
 
-    return TRUE;
+    return CBLAS_TRUE;
 }
 
 //------------------------------------------------------
@@ -144,7 +144,7 @@ int cblas_init_server()
 void cblas_shutdown()
 {
     if (cblas_is_server_alive())
-        cblas_set_server_alive(FALSE);
+        cblas_set_server_alive(CBLAS_FALSE);
     else
         return;
 

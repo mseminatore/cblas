@@ -80,12 +80,12 @@ typedef size_t CBLAS_INDEX;
 #   define XERBLA(param) xerbla(__func__, (param), strlen(__func__))
 #endif
 
-#ifndef TRUE
-#   define TRUE 1
+#ifndef CBLAS_TRUE
+#   define CBLAS_TRUE 1
 #endif
 
-#ifndef FALSE
-#   define FALSE 0
+#ifndef CBLAS_FALSE
+#   define CBLAS_FALSE 0
 #endif
 
 #ifndef MAX
@@ -274,6 +274,8 @@ void cblas_print_configuration();
 //------------------------------------------------------
 // internal functions
 //------------------------------------------------------
+int cblas_is_server_alive();
+void cblas_set_server_alive(int yesno);
 
 //------------------------------------------------------
 // testing functions/structs
@@ -287,12 +289,12 @@ struct cblas_timer
 #endif
 };
 
-int cblas_is_server_alive();
-void cblas_set_server_alive(int yesno);
 void cblas_timer_get_time(struct cblas_timer* t);
 float cblas_timer_get_delta(struct cblas_timer* t1, struct cblas_timer* t2);
-void cblas_set_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows);
-int cblas_is_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows);
+
+// Utility functions
+void cbu_set_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows);
+int cbu_is_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows);
 
 #ifdef __cplusplus
     }

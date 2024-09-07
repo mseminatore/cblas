@@ -10,10 +10,10 @@
 // state variables
 //------------------------------------------------------
 volatile int cblas_max_threads  = MAX_THREADS;  // max system supported threads
-static int cblas_server_alive   = FALSE;        // has thread server been initialized
+static int cblas_server_alive   = CBLAS_FALSE;  // has thread server been initialized
 
 //------------------------------------------------------
-//
+// return the current server status
 //------------------------------------------------------
 int cblas_is_server_alive()
 {
@@ -21,7 +21,7 @@ int cblas_is_server_alive()
 }
 
 //------------------------------------------------------
-//
+// mark the server as dead/alive
 //------------------------------------------------------
 void cblas_set_server_alive(int yesno)
 {
@@ -293,7 +293,7 @@ float cblas_timer_get_delta(struct cblas_timer* t1, struct cblas_timer* t2)
 //------------------------------------------------------
 // set given matrix to identity
 //------------------------------------------------------
-void cblas_set_identity(float *mtx, CBLAS_INDEX cols, CBLAS_INDEX rows)
+void cbu_set_identity(float *mtx, CBLAS_INDEX cols, CBLAS_INDEX rows)
 {
     for (CBLAS_INDEX row = 0; row < rows; row++)
         for (CBLAS_INDEX col = 0; col < cols; col++)
@@ -303,7 +303,7 @@ void cblas_set_identity(float *mtx, CBLAS_INDEX cols, CBLAS_INDEX rows)
 //------------------------------------------------------
 // test given matrix for identity
 //------------------------------------------------------
-int cblas_is_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows)
+int cbu_is_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows)
 {
     for (CBLAS_INDEX row = 0; row < rows; row++)
         for (CBLAS_INDEX col = 0; col < cols; col++)
@@ -313,14 +313,14 @@ int cblas_is_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows)
             if (row == col)
             {
                 if (val != 1.0f)
-                    return FALSE;
+                    return CBLAS_FALSE;
             }
             else
             {
                 if (val != 0.0f)
-                    return FALSE;
+                    return CBLAS_FALSE;
             }
         }
 
-    return TRUE;
+    return CBLAS_TRUE;
 }
