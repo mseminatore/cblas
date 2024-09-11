@@ -293,22 +293,31 @@ float cbu_timer_get_delta(struct cblas_timer* t1, struct cblas_timer* t2)
 //------------------------------------------------------
 // set given matrix to identity
 //------------------------------------------------------
-void cbu_set_identity(float *mtx, CBLAS_INDEX cols, CBLAS_INDEX rows)
+void cbu_sge_set_identity(float *mtx, CBLAS_INDEX cols, CBLAS_INDEX rows)
 {
     for (CBLAS_INDEX row = 0; row < rows; row++)
         for (CBLAS_INDEX col = 0; col < cols; col++)
             mtx[row * cols + col] = (row == col) ? 1.0f : 0.0f;
 }
 
-//------------------------------------------------------
-// test given matrix for identity
-//------------------------------------------------------
-int cbu_is_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows)
+void cbu_dge_set_identity(double *mtx, CBLAS_INDEX cols, CBLAS_INDEX rows)
 {
     for (CBLAS_INDEX row = 0; row < rows; row++)
         for (CBLAS_INDEX col = 0; col < cols; col++)
+            mtx[row * cols + col] = (row == col) ? 1.0 : 0.0;
+}
+
+//------------------------------------------------------
+// test given matrix for identity
+//------------------------------------------------------
+int cbu_sge_is_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows)
+{
+    float val;
+
+    for (CBLAS_INDEX row = 0; row < rows; row++)
+        for (CBLAS_INDEX col = 0; col < cols; col++)
         {
-            float val = mtx[row * cols + col];
+            val = mtx[row * cols + col];
             
             if (row == col)
             {
@@ -325,10 +334,34 @@ int cbu_is_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows)
     return CBLAS_TRUE;
 }
 
+int cbu_dge_is_identity(double* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows)
+{
+    double val;
+
+    for (CBLAS_INDEX row = 0; row < rows; row++)
+        for (CBLAS_INDEX col = 0; col < cols; col++)
+        {
+            val = mtx[row * cols + col];
+
+            if (row == col)
+            {
+                if (val != 1.0)
+                    return CBLAS_FALSE;
+            }
+            else
+            {
+                if (val != 0.0)
+                    return CBLAS_FALSE;
+            }
+        }
+
+    return CBLAS_TRUE;
+}
+
 //------------------------------------------------------
 // allocate and fill an identity matrix
 //------------------------------------------------------
-float *cbu_make_identity(int cols, int rows)
+float *cbu_sge_make_identity(int cols, int rows)
 {
 	float *mtx = malloc(cols * rows * sizeof(float));
 
@@ -340,4 +373,18 @@ float *cbu_make_identity(int cols, int rows)
 			mtx[row * cols + col] = (row == col) ? 1.0f : 0.0f;
 
 	return mtx;
+}
+
+double* cbu_dge_make_identity(int cols, int rows)
+{
+    double* mtx = malloc(cols * rows * sizeof(double));
+
+    if (!mtx)
+        return mtx;
+
+    for (int row = 0; row < rows; row++)
+        for (int col = 0; col < cols; cols++)
+            mtx[row * cols + col] = (row == col) ? 1.0 : 0.0;
+
+    return mtx;
 }

@@ -57,7 +57,7 @@
 #define COMMENT(s)      printf("\t%s" s "%s\n", TERM_BRIGHT_BLUE, TERM_RESET)
 #define SUITE(s)        printf("\nTesting suite %s" s "%s...\n", TERM_YELLOW, TERM_RESET); test_suites++
 #define MODULE(s)       printf("\nModule %s" s "%s...\n", TERM_BRIGHT_MAGENTA, TERM_RESET); test_modules++
-#define END_TESTS()     printf("\n%sTest pass completed%s.\nEvaluated %s%d%s modules, %s%d%s suites, and %s%d%s tests with %s%d%s failed test case(s).\n\n", TERM_BRIGHT_MAGENTA, TERM_RESET, TERM_GREEN, test_modules, TERM_RESET, TERM_GREEN, test_suites, TERM_RESET, TERM_GREEN, test_number, TERM_RESET, test_failures ? TERM_BRIGHT_RED : TERM_GREEN, test_failures, TERM_RESET); return test_failures
+#define END_TESTS()     printf("\n%sTest pass completed%s!\n%s%d%s failed test case(s) out of %s%d%s tests in %s%d%s modules with %s%d%s suites.\n\n", TERM_BRIGHT_MAGENTA, TERM_RESET, test_failures ? TERM_BRIGHT_RED : TERM_GREEN, test_failures, TERM_RESET,TERM_GREEN, test_number, TERM_RESET, TERM_GREEN, test_modules, TERM_RESET, TERM_GREEN, test_suites, TERM_RESET); return test_failures
 
 #ifndef TRUE
 #	define TRUE 1

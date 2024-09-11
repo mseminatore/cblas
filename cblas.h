@@ -293,9 +293,12 @@ void cbu_timer_get_time(struct cblas_timer* t);
 float cbu_timer_get_delta(struct cblas_timer* t1, struct cblas_timer* t2);
 
 // Utility functions
-void cbu_set_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows);
-int cbu_is_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows);
-float *cbu_make_identity(int cols, int rows);
+void cbu_sge_set_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows);
+void cbu_dge_set_identity(double* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows);
+int cbu_sge_is_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows);
+int cbu_dge_is_identity(double* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows);
+float *cbu_sge_make_identity(int cols, int rows);
+double* cbu_dge_make_identity(int cols, int rows);
 
 #ifdef __cplusplus
     }

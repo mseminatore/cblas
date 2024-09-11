@@ -369,7 +369,7 @@ static void test_gemv()
 		float sy[3] = {0,0,0};
 		float sz[3] = {4, 4, 4};
 
-		TEST(cbu_is_identity(smtx, 3, 3));
+		TEST(cbu_sge_is_identity(smtx, 3, 3));
 
 		{
 			float sy[3] = {0};
@@ -395,6 +395,8 @@ static void test_gemv()
 		double dx[3] = {2,2,2};
 		double dy[3] = {0,0,0};
 		double dz[3] = {4,4,4};
+
+		TEST(cbu_dge_is_identity(dmtx, 3, 3));
 
 		{
 			double dy[3] = {0};
