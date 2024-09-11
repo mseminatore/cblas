@@ -143,10 +143,10 @@ int cblas_init_server()
 //------------------------------------------------------
 void cblas_shutdown()
 {
-    if (cblas_is_server_alive())
-        cblas_set_server_alive(CBLAS_FALSE);
-    else
+    if (!cblas_is_server_alive())
         return;
+
+    cblas_set_server_alive(CBLAS_FALSE);
 
     // TODO - shutdown threads? set thread count to 1, wake threads and let them die gracefully
 
