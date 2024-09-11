@@ -158,7 +158,8 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
     }
 
     // mark end of task queue
-    queue[thread_count - 1].next = NULL;
+//    if (thread_count)
+        queue[thread_count - 1].next = NULL;
 
     // synchronously execute task queue
     cblas_execute(thread_count, queue);

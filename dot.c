@@ -79,13 +79,23 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
 #endif  // CBLAS_CHECK_INPUTS
 
 #if 0 // defined(MT_ENABLED)
+    float thread_partial_sums[MAX_THREADS];
+
     kernel_function kernel = cblas_sdot_k;
+
+    // special case kernel for no increments
     if (incx == 1 && incy == 1)
         kernel = cblas_sdot_k_noinc;
 
     cblas_level1_exec(sizeof(float), kernel, n, x, incx, y, incy);
 
     // accumulate results
+    CBLAS_INDEX threads = cblas_get_num_threads();
+    for (CBLAS_INDEX i = 0; i < threads; i++)
+    {
+        sum += thread_partial_sums[i];
+    }
+
 #else
     if (incx == 1 && incy == 1)
     {
