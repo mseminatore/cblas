@@ -126,14 +126,14 @@ void cblas_print_configuration()
 //------------------------------------------------------
 // leve1 1 dispatch
 //------------------------------------------------------
-void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n, void *x, CBLAS_INDEX incx, void *y, CBLAS_INDEX incy)
+void cblas_level1_exec(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_INDEX n, void *x, CBLAS_INDEX incx, void *y, CBLAS_INDEX incy)
 {
     work_queue_t queue[MAX_THREADS];
     cblas_args_t args[MAX_THREADS];
 
-    int thread_count = CLAMP(cblas_get_num_threads(), 1, MAX_THREADS);
+    CBLAS_INDEX thread_count = CLAMP(cblas_get_num_threads(), 1, MAX_THREADS);
 
-    for (int i = 0; i < thread_count; i++)
+    for (CBLAS_INDEX i = 0; i < thread_count; i++)
     {
         args[i].incx = incx;
         args[i].incy = incy;
@@ -148,8 +148,8 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
         n -= partition_size;
 
         // TODO - the x/y is wrong when incx/incy is > 1
-        x = (void*)((CBLAS_INDEX)x + partition_size * incx * stride);
-        y = (void*)((CBLAS_INDEX)y + partition_size * incy * stride);
+        x = (void*)((CBLAS_INDEX)x + partition_size * incx * byte_stride);
+        y = (void*)((CBLAS_INDEX)y + partition_size * incy * byte_stride);
 
         queue[i].finished   = 0;
         queue[i].args       = &args[i];
@@ -173,7 +173,7 @@ void cblas_level2_exec()
     //work_queue_t queue[MAX_THREADS];
     //cblas_args_t args[MAX_THREADS];
 
-    int thread_count = CLAMP(cblas_get_num_threads(), 1, MAX_THREADS);
+    CBLAS_INDEX thread_count = CLAMP(cblas_get_num_threads(), 1, MAX_THREADS);
 
     //for (int i = 0; i < thread_count; i++)
     //{
