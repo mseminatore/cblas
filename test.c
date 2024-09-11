@@ -477,6 +477,8 @@ static void test_gemm()
 		// 	1,1,1,1
 		// };
 
+		TEST(cbu_sge_is_identity(sbmtx, S, S));
+
 		// print_sarray(16, samtx);
 		// print_sarray(16, scmtx);
 		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, S, S, S, 1.0f, samtx, S, sbmtx, S, 1.0f, scmtx, S);
@@ -502,6 +504,8 @@ static void test_gemm()
 	};
 
 	double dcmtx[16] = { 0 };
+
+	TEST(cbu_dge_is_identity(dbmtx, 4, 4));
 
 	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 4, 4, 4, 1.0, damtx, 4, dbmtx, 4, 1.0, dcmtx, 4);
 
