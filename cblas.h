@@ -24,6 +24,8 @@
 #   define LIB_CBLAS
 #endif
 
+#define CBLAS_VERSION "0.1"
+
 //[]------------------------------------------------------[]
 // configurable library parameters
 //[]------------------------------------------------------[]
@@ -270,6 +272,7 @@ int cpu_get_cacheline_size();
 unsigned int cpu_get_features();
 const char *cblas_get_isa_features();
 void cblas_print_configuration();
+int cpu_get_l2_cache_size();
 
 //------------------------------------------------------
 // internal functions

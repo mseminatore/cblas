@@ -96,7 +96,7 @@ int cpu_get_core_count()
 }
 
 //------------------------------------------------------
-//
+// return the CPU L1 cache line size
 //------------------------------------------------------
 int cpu_get_cacheline_size()
 {
@@ -109,4 +109,14 @@ int cpu_get_cacheline_size()
 #endif
 
     return 32;
+}
+
+//------------------------------------------------------
+// return the L2$ size
+//------------------------------------------------------
+int cpu_get_l2_cache_size()
+{
+    uint32_t l2_cache_size = 0;
+
+    return l2_cache_size;
 }

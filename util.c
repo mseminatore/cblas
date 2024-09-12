@@ -55,9 +55,9 @@ const char *cblas_get_config()
     static char buf[CBLAS_SMALL_BUF];
 
 #ifdef _WIN32
-    sprintf_s(buf, sizeof(buf), "\nCBLAS 0.1 %s MAX_THREADS=%d", cpu_get_core_name(), MAX_THREADS);
+    sprintf_s(buf, sizeof(buf), "\nCBLAS %s %s MAX_THREADS=%d", CBLAS_VERSION, cpu_get_core_name(), MAX_THREADS);
 #else
-    sprintf(buf, "\nCBLAS 0.1 %s MAX_THREADS=%d", cpu_get_core_name(), MAX_THREADS);
+    sprintf(buf, "\nCBLAS %s %s MAX_THREADS=%d", CBLAS_VERSION, cpu_get_core_name(), MAX_THREADS);
 #endif
     
     return buf;

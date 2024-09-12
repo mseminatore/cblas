@@ -4,6 +4,7 @@
 //------------------------------------------------------
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 #include "cblas.h"
 
 #ifdef _WIN32
@@ -55,6 +56,39 @@ const char *cpu_get_core_name()
 
 	return "Generic x64";
 #endif
+}
+
+//------------------------------------------------------
+// return the CPU L1 cache line size
+//------------------------------------------------------
+int cpu_get_cacheline_size()
+{
+#ifdef __APPLE__
+	uint32_t entry;
+	size_t len = sizeof(entry);
+
+	sysctlbyname("hw.cachelinesize", &entry, &len, NULL, 0);
+	return entry;
+#else
+#endif
+
+	return 64;
+}
+
+//------------------------------------------------------
+// return the L2$ size
+//------------------------------------------------------
+int cpu_get_l2_cache_size()
+{
+	uint32_t l2_cache_size = 0;
+
+#if defined(_MSC_VER)
+	uint32_t regs[4];
+	__cpuidex(regs, 0x80000006, 0);
+	l2_cache_size = (regs[0] >> 16) & 0xFFFF; // Extract L2 cache size in KB
+#endif
+
+	return l2_cache_size;
 }
 
 //------------------------------------------------------
