@@ -31,19 +31,33 @@ void cblas_srot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX
         assert(n > 0 && x && y);
         return;
     }
-#endif
-#endif
+#endif  // CBLAS_XERBLA_INPUTS
+#endif  // CBLAS_CHECK_INPUTS
 
     float temp;
-
-    for (CBLAS_INDEX i = 0; i < n; i++)
+    if (incx == 1 && incy == 1)
     {
-        temp = c * *x + s * *y;
-        *y = c * *y - s * *x;
-        *x = temp;
+        for (CBLAS_INDEX i = 0; i < n; i++)
+        {
+            temp = c * *x + s * *y;
+            *y = c * *y - s * *x;
+            *x = temp;
 
-        x += incx;
-        y += incy;
+            x++;
+            y++;
+        }
+    }
+    else
+    {
+        for (CBLAS_INDEX i = 0; i < n; i++)
+        {
+            temp = c * *x + s * *y;
+            *y = c * *y - s * *x;
+            *x = temp;
+
+            x += incx;
+            y += incy;
+        }
     }
 }
 
@@ -73,8 +87,8 @@ void cblas_drot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IND
         assert(n > 0 && x && y);
         return;
     }
-#endif
-#endif
+#endif  // CBLAS_XERBLA_INPUTS
+#endif  // CBLAS_CHECK_INPUTS
 
     double temp;
 

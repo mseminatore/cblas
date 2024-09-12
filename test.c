@@ -6,6 +6,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#if defined(_MSC_VER)
+#	define _USE_MATH_DEFINES
+#endif
+
+#include <math.h>
 #include "test.h"
 #include "cblas.h"
 
@@ -28,6 +34,31 @@ static double da[] = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
 static double db[] = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
 static double dc[] = {9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0};
 static double dd[] = {9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0};
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+int equal_sarray_epsilon(float *a, float *b, int len)
+{
+	for (int i = 0; i < len; i++)
+	{
+		if (!EQUAL_EPSILON(a[i], b[i]))
+			return 0;
+	}
+
+	return 1;
+}
+
+int equal_darray_epsilon(double* a, double* b, int len)
+{
+	for (int i = 0; i < len; i++)
+	{
+		if (!EQUAL_EPSILON(a[i], b[i]))
+			return 0;
+	}
+
+	return 1;
+}
 
 //------------------------------------------------------
 //
@@ -233,8 +264,66 @@ static void test_scal()
 static void test_rot()
 {
 	SUITE("cblas_srot");
+	{
+		float angle = M_PI_2;
+		float a[] = { 1.0f, 0.0f };
+		float b[] = { 0.0f, 1.0f };
+		float c[] = { 0.0f, 1.0f };
+		float d[] = { -1.0f, 0.0f };
+
+		float cosine = cos(angle);
+		float sine = sin(angle);
+
+		cblas_srot(2, a, 1, b, 1, cosine, sine);
+		TEST(equal_sarray_epsilon(a, c, ARRAY_SIZE(a)));
+		TEST(equal_sarray_epsilon(b, d, ARRAY_SIZE(b)));
+	}
+
+	{
+		float angle = M_PI_4;
+		float a[] = { 1.0f, 0.0f };
+		float b[] = { 0.0f, 1.0f };
+		float c[] = { 0.7071f, 0.7071f };
+		float d[] = { -0.7071f, 0.7071f };
+
+		float cosine = cos(angle);
+		float sine = sin(angle);
+
+		cblas_srot(2, a, 1, b, 1, cosine, sine);
+		TEST(equal_sarray_epsilon(a, c, ARRAY_SIZE(a)));
+		TEST(equal_sarray_epsilon(b, d, ARRAY_SIZE(b)));
+	}
 
 	SUITE("cblas_drot");
+	{
+		double angle = M_PI_2;
+		double a[] = { 1.0, 0.0 };
+		double b[] = { 0.0, 1.0 };
+		double c[] = { 0.0, 1.0 };
+		double d[] = { -1.0, 0.0 };
+
+		double cosine = cos(angle);
+		double sine = sin(angle);
+
+		cblas_drot(2, a, 1, b, 1, cosine, sine);
+		TEST(equal_darray_epsilon(a, c, ARRAY_SIZE(a)));
+		TEST(equal_darray_epsilon(b, d, ARRAY_SIZE(b)));
+	}
+
+	{
+		double angle = M_PI_4;
+		double a[] = { 1.0, 0.0 };
+		double b[] = { 0.0, 1.0 };
+		double c[] = { 0.7071, 0.7071 };
+		double d[] = { -0.7071, 0.7071 };
+
+		double cosine = cos(angle);
+		double sine = sin(angle);
+
+		cblas_drot(2, a, 1, b, 1, cosine, sine);
+		TEST(equal_darray_epsilon(a, c, ARRAY_SIZE(a)));
+		TEST(equal_darray_epsilon(b, d, ARRAY_SIZE(b)));
+	}
 }
 
 //------------------------------------------------------
