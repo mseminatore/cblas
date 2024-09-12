@@ -3,6 +3,7 @@
 // Copyright 2023 Mark Seminatore. All rights reserved.
 //------------------------------------------------------
 #include <stdio.h>
+#include <stdint.h>
 #include "cblas.h"
 
 #if !defined(_WIN32)
