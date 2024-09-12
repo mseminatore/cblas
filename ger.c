@@ -290,8 +290,8 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 		assert(lda >= MAX(1, m));
 		return;
 	}
-#endif
-#endif
+#endif  // CBLAS_XERBLA_INPUTS
+#endif  // CBLAS_CHECK_INPUTS
 
 	// fast reject case
 	if (m == 0 ||  n == 0 || alpha == 0.0f)

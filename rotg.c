@@ -33,8 +33,8 @@ void cblas_srotg(float *a, float *b, float *c, float *s)
         assert(a && b && c && s);
         return;
     }
-#endif
-#endif
+#endif  // CBLAS_XERBLA_INPUTS
+#endif  // CBLAS_CHECK_INPUTS
 
     // float temp;
     // for (CBLAS_INDEX i = 0; i < n; i++)
@@ -75,8 +75,8 @@ void cblas_drotg(double *a, double *b, double *c, double *s)
         assert(a && b && c && s);
         return;
     }
-#endif
-#endif
+#endif  // CBLAS_XERBLA_INPUTS
+#endif  // CBLAS_CHECK_INPUTS
 
     // double temp;
     // for (CBLAS_INDEX i = 0; i < n; i++)
