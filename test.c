@@ -265,14 +265,14 @@ static void test_rot()
 {
 	SUITE("cblas_srot");
 	{
-		float angle = M_PI_2;
+		float angle = (float)M_PI_2;
 		float a[] = { 1.0f, 0.0f };
 		float b[] = { 0.0f, 1.0f };
 		float c[] = { 0.0f, 1.0f };
 		float d[] = { -1.0f, 0.0f };
 
-		float cosine = cos(angle);
-		float sine = sin(angle);
+		float cosine = (float)cos(angle);
+		float sine = (float)sin(angle);
 
 		cblas_srot(2, a, 1, b, 1, cosine, sine);
 		TEST(equal_sarray_epsilon(a, c, ARRAY_SIZE(a)));
@@ -280,14 +280,14 @@ static void test_rot()
 	}
 
 	{
-		float angle = M_PI_4;
+		float angle = (float)M_PI_4;
 		float a[] = { 1.0f, 0.0f };
 		float b[] = { 0.0f, 1.0f };
 		float c[] = { 0.7071f, 0.7071f };
 		float d[] = { -0.7071f, 0.7071f };
 
-		float cosine = cos(angle);
-		float sine = sin(angle);
+		float cosine = (float)cos(angle);
+		float sine = (float)sin(angle);
 
 		cblas_srot(2, a, 1, b, 1, cosine, sine);
 		TEST(equal_sarray_epsilon(a, c, ARRAY_SIZE(a)));

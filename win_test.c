@@ -8,7 +8,7 @@
 #include "test.h"
 #include "cblas.h"
 
-#define size 500000
+#define size 1000000
 #define checks 500
 #define epsilon (1e-5 + 1e-8)
 
@@ -30,11 +30,11 @@ static int isclose()
 
 	for (int i = 0; i < size; i++)
 	{
-		dtype delta = fabs(result[i][0] - expected[i][0]);
+		dtype delta = (dtype)fabs(result[i][0] - expected[i][0]);
 		if (delta > epsilon)
 			count++;
 
-		delta = fabs(result[i][1] - expected[i][1]);
+		delta = (dtype)fabs(result[i][1] - expected[i][1]);
 		if (delta > epsilon)
 			count++;
 	}
@@ -61,8 +61,8 @@ static void test_win_threads()
 	{
 		x[i] = (dtype)i;
 		src[i][0] = x[i];
-		src[i][1] = -10.0 * x[i];
-		expected[i][0] = -10.0 * x[i];
+		src[i][1] = (dtype)-10.0 * x[i];
+		expected[i][0] = (dtype)-10.0 * x[i];
 		expected[i][1] = x[i];
 	}
 
@@ -70,13 +70,13 @@ static void test_win_threads()
 	{
 		clear_result();
 
-		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, size, 2, 2, 1.0, src, 2, matrix, 2, 1.0, result, 2);
+		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, size, 2, 2, 1.0f, (dtype*)src, 2, matrix, 2, 1.0, (dtype*)result, 2);
 		mismatches[i] = isclose();
 		if (mismatches[i] > 0)
 			printf("%d mismatching elements in multiplication %d", mismatches[i], i);
 	}
 
-	puts("done");
+	puts("done!");
 }
 
 //------------------------------------------------------
