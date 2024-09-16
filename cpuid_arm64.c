@@ -102,7 +102,7 @@ int cpu_get_core_count()
 int cpu_get_cacheline_size()
 {
 #ifdef __APPLE__
-    uint32_t entry;
+    long int entry;
     size_t len = sizeof(entry);
 
     sysctlbyname("hw.cachelinesize", &entry, &len, NULL, 0);
@@ -117,7 +117,12 @@ int cpu_get_cacheline_size()
 //------------------------------------------------------
 int cpu_get_l2_cache_size()
 {
-    uint32_t l2_cache_size = 0;
+    long l2_cache_size = 0;
 
-    return l2_cache_size;
+#ifdef __APPLE__
+    size_t len = sizeof(l2_cache_size);
+    sysctlbyname("hw.l2cachesize", &l2_cache_size, &len, NULL, 0);
+#endif
+
+    return l2_cache_size/1024;
 }
