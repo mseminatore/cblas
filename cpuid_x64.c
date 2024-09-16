@@ -63,6 +63,8 @@ const char *cpu_get_core_name()
 //------------------------------------------------------
 int cpu_get_cacheline_size()
 {
+	int line_size = 64;
+
 #ifdef __APPLE__
 	uint32_t entry;
 	size_t len = sizeof(entry);
@@ -70,9 +72,16 @@ int cpu_get_cacheline_size()
 	sysctlbyname("hw.cachelinesize", &entry, &len, NULL, 0);
 	return entry;
 #else
+
+#if defined(_MSC_VER)
+	uint32_t regs[4];
+	__cpuid(regs, 0x80000006);
+	unsigned lsize = regs[ECX] & 0xff;
 #endif
 
-	return 64;
+#endif
+
+	return line_size;
 }
 
 //------------------------------------------------------
@@ -84,8 +93,8 @@ int cpu_get_l2_cache_size()
 
 #if defined(_MSC_VER)
 	uint32_t regs[4];
-	__cpuidex(regs, 0x80000006, 0);
-	l2_cache_size = (regs[0] >> 16) & 0xFFFF; // Extract L2 cache size in KB
+	__cpuid(regs, 0x80000006);
+	l2_cache_size = (regs[ECX] >> 16) & 0xFFFF; // Extract L2 cache size in KB
 #endif
 
 	return l2_cache_size;

@@ -120,7 +120,9 @@ void cblas_print_configuration()
     printf("%s\n", cblas_get_config());
     printf("     CPU uArch: %s\n", cblas_get_corename());
 	printf("ISA Extensions: %s\n", cblas_get_isa_features());
-    printf(" Cores/Threads: %d/%d\n\n", cblas_get_num_procs(), cblas_get_num_threads());
+    printf(" Cores/Threads: %d/%d\n", cblas_get_num_procs(), cblas_get_num_threads());
+    printf("  L1$ line size: %d bytes\n", cpu_get_cacheline_size());
+    printf("       L2$ size: %d Kbytes\n\n", cpu_get_l2_cache_size());
 }
 
 //------------------------------------------------------
