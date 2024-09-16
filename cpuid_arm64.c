@@ -107,6 +107,11 @@ int cpu_get_cacheline_size()
 
     sysctlbyname("hw.cachelinesize", &entry, &len, NULL, 0);
     return entry;
+#else
+
+    long l1 = sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
+    return l1;
+
 #endif
 
     return 32;
@@ -122,6 +127,10 @@ int cpu_get_l2_cache_size()
 #ifdef __APPLE__
     size_t len = sizeof(l2_cache_size);
     sysctlbyname("hw.l2cachesize", &l2_cache_size, &len, NULL, 0);
+#else
+    long l2 = sysconf(_SC_LEVEL2_CACHE_SIZE);
+    return l2/1024;
+
 #endif
 
     return l2_cache_size/1024;
