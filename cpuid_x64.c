@@ -76,7 +76,11 @@ int cpu_get_cacheline_size()
 #if defined(_MSC_VER)
 	uint32_t regs[4];
 	__cpuid(regs, 0x80000006);
-	unsigned lsize = regs[ECX] & 0xff;
+	line_size = regs[ECX] & 0xff;
+#else
+	unsigned int eax, ebx, ecx, edx;
+	__cpuid(0x80000006, eax, ebx, ecx, edx);
+	line_size = ecx & 0xff;	
 #endif
 
 #endif
@@ -102,6 +106,12 @@ int cpu_get_l2_cache_size()
 		uint32_t regs[4];
 		__cpuid(regs, 0x80000006);
 		l2_cache_size = (regs[ECX] >> 16) & 0xFFFF; // Extract L2 cache size in KB
+	#else
+		uint32_t l2_cache_size = 0;
+		unsigned int eax, ebx, ecx, edx;
+
+		__cpuid(0x80000006, eax, ebx, ecx, edx);
+		l2_cache_size = (ecx >> 16) & 0xFFFF; // Extract L2 cache size in KB
 	#endif
 #endif
 
