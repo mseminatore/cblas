@@ -102,12 +102,10 @@ int cpu_get_l2_cache_size()
     return l2_cache_size/1024;
 #else
 	#if defined(_MSC_VER)
-		uint32_t l2_cache_size = 0;
 		uint32_t regs[4];
 		__cpuid(regs, 0x80000006);
 		l2_cache_size = (regs[ECX] >> 16) & 0xFFFF; // Extract L2 cache size in KB
 	#else
-		uint32_t l2_cache_size = 0;
 		unsigned int eax, ebx, ecx, edx;
 
 		__cpuid(0x80000006, eax, ebx, ecx, edx);
