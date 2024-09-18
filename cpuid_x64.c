@@ -106,7 +106,7 @@ int cpu_get_l2_cache_size()
 		__cpuid(regs, 0x80000006);
 		l2_cache_size = (regs[ECX] >> 16) & 0xFFFF; // Extract L2 cache size in KB
 	#else
-		printf("l2 unix\n"");
+		printf("l2 unix\n");
 		unsigned int eax, ebx, ecx, edx = 0;
 
 		__cpuid(0x80000006, eax, ebx, ecx, edx);
