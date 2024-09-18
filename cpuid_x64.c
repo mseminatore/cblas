@@ -89,7 +89,7 @@ int cpu_get_cacheline_size()
 }
 
 //------------------------------------------------------
-// return the L2$ size
+// return the L2$ size in KBytes
 //------------------------------------------------------
 int cpu_get_l2_cache_size()
 {
@@ -113,7 +113,7 @@ int cpu_get_l2_cache_size()
 	#endif
 #endif
 
-	return l2_cache_size/1024;
+	return l2_cache_size;
 }
 
 //------------------------------------------------------
