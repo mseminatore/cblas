@@ -26,6 +26,8 @@
 #define ECX 2
 #define EDX 3
 
+#define BIT(i) (1 << (i))
+
 //------------------------------------------------------
 // return the CPU name
 //------------------------------------------------------
@@ -176,12 +178,15 @@ unsigned int cpu_get_features()
 	if (ecx & (1 << 28))
 		features |= CPU_AVX;
 
-	__cpuid(7, eax, ebx, ecx, edx);
+	if (ecx & BIT(12))
+		features |= CPU_x64_FMA3;
 
-	if (ebx & (1 << 5))
+	__cpuid_count(7, 0, eax, ebx, ecx, edx);
+
+	if (ebx & BIT(5))
 		features |= CPU_AVX2;
 
-	if (ebx & (1 << 16))
+	if (ebx & BIT(16))
 		features |= CPU_AVX512;
 
 #endif
