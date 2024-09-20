@@ -30,6 +30,8 @@ static const char *cpu_names[] =
     "Vortex-M3"
 };
 
+static unsigned int cpu_features = CPU_NONE;
+
 //------------------------------------------------------
 // return the name of the current processor
 //------------------------------------------------------
@@ -55,18 +57,27 @@ const char *cpu_get_core_name()
 }
 
 //------------------------------------------------------
-// return any ISA features of this CPU
+// query and return any ISA features of this CPU
+//------------------------------------------------------
+static unsigned int __cpu_get_features()
+{
+#if defined(__APPLE__) || defined(__aarch64__)
+    cpu_features |= CPU_NEON;
+    cpu_features |= CPU_NEON_FMA;
+#endif
+
+    return cpu_features;
+}
+
+//------------------------------------------------------
+// get and cache cpu features
 //------------------------------------------------------
 unsigned int cpu_get_features()
 {
-	unsigned int features = CPU_NONE;
+	if (cpu_features == CPU_NONE)
+		cpu_features = __cpu_get_features();
 
-#if defined(__APPLE__) || defined(__aarch64__)
-    features |= CPU_NEON;
-    features |= CPU_NEON_FMA;
-#endif
-
-    return features;
+	return cpu_features;
 }
 
 //------------------------------------------------------

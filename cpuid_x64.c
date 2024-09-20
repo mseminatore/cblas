@@ -26,6 +26,8 @@
 #define ECX 2
 #define EDX 3
 
+static unsigned int cpu_features = CPU_NONE;
+
 #define BIT(i) (1 << (i))
 
 //------------------------------------------------------
@@ -144,54 +146,63 @@ const char* cpu_get_brand_string(void)
 }
 
 //------------------------------------------------------
-//
+// query for cpu features
 //------------------------------------------------------
-unsigned int cpu_get_features()
+static unsigned int __cpu_get_features()
 {
-	unsigned int features = CPU_NONE;
-
 #if defined(_MSC_VER)
 	int info[4];
 
 	__cpuid(info, 1);
 	if (info[ECX] & (1 << 20))
-		features |= CPU_SSE;
+		cpu_features |= CPU_SSE;
 
 	if (info[ECX] & (1 << 28))
-		features |= CPU_AVX;
+		cpu_features |= CPU_AVX;
 
 	__cpuid(info, 7);
 
 	if (info[EBX] & (1 << 5))
-		features |= CPU_AVX2;
+		cpu_features |= CPU_AVX2;
 
 	if (info[EBX] & (1 << 16))
-		features |= CPU_AVX512;
+		cpu_features |= CPU_AVX512;
 	
 #else
 	unsigned int eax, ebx, ecx, edx;
 
 	__cpuid(1, eax, ebx, ecx, edx);
 	if (ecx & (1 << 20))
-		features |= CPU_SSE;
+		cpu_features |= CPU_SSE;
 
 	if (ecx & (1 << 28))
-		features |= CPU_AVX;
+		cpu_features |= CPU_AVX;
 
 	if (ecx & BIT(12))
-		features |= CPU_x64_FMA3;
+		cpu_features |= CPU_x64_FMA3;
 
 	__cpuid_count(7, 0, eax, ebx, ecx, edx);
 
 	if (ebx & BIT(5))
-		features |= CPU_AVX2;
+		cpu_features |= CPU_AVX2;
 
 	if (ebx & BIT(16))
-		features |= CPU_AVX512;
+		cpu_features |= CPU_AVX512;
 
 #endif
 
-	return features;
+	return cpu_features;
+}
+
+//------------------------------------------------------
+// get and cache cpu features
+//------------------------------------------------------
+unsigned int cpu_get_features()
+{
+	if (cpu_features == CPU_NONE)
+		cpu_features = __cpu_get_features();
+
+	return cpu_features;
 }
 
 //------------------------------------------------------
