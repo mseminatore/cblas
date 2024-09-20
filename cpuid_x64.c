@@ -160,6 +160,9 @@ static unsigned int __cpu_get_features()
 	if (info[ECX] & (1 << 28))
 		cpu_features |= CPU_AVX;
 
+	if (info[ECX] & BIT(12))
+		cpu_features |= CPU_x64_FMA3;
+
 	__cpuid(info, 7);
 
 	if (info[EBX] & (1 << 5))
