@@ -1,6 +1,7 @@
 # CBLAS - small, fast, portable subset of the standard BLAS libraries 
 
 [![CMake](https://github.com/mseminatore/cblas/actions/workflows/cmake-single-platform.yml/badge.svg)](https://github.com/mseminatore/cblas/actions/workflows/cmake-single-platform.yml)
+![GitHub License](https://img.shields.io/github/license/mseminatore/cblas)
 
 # What is CBLAS?
 

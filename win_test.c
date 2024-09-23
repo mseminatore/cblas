@@ -70,7 +70,7 @@ static void test_win_threads()
 	{
 		clear_result();
 
-		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, size, 2, 2, 1.0f, (dtype*)src, 2, matrix, 2, 1.0, (dtype*)result, 2);
+		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, size, 2, 2, 1.0f, (dtype*)src, 2, (dtype*)matrix, 2, 1.0f, (dtype*)result, 2);
 		mismatches[i] = isclose();
 		if (mismatches[i] > 0)
 			printf("%d mismatching elements in multiplication %d", mismatches[i], i);
