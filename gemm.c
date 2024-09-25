@@ -112,6 +112,13 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
     float32x4_t b_row;
     float32x4_t a_p0, a_p1, a_p2, a_p3;
     
+    // __builtin_prefetch(&C(0,0), 0);
+    // __builtin_prefetch(&C(0,1), 0);
+    // __builtin_prefetch(&C(0,2), 0);
+    // __builtin_prefetch(&C(0,3), 0);
+    // __builtin_prefetch(a, 0);
+    // __builtin_prefetch(b, 0);
+
     // 4 x 4 floats into SIMD regs
     c_row1 = vld1q_f32(&C(0,0));
     c_row2 = vld1q_f32(&C(0,1));
