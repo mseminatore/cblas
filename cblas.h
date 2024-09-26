@@ -167,6 +167,12 @@ typedef struct
 // kernel operation for MT tasks
 typedef void (*kernel_function)(cblas_args_t* args);
 
+typedef struct
+{
+    kernel_function sgemm_k;
+    kernel_function dgemm_k;
+} kernels_t;
+
 #define CBLAS_DEFAULT_THREADS -1
 
 //------------------------------------------------------
