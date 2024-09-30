@@ -36,7 +36,7 @@ static void cblas_sdot_k_noinc(cblas_args_t* args)
     float* x = args->x;
     float* y = args->y;
     float* result = args->c;
-    register CBLAS_INDEX incx = args->incx, incy = args->incy, n = args->n;
+    register CBLAS_INDEX n = args->n;
 
     for (CBLAS_INDEX i = 0; i < n; i++)
     {
