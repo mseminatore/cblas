@@ -4,6 +4,7 @@ blas_stress
 blas_perf
 ger_perf
 gemm_perf
+dot_perf
 build/
 
 .DS_Store
