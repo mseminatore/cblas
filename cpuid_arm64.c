@@ -125,6 +125,8 @@ int cpu_get_cacheline_size()
 
 #endif
 
+    // catch all
+    puts("warning: cpu_get_cacheline_size() not implemented!");
     return 32;
 }
 
@@ -139,8 +141,7 @@ int cpu_get_l2_cache_size()
     size_t len = sizeof(l2_cache_size);
     sysctlbyname("hw.l2cachesize", &l2_cache_size, &len, NULL, 0);
 #else
-    long l2 = sysconf(_SC_LEVEL2_CACHE_SIZE);
-    return l2/1024;
+    l2_cache_size = sysconf(_SC_LEVEL2_CACHE_SIZE);
 
 #endif
 
