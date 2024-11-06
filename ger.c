@@ -85,11 +85,6 @@ static void AddProd4x4_SIMD(float* x, float* y, float* a, CBLAS_INDEX lda)
 #if defined(__aarch64__)
 #else
 	__m128 x0, x1, x2, x3, y0, a0, a1, a2, a3;
-	float* ap1, *ap2, *ap3;
-
-	ap1 = a + lda;
-	ap2 = ap1 + lda;
-	ap3 = ap2 + lda;
 
 	x0 = _mm_load_ps1(x);
 	x1 = _mm_load_ps1(x + 1);
@@ -99,11 +94,12 @@ static void AddProd4x4_SIMD(float* x, float* y, float* a, CBLAS_INDEX lda)
 	y0 = _mm_load_ps(y);
 	
 	a0 = _mm_load_ps(a);
-	a1 = _mm_load_ps(ap1);
-	a2 = _mm_load_ps(ap2);
-	a3 = _mm_load_ps(ap3);
+	a1 = _mm_load_ps(a + lda);
+	a2 = _mm_load_ps(a + 2 * lda);
+	a3 = _mm_load_ps(a + 3 * lda);
 
 	// compute 4x4 product
+	// TODO - FMAD here???
 	a0 = _mm_add_ps(a0, _mm_mul_ps(x0, y0));
 	a1 = _mm_add_ps(a1, _mm_mul_ps(x1, y0));
 	a2 = _mm_add_ps(a2, _mm_mul_ps(x2, y0));
@@ -111,9 +107,9 @@ static void AddProd4x4_SIMD(float* x, float* y, float* a, CBLAS_INDEX lda)
 
 	// store results
 	_mm_store_ps(a, a0);
-	_mm_store_ps(a, a1);
-	_mm_store_ps(a, a2);
-	_mm_store_ps(a, a3);
+	_mm_store_ps(a + lda, a1);
+	_mm_store_ps(a + 2 * lda, a2);
+	_mm_store_ps(a + 3 * lda, a3);
 #endif
 }
 
@@ -161,7 +157,7 @@ static void AddProd4x4(float* x, float* y, float* a, CBLAS_INDEX lda)
 //------------------------------------------------------
 static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_INDEX incx, float* y, CBLAS_INDEX incy, float* a, CBLAS_INDEX lda)
 {
-	float*xr, * yc, * ap;
+	float *xr, *yc, *ap;
 	int col, row;
 
 	for (row = 0; row + 4 <= m; row += 4)
