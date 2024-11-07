@@ -62,6 +62,13 @@
 // uncomment to enable multi-threading debug messages
 //#define MT_DEBUG
 
+// multi-threading threshold limits
+#define CBLAS_MT_DOT    10000
+#define CBLAS_MT_COPY   10000
+#define CBLAS_MT_GER    10000
+#define CBLAS_MT_GEMM   10000
+#define CBLAS_MT_GEMV   10000
+
 //------------------------------------------------------
 // size type for indices
 //------------------------------------------------------
@@ -171,6 +178,10 @@ typedef struct
 {
     kernel_function sgemm_k;
     kernel_function dgemm_k;
+    kernel_function sger_k;
+    kernel_function dger_k;
+    kernel_function sgemv_k;
+    kernel_function dgemv_k;
 } kernels_t;
 
 #define CBLAS_DEFAULT_THREADS -1

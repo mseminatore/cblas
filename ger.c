@@ -78,6 +78,44 @@ static void AddProd4x1(float x, float *y, float *a)
 }
 
 //------------------------------------------------------
+// compute 8 cols x 4 rows product
+//------------------------------------------------------
+static void AddProd8x4_SIMD(float* x, float* y, float* a, CBLAS_INDEX lda)
+{
+#if defined(__aarch64__)
+#else
+	__m256 x0, x1, x2, x3, y0, a0, a1, a2, a3;
+
+	// copy single FP to all 8 elements of vector
+	x0 = _mm256_broadcast_ss(x);
+	x1 = _mm256_broadcast_ss(x + 1);
+	x2 = _mm256_broadcast_ss(x + 2);
+	x3 = _mm256_broadcast_ss(x + 3);
+
+	y0 = _mm256_load_ps(y);
+
+	// load 4 rows of destination
+	a0 = _mm256_load_ps(a);
+	a1 = _mm256_load_ps(a + lda);
+	a2 = _mm256_load_ps(a + 2 * lda);
+	a3 = _mm256_load_ps(a + 3 * lda);
+
+	// compute 8x4 products
+	// TODO - FMAD here???
+	a0 = _mm256_add_ps(a0, _mm256_mul_ps(x0, y0));
+	a1 = _mm256_add_ps(a1, _mm256_mul_ps(x1, y0));
+	a2 = _mm256_add_ps(a2, _mm256_mul_ps(x2, y0));
+	a3 = _mm256_add_ps(a3, _mm256_mul_ps(x3, y0));
+
+	// store results
+	_mm256_store_ps(a, a0);
+	_mm256_store_ps(a + lda, a1);
+	_mm256_store_ps(a + 2 * lda, a2);
+	_mm256_store_ps(a + 3 * lda, a3);
+#endif
+}
+
+//------------------------------------------------------
 // compute 4 cols x 4 rows product
 //------------------------------------------------------
 static void AddProd4x4_SIMD(float* x, float* y, float* a, CBLAS_INDEX lda)
@@ -158,7 +196,7 @@ static void AddProd4x4(float* x, float* y, float* a, CBLAS_INDEX lda)
 static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_INDEX incx, float* y, CBLAS_INDEX incy, float* a, CBLAS_INDEX lda)
 {
 	float *xr, *yc, *ap;
-	int col, row;
+	CBLAS_INDEX col, row;
 
 	for (row = 0; row + 4 <= m; row += 4)
 	{
@@ -174,7 +212,7 @@ static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_IN
 		}
 
 		// handle leftover cols handling each of the 4 rows in this block
-		for (int i = 0; i < 4; i++)
+		for (CBLAS_INDEX i = 0; i < 4; i++)
 		{
 			switch (n - col)
 			{
@@ -205,9 +243,9 @@ static void sger_row_noalpha(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS_INDEX
 {
 	register float xr;
 	float *yc, *ap;
-	int col;
+	CBLAS_INDEX col;
 
-	for (int row = 0; row < m; row++)
+	for (CBLAS_INDEX row = 0; row < m; row++)
 	{
 		xr = X(row);
 		yc = y;
@@ -236,9 +274,9 @@ static void sger_row_noalpha(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS_INDEX
 //------------------------------------------------------
 static void sger_row_noalpha_plain(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda)
 {
-	for (int row = 0; row < m; row++)
+	for (CBLAS_INDEX row = 0; row < m; row++)
 	{
-		for (int col = 0; col < n; col++)
+		for (CBLAS_INDEX col = 0; col < n; col++)
 		{
 			a[row * n + col] += x[row] * y[col];
 		}
