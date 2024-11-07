@@ -422,7 +422,7 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
 //------------------------------------------------------
 //
 //------------------------------------------------------
-static void sgemm_k(cblas_args_t* args)
+void sgemm_k(cblas_args_t* args)
 {
     InnerKernel(args->ib, args->n, args->pb, args->a, args->lda, args->b, args->ldb, args->c, args->ldc);
 }
@@ -534,7 +534,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         
             queue[tile_count].finished   = 0;
             queue[tile_count].args       = &args[tile_count];
-            queue[tile_count].kernel     = sgemm_k;
+            queue[tile_count].kernel     = blas_kernels.sgemm_k;
             queue[tile_count].next       = &queue[tile_count + 1];
 
             tile_count++;

@@ -66,6 +66,11 @@ static unsigned int __cpu_get_features()
     cpu_features |= CPU_NEON_FMA;
 #endif
 
+	if (cpu_features & CPU_NEON)
+	{
+		blas_kernels.sgemm_k = sgemm_k;
+	}
+
     return cpu_features;
 }
 

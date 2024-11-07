@@ -11,6 +11,7 @@
 //------------------------------------------------------
 volatile int cblas_max_threads  = MAX_THREADS;  // max system supported threads
 static int cblas_server_alive   = CBLAS_FALSE;  // has thread server been initialized
+kernels_t blas_kernels;
 
 //------------------------------------------------------
 // return the current server status

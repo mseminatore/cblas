@@ -194,6 +194,11 @@ static unsigned int __cpu_get_features()
 
 #endif
 
+	if (cpu_features & CPU_AVX)
+	{
+		blas_kernels.sgemm_k = sgemm_k;
+	}
+
 	return cpu_features;
 }
 

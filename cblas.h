@@ -309,6 +309,12 @@ int cbu_dge_is_identity(double* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows);
 float *cbu_sge_make_identity(int cols, int rows);
 double* cbu_dge_make_identity(int cols, int rows);
 
+//------------------------------------------------------
+// kernel dispatch
+//------------------------------------------------------
+extern kernels_t blas_kernels;
+void sgemm_k(cblas_args_t* args);
+
 #ifdef __cplusplus
     }
 #endif
