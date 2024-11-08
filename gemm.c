@@ -366,7 +366,7 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
 
     //int row_leftover    = m % 4; 
     //int col_leftover    = n % 4;
-    int row, col;
+    CBLAS_INDEX row, col;
 
     // Loop over the rows and columns of C unrolled by 4
     for (row = 0; row + 4 <= m; row += 4)
