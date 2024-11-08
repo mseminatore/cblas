@@ -43,7 +43,7 @@
 //------------------------------------------------------
 static void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, float *gamma)
 {
-	for (int p = 0; p < k; p++)
+	for (CBLAS_INDEX p = 0; p < k; p++)
     {
         // TODO - turn x[p] into *x++
         // TODO - optimize Y(p)
@@ -67,7 +67,7 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
     c_row3 = _mm_load_ps(&C(0,2));
     c_row4 = _mm_load_ps(&C(0,3));
 
-	for (int p = 0; p < k; p++) 
+	for (CBLAS_INDEX p = 0; p < k; p++) 
     {
         // load and duplicate 
         a_p0 = _mm_load_ps1(a);
@@ -125,7 +125,7 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
     c_row3 = vld1q_f32(&C(0,2));
     c_row4 = vld1q_f32(&C(0,3));
 
-	for (int p = 0; p < k; p++) 
+	for (CBLAS_INDEX p = 0; p < k; p++) 
     {
         // load 1 float and duplicate to 4 SIMD elements 
         a_p0 = vld1q_dup_f32(a);
@@ -190,7 +190,7 @@ static void AddDot4x4(CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_
     c_02 = 0.0f; c_12 = 0.0f; c_22 = 0.0f; c_32 = 0.0f;
     c_03 = 0.0f; c_13 = 0.0f; c_23 = 0.0f; c_33 = 0.0f;
 
-    for (int p = 0; p < k; p++) 
+    for (CBLAS_INDEX p = 0; p < k; p++) 
     {
         a_p0 = *a;
         a_p1 = *(a + 1);
@@ -258,7 +258,7 @@ static void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
     c_03 = 0.0f;
 
     // 
-    for (int p = 0; p < k; p += 4) 
+    for (CBLAS_INDEX p = 0; p < k; p += 4) 
     {
         b_0p = B(0, p);
 
