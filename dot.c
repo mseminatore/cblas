@@ -103,9 +103,10 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
         {
             sum += *x++ * *y++;
         }
-    } 
+    }
     else
     {
+        // incx and/or incy are not 1
         for (CBLAS_INDEX i = 0; i < n; i++)
         {
             sum += *x * *y;

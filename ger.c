@@ -80,7 +80,7 @@ static void AddProd4x1(float x, float *y, float *a)
 //------------------------------------------------------
 // compute 8 cols x 4 rows product
 //------------------------------------------------------
-static void AddProd8x4_SIMD(float* x, float* y, float* a, CBLAS_INDEX lda)
+static void AddProd8x4_AVX(float* x, float* y, float* a, CBLAS_INDEX lda)
 {
 #if defined(__aarch64__)
 #else
