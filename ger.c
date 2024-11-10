@@ -294,7 +294,7 @@ static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_IN
 
 		for (col = 0; col + 4 <= n; col += 4)
 		{
-			AddProd4x4_SIMD(xr, yc, ap, lda);
+			AddProd4x4(xr, yc, ap, lda);
 			yc += 4;
 			ap += 4;
 		}
