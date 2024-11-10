@@ -6,6 +6,7 @@
 #include "cblas.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 #   include <immintrin.h>
