@@ -121,6 +121,44 @@ static void AddProd8x4_AVX(float* x, float* y, float* a, CBLAS_INDEX lda)
 static void AddProd4x4_SIMD(float* x, float* y, float* a, CBLAS_INDEX lda)
 {
 #if defined(__aarch64__)
+	float32x4_t x0, x1, x2, x3, y0, a0, a1, a2, a3;
+
+	x0 = vld1q_dup_f32(x);
+	x1 = vld1q_dup_f32(x + 1);
+	x2 = vld1q_dup_f32(x + 2);
+	x3 = vld1q_dup_f32(x + 3);
+
+	y0 = vld1q_f32(y);
+
+	a0 = vld1q_f32(a);
+	a1 = vld1q_f32(a + lda);
+	a2 = vld1q_f32(a + 2 * lda);
+	a3 = vld1q_f32(a + 3 * lda);
+
+#ifdef __ARM_FEATURE_FMA
+
+	// compute 4x4 product using FMA
+	a0 = vfmaq_f32(a0, x0, y0);
+	a1 = vfmaq_f32(a1, x1, y0);
+	a2 = vfmaq_f32(a2, x2, y0);
+	a3 = vfmaq_f32(a3, x3, y0);
+
+#else
+
+	// rows 1 - 4 using NEON MUL and ADD A += X * Y
+	a0 = vaddq_f32(a0, vmulq_f32(x0, y0));
+	a1 = vaddq_f32(a1, vmulq_f32(x1, y0));
+	a2 = vaddq_f32(a2, vmulq_f32(x2, y0));
+	a3 = vaddq_f32(a3, vmulq_f32(x3, y0));
+
+#endif
+
+    // store 4x4 floats
+    vst1q_f32(a, a0);
+    vst1q_f32(a + lda, a1);
+    vst1q_f32(a + 2 * lda, a2);
+    vst1q_f32(a + 3 * lda, a3);
+
 #else
 	__m128 x0, x1, x2, x3, y0, a0, a1, a2, a3;
 
@@ -386,7 +424,7 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
     {
 		if (alpha == 1.0f)
 		{
-			sger_row_noalpha8x4(m, n,  x, incx, y, incy, a, lda);
+			sger_row_noalpha4x4(m, n,  x, incx, y, incy, a, lda);
 		}
 		else
 		{
