@@ -431,6 +431,21 @@ static void test_ger()
 			TEST(EQUAL_ARRAY(sa, sr));
 		}
 
+		{
+			float sx[8] = { 1,1,1,1,1,1,1,1 };
+			float sy[8] = { 1,1,1,1,1,1,1,1 };
+			float sa[64];
+			float sr[64];
+
+			cblas_ssetv(64, sa, 0.0f);
+			cblas_ssetv(64, sr, 1.0f);
+
+			cblas_sger(CblasRowMajor, 8, 8, 1.0f, sx, 1, sy, 1, sa, 8);
+			//print_sarray(25, sa);
+			//print_sarray(25, sr);
+			TEST(EQUAL_ARRAY(sa, sr));
+		}
+
 	SUITE("cblas_dger");
 
 		double dx[3] = {1,1,1};

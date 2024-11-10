@@ -193,6 +193,56 @@ static void AddProd4x4(float* x, float* y, float* a, CBLAS_INDEX lda)
 //------------------------------------------------------
 //
 //------------------------------------------------------
+static void sger_row_noalpha8x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_INDEX incx, float* y, CBLAS_INDEX incy, float* a, CBLAS_INDEX lda)
+{
+	float* xr, * yc, * ap;
+	CBLAS_INDEX col, row;
+
+	for (row = 0; row + 4 <= m; row += 4)
+	{
+		xr = &X(row);
+		yc = y;
+		ap = &A(0, row);
+
+		for (col = 0; col + 8 <= n; col += 8)
+		{
+			AddProd8x4_AVX(xr, yc, ap, lda);
+			yc += 8;
+			ap += 8;
+		}
+
+		// handle leftover cols handling each of the 4 rows in this block
+		for (CBLAS_INDEX i = 0; i < 4; i++)
+		{
+			switch (n - col)
+			{
+			case 7: AddProd(*xr, Y(col + 6), &A(col + 6, row + i));
+			case 6: AddProd(*xr, Y(col + 5), &A(col + 5, row + i));
+			case 5: AddProd(*xr, Y(col + 4), &A(col + 4, row + i));
+			case 4: AddProd(*xr, Y(col + 3), &A(col + 3, row + i));
+			case 3: AddProd(*xr, Y(col + 2), &A(col + 2, row + i));
+			case 2: AddProd(*xr, Y(col + 1), &A(col + 1, row + i));
+			case 1: AddProd(*xr, Y(col), &A(col, row + i));
+			case 0:;	// do nothing!
+			}
+
+			xr = &X(row + i);
+		}
+	}
+
+	// handle leftover rows
+	switch (m - row)
+	{
+	case 3: for (col = 0; col < n; col++) AddProd(X(row + 2), Y(col), &A(col, row + 2));
+	case 2: for (col = 0; col < n; col++) AddProd(X(row + 1), Y(col), &A(col, row + 1));
+	case 1: for (col = 0; col < n; col++) AddProd(X(row), Y(col), &A(col, row));
+	case 0:;	// do nothing!
+	}
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
 static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_INDEX incx, float* y, CBLAS_INDEX incy, float* a, CBLAS_INDEX lda)
 {
 	float *xr, *yc, *ap;
@@ -206,7 +256,7 @@ static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_IN
 
 		for (col = 0; col + 4 <= n; col += 4)
 		{
-			AddProd4x4(xr, yc, ap, lda);
+			AddProd4x4_SIMD(xr, yc, ap, lda);
 			yc += 4;
 			ap += 4;
 		}
@@ -336,7 +386,7 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
     {
 		if (alpha == 1.0f)
 		{
-			sger_row_noalpha4x4(m, n,  x, incx, y, incy, a, lda);
+			sger_row_noalpha8x4(m, n,  x, incx, y, incy, a, lda);
 		}
 		else
 		{
