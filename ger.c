@@ -182,10 +182,10 @@ static void AddProd4x4_SIMD(float* x, float* y, float* a, CBLAS_INDEX lda)
 	a3 = _mm_add_ps(a3, _mm_mul_ps(x3, y0));
 
 	// store results
-	_mm_store_ps(a, a0);
-	_mm_store_ps(a + lda, a1);
-	_mm_store_ps(a + 2 * lda, a2);
-	_mm_store_ps(a + 3 * lda, a3);
+	_mm_storeu_ps(a, a0);
+	_mm_storeu_ps(a + lda, a1);
+	_mm_storeu_ps(a + 2 * lda, a2);
+	_mm_storeu_ps(a + 3 * lda, a3);
 #endif
 }
 
@@ -294,7 +294,7 @@ static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_IN
 
 		for (col = 0; col + 4 <= n; col += 4)
 		{
-			AddProd4x4(xr, yc, ap, lda);
+			AddProd4x4_SIMD(xr, yc, ap, lda);
 			yc += 4;
 			ap += 4;
 		}
