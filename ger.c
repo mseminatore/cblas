@@ -169,10 +169,10 @@ static void AddProd4x4_SIMD(float* x, float* y, float* a, CBLAS_INDEX lda)
 	
 	y0 = _mm_load_ps(y);
 	
-	a0 = _mm_load_ps(a);
-	a1 = _mm_load_ps(a + lda);
-	a2 = _mm_load_ps(a + 2 * lda);
-	a3 = _mm_load_ps(a + 3 * lda);
+	a0 = _mm_loadu_ps(a);
+	a1 = _mm_loadu_ps(a + lda);
+	a2 = _mm_loadu_ps(a + 2 * lda);
+	a3 = _mm_loadu_ps(a + 3 * lda);
 
 	// compute 4x4 product
 	// TODO - FMAD here???
