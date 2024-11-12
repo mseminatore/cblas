@@ -99,7 +99,23 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
 #else
     if (incx == 1 && incy == 1)
     {
-        for (CBLAS_INDEX i = 0; i < n; i++)
+        CBLAS_INDEX i = 0;
+        float sum0, sum1, sum2, sum3 = 0.0f;
+
+        for (; i + 4 <= n; i += 4)
+        {
+            sum0 = *x * *y;
+            sum1 = *(x + 1) * *(y + 1);
+            sum2 = *(x + 2) * *(y + 2);
+            sum3 = *(x + 3) * *(y + 3);
+
+            x += 4;
+            y += 4;
+
+            sum += sum0 + sum1 + sum2 + sum3;
+        }
+
+        for (; i < n; i++)
         {
             sum += *x++ * *y++;
         }
