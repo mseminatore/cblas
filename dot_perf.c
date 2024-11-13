@@ -7,7 +7,7 @@
 #include <time.h>
 #include "cblas.h"
 
-#define MAX_SIZE 65536*4
+#define MAX_SIZE 65536*64
 
 float x[MAX_SIZE], y[MAX_SIZE];
 
