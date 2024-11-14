@@ -80,6 +80,9 @@
 #define EQUAL_ARRAY(a, b)       !memcmp((a), (b), sizeof(a))
 #define NOT_EQUAL_ARRAY(a, b)   !EQUAL_ARRAY(a, b)
 
+#define EQUAL_ARRAY_SIZE(a, b, size)       !memcmp((a), (b), (size))
+#define NOT_EQUAL_ARRAY_SIZE(a, b, size)   !EQUAL_ARRAY(a, b, (size))
+
 extern int test_number;
 extern int test_suites;
 extern int test_failures;

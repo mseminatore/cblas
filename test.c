@@ -22,11 +22,12 @@ static float sb[] = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
 static float sc[] = {9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0};
 static float sd[] = {9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0};
 
-static float sbig_ones[1024] = { 1.0f };
-static float sbig_zeroes[1024] = { 0.0f };
+#define BIG_ARRAY 65536
+static float *sbig_ones;
+static float *sbig_zeroes;
 
-static double dbig_ones[1024] = { 1.0 };
-static double dbig_zeroes[1024] = { 0.0 };
+static double *dbig_ones;
+static double *dbig_zeroes;
 
 static double dzeros[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 static double dones[] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
@@ -58,6 +59,70 @@ int equal_darray_epsilon(double* a, double* b, int len)
 	}
 
 	return 1;
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+static float* svec_fill(CBLAS_INDEX size, float val)
+{
+	float* result = malloc(size * sizeof(float));
+	if (!result)
+		return result;
+
+	for (int i = 0; i < size; i++)
+		result[i] = val;
+
+	return result;
+
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+static double* dvec_fill(CBLAS_INDEX size, double val)
+{
+	double* result = malloc(size * sizeof(double));
+	if (!result)
+		return result;
+
+	for (int i = 0; i < size; i++)
+		result[i] = val;
+
+	return result;
+
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+static float* svec_zeroes(CBLAS_INDEX size)
+{
+	return svec_fill(size, 0.0f);
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+static float* svec_ones(CBLAS_INDEX size)
+{
+	return svec_fill(size, 1.0f);
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+static double* dvec_zeroes(CBLAS_INDEX size)
+{
+	return dvec_fill(size, 0.0);
+}
+
+//------------------------------------------------------
+//
+//------------------------------------------------------
+static double* dvec_ones(CBLAS_INDEX size)
+{
+	return dvec_fill(size, 1.0);
 }
 
 //------------------------------------------------------
@@ -141,25 +206,37 @@ static void test_dot()
 {
 	SUITE("cblas_sdot");
 
-	float sr = cblas_sdot(ARRAY_SIZE(szeros), szeros, 1, sones, 1);
-	TEST(0.0f == sr);
+		float sr = cblas_sdot(ARRAY_SIZE(szeros), szeros, 1, sones, 1);
+		TEST(0.0f == sr);
 
-	sr = cblas_sdot(ARRAY_SIZE(szeros), szeros, 1, szeros, 1);
-	TEST(0.0f == sr);
+		sr = cblas_sdot(ARRAY_SIZE(szeros), szeros, 1, szeros, 1);
+		TEST(0.0f == sr);
 
-	sr = cblas_sdot(ARRAY_SIZE(sones), sones, 1, sones, 1);
-	TEST(ARRAY_SIZE(sones) == sr);
+		sr = cblas_sdot(ARRAY_SIZE(sones), sones, 1, sones, 1);
+		TEST(ARRAY_SIZE(sones) == sr);
+
+		sr = cblas_sdot(BIG_ARRAY, sbig_ones, 1, sbig_ones, 1);
+		TEST(sr == BIG_ARRAY);
+
+		sr = cblas_sdot(BIG_ARRAY, sbig_ones, 1, sbig_zeroes, 1);
+		TEST(sr == 0.0f);
 
 	SUITE("cblas_ddot");
 
-	double dr = cblas_ddot(ARRAY_SIZE(dzeros), dzeros, 1, dones, 1);
-	TEST(0.0 == dr);
+		double dr = cblas_ddot(ARRAY_SIZE(dzeros), dzeros, 1, dones, 1);
+		TEST(0.0 == dr);
 
-	dr = cblas_ddot(ARRAY_SIZE(dzeros), dzeros, 1, dzeros, 1);
-	TEST(0.0 == dr);
+		dr = cblas_ddot(ARRAY_SIZE(dzeros), dzeros, 1, dzeros, 1);
+		TEST(0.0 == dr);
 
-	dr = cblas_ddot(ARRAY_SIZE(dones), dones, 1, dones, 1);
-	TEST(ARRAY_SIZE(dones) == dr);
+		dr = cblas_ddot(ARRAY_SIZE(dones), dones, 1, dones, 1);
+		TEST(ARRAY_SIZE(dones) == dr);
+
+		dr = cblas_ddot(BIG_ARRAY, dbig_ones, 1, dbig_ones, 1);
+		TEST(dr == BIG_ARRAY);
+
+		dr = cblas_ddot(BIG_ARRAY, dbig_ones, 1, dbig_zeroes, 1);
+		TEST(dr == 0.0f);
 }
 
 //------------------------------------------------------
@@ -174,10 +251,10 @@ static void test_copy()
 		cblas_scopy(ARRAY_SIZE(sones), sr, 1, sones, 1);
 		TEST(EQUAL_ARRAY(sones, sr));
 
-		float sr1[ARRAY_SIZE(sbig_ones)];
+		float sr1[BIG_ARRAY];
 
-		cblas_scopy(ARRAY_SIZE(sbig_ones), sr1, 1, sbig_ones, 1);
-		TEST(EQUAL_ARRAY(sbig_ones, sr1));
+		cblas_scopy(BIG_ARRAY, sr1, 1, sbig_ones, 1);
+		TEST(EQUAL_ARRAY_SIZE(sbig_ones, sr1, BIG_ARRAY));
 
 	SUITE("cblas_dcopy");
 
@@ -186,10 +263,10 @@ static void test_copy()
 		cblas_dcopy(ARRAY_SIZE(dones), dr, 1, dones, 1);
 		TEST(EQUAL_ARRAY(dones, dr));
 
-		double dr1[ARRAY_SIZE(dbig_ones)];
+		double dr1[BIG_ARRAY];
 
-		cblas_dcopy(ARRAY_SIZE(dbig_ones), dr1, 1, dbig_ones, 1);
-		TEST(EQUAL_ARRAY(dbig_ones, dr1));
+		cblas_dcopy(BIG_ARRAY, dr1, 1, dbig_ones, 1);
+		TEST(EQUAL_ARRAY_SIZE(dbig_ones, dr1, BIG_ARRAY));
 }
 
 //------------------------------------------------------
@@ -661,6 +738,12 @@ static void test_level3()
 //------------------------------------------------------
 int test_main(int argc, char *argv[])
 {
+	sbig_ones	= svec_ones(BIG_ARRAY);
+	sbig_zeroes	= svec_zeroes(BIG_ARRAY);
+
+	dbig_ones	= dvec_ones(BIG_ARRAY);
+	dbig_zeroes = dvec_zeroes(BIG_ARRAY);
+
 	cblas_init(CBLAS_DEFAULT_THREADS);
 
 	//cblas_set_num_threads(2);
@@ -671,6 +754,12 @@ int test_main(int argc, char *argv[])
 	test_level1();
 	test_level2();
 	test_level3();
+
+	free(sbig_ones);
+	free(sbig_zeroes);
+
+	free(dbig_ones);
+	free(dbig_zeroes);
 
 	return 0;
 }
