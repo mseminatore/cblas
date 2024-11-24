@@ -425,6 +425,7 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 		if (alpha == 1.0f)
 		{
 			sger_row_noalpha4x4(m, n,  x, incx, y, incy, a, lda);
+			// sger_row_noalpha8x4(m, n,  x, incx, y, incy, a, lda);
 		}
 		else
 		{
