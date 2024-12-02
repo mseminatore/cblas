@@ -52,7 +52,7 @@ install:
 	sudo cp libcblas.a /opt/cblas/lib
 	sudo cp cblas.h /opt/cblas/include
 
-test:
+test: all
 	./blas_test
 
 clean:
