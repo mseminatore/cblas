@@ -235,9 +235,8 @@ void cblas_level2_exec()
 
     //    n -= partition_size;
 
-    //    // TODO - the x/y is wrong when incx/incy is > 1
-    //    x = (void*)((CBLAS_INDEX)x + partition_size * incx * stride);
-    //    y = (void*)((CBLAS_INDEX)y + partition_size * incy * stride);
+    //    x = (char*)x + partition_size * incx * stride);
+    //    y = (char*)y + partition_size * incy * stride);
 
     //    queue[i].finished = 0;
     //    queue[i].args = &args[i];
