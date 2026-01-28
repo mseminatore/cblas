@@ -271,9 +271,9 @@ void cblas_set_num_threads(int threads);
 int cblas_get_num_threads(void);
 int cblas_init_server();
 
-void cblas_execute(int items, work_queue_t* queue);
-void cblas_execute_async(int items, work_queue_t* queue);
-void cblas_execute_async_join(int items, work_queue_t* queue);
+void cblas_execute(CBLAS_INDEX items, work_queue_t* queue);
+void cblas_execute_async(CBLAS_INDEX items, work_queue_t* queue);
+void cblas_execute_async_join(CBLAS_INDEX items, work_queue_t* queue);
 
 void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy);
 void cblas_level1_exec_result(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy, void* c);

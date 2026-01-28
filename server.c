@@ -183,7 +183,7 @@ static void *cblas_worker_thread(void *pvoid)
 //------------------------------------------------------
 // execute a work queue synchronously
 //------------------------------------------------------
-void cblas_execute(int items, work_queue_t* queue)
+void cblas_execute(CBLAS_INDEX items, work_queue_t* queue)
 {
     assert(items > 0 && queue);
 
@@ -208,11 +208,11 @@ void cblas_execute(int items, work_queue_t* queue)
 //------------------------------------------------------
 // execute a work queue asynchronously
 //------------------------------------------------------
-void cblas_execute_async(int items, work_queue_t* queue)
+void cblas_execute_async(CBLAS_INDEX items, work_queue_t* queue)
 {
    assert(queue);
 
-    MT_TRACE("adding %d items to the queue.\n", items);
+    MT_TRACE("adding %zu items to the queue.\n", items);
 
     // add new work to the end of the work_queue
     pthread_mutex_lock(&queue_lock);
@@ -246,11 +246,11 @@ void cblas_execute_async(int items, work_queue_t* queue)
 //------------------------------------------------------
 // wait for the set of tasks to complete
 //------------------------------------------------------
-void cblas_execute_async_join(int items, work_queue_t* queue)
+void cblas_execute_async_join(CBLAS_INDEX items, work_queue_t* queue)
 {
     assert(queue);
 
-    MT_TRACE("waiting on queue to complete %d items.\n", items);
+    MT_TRACE("waiting on queue to complete %zu items.\n", items);
 
     while (items)
     {

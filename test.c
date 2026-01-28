@@ -248,24 +248,24 @@ static void test_copy()
 
 		float sr[ARRAY_SIZE(sones)];
 
-		cblas_scopy(ARRAY_SIZE(sones), sr, 1, sones, 1);
+		cblas_scopy(ARRAY_SIZE(sones), sones, 1, sr, 1);
 		TEST(EQUAL_ARRAY(sones, sr));
 
 		float sr1[BIG_ARRAY];
 
-		cblas_scopy(BIG_ARRAY, sr1, 1, sbig_ones, 1);
+		cblas_scopy(BIG_ARRAY, sbig_ones, 1, sr1, 1);
 		TEST(EQUAL_ARRAY_SIZE(sbig_ones, sr1, BIG_ARRAY));
 
 	SUITE("cblas_dcopy");
 
 		double dr[ARRAY_SIZE(dones)];
 
-		cblas_dcopy(ARRAY_SIZE(dones), dr, 1, dones, 1);
+		cblas_dcopy(ARRAY_SIZE(dones), dones, 1, dr, 1);
 		TEST(EQUAL_ARRAY(dones, dr));
 
 		double dr1[BIG_ARRAY];
 
-		cblas_dcopy(BIG_ARRAY, dr1, 1, dbig_ones, 1);
+		cblas_dcopy(BIG_ARRAY, dbig_ones, 1, dr1, 1);
 		TEST(EQUAL_ARRAY_SIZE(dbig_ones, dr1, BIG_ARRAY));
 }
 
@@ -278,7 +278,7 @@ static void test_axpy()
 
 		float sr[ARRAY_SIZE(sones)];
 
-		cblas_scopy(ARRAY_SIZE(szeros), sr, 1, szeros, 1);
+		cblas_scopy(ARRAY_SIZE(szeros), szeros, 1, sr, 1);
 		cblas_saxpy(ARRAY_SIZE(sones), 1.0f, sones, 1, sr, 1);
 		TEST(EQUAL_ARRAY(sr, sones));
 
@@ -286,7 +286,7 @@ static void test_axpy()
 
 		double dr[ARRAY_SIZE(dones)];
 
-		cblas_dcopy(ARRAY_SIZE(dzeros), dr, 1, dzeros, 1);
+		cblas_dcopy(ARRAY_SIZE(dzeros), dzeros, 1, dr, 1);
 		cblas_daxpy(ARRAY_SIZE(dones), 1.0, dones, 1, dr, 1);
 		TEST(EQUAL_ARRAY(dr, dones));
 }
@@ -300,7 +300,7 @@ static void test_axpby()
 
 		float sr[ARRAY_SIZE(sones)];
 
-		cblas_scopy(ARRAY_SIZE(szeros), sr, 1, szeros, 1);
+		cblas_scopy(ARRAY_SIZE(szeros), szeros, 1, sr, 1);
 		cblas_saxpby(ARRAY_SIZE(sones), 1.0f, sones, 1, 1.0f, sr, 1);
 		TEST(EQUAL_ARRAY(sr, sones));
 
@@ -308,7 +308,7 @@ static void test_axpby()
 
 		double dr[ARRAY_SIZE(dones)];
 
-		cblas_dcopy(ARRAY_SIZE(dzeros), dr, 1, dzeros, 1);
+		cblas_dcopy(ARRAY_SIZE(dzeros), dzeros, 1, dr, 1);
 		cblas_daxpby(ARRAY_SIZE(dones), 1.0, dones, 1, 1.0, dr, 1);
 		TEST(EQUAL_ARRAY(dr, dones));
 }
@@ -322,7 +322,7 @@ static void test_scal()
 
 		float sr[ARRAY_SIZE(sones)];
 
-		cblas_scopy(ARRAY_SIZE(sones), sr, 1, sones, 1);
+		cblas_scopy(ARRAY_SIZE(sones), sones, 1, sr, 1);
 		cblas_sscal(ARRAY_SIZE(sr), 1.0, sr, 1);
 		TEST(EQUAL_ARRAY(sr, sones));
 
@@ -330,7 +330,7 @@ static void test_scal()
 
 		double dr[ARRAY_SIZE(dones)];
 
-		cblas_dcopy(ARRAY_SIZE(dones), dr, 1, dones, 1);
+		cblas_dcopy(ARRAY_SIZE(dones), dones, 1, dr, 1);
 		cblas_dscal(ARRAY_SIZE(dr), 1.0, dr, 1);
 		TEST(EQUAL_ARRAY(dr, dones));
 }
