@@ -79,7 +79,7 @@ static void test_scopy_stride2(void)
     memset(sb, 0, sizeof(sb));
     
     // Copy with stride=2 for both (copies FROM sa TO sb)
-    cblas_scopy(LOGICAL_SIZE, sb, 2, sa, 2);
+    cblas_scopy(LOGICAL_SIZE, sa, 2, sb, 2);
     
     // Verify the copy worked
     TEST(equal_strided_float(sa, sb, LOGICAL_SIZE, 2));
@@ -95,7 +95,7 @@ static void test_dcopy_stride2(void)
     init_strided_double(da, LOGICAL_SIZE, 2, 1.0);
     memset(db, 0, sizeof(db));
     
-    cblas_dcopy(LOGICAL_SIZE, db, 2, da, 2);
+    cblas_dcopy(LOGICAL_SIZE, da, 2, db, 2);
     
     TEST(equal_strided_double(da, db, LOGICAL_SIZE, 2));
 }
@@ -112,7 +112,7 @@ static void test_scopy_stride3(void)
     float sb3[60] = {0};
     
     init_strided_float(sa3, LOGICAL_SIZE, 3, 1.0f);
-    cblas_scopy(LOGICAL_SIZE, sb3, 3, sa3, 3);
+    cblas_scopy(LOGICAL_SIZE, sa3, 3, sb3, 3);
     
     TEST(equal_strided_float(sa3, sb3, LOGICAL_SIZE, 3));
 }
@@ -128,7 +128,7 @@ static void test_dcopy_stride3(void)
     double db3[60] = {0};
     
     init_strided_double(da3, LOGICAL_SIZE, 3, 1.0);
-    cblas_dcopy(LOGICAL_SIZE, db3, 3, da3, 3);
+    cblas_dcopy(LOGICAL_SIZE, da3, 3, db3, 3);
     
     TEST(equal_strided_double(da3, db3, LOGICAL_SIZE, 3));
 }

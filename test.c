@@ -761,5 +761,8 @@ int test_main(int argc, char *argv[])
 	free(dbig_ones);
 	free(dbig_zeroes);
 
+	// Shutdown CBLAS library
+	cblas_shutdown();
+
 	return 0;
 }

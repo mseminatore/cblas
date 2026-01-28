@@ -148,10 +148,33 @@ void cblas_shutdown()
 
     cblas_set_server_alive(CBLAS_FALSE);
 
-    // TODO - shutdown threads? set thread count to 1, wake threads and let them die gracefully
+    // Wake all threads and wait for them to exit gracefully
+    EnterCriticalSection(&server_lock);
+    
+    int thread_count = cblas_max_threads;
+    cblas_max_threads = 1;  // Signal all threads to exit
+    
+    // Wake up all waiting threads
+    SetEvent(kickoff_event);
+    
+    // Wait for all threads to complete
+    for (int i = 0; i < thread_count - 1; i++)
+    {
+        if (cblas_threads[i] != NULL)
+        {
+            MT_TRACE("shutdown: waiting on thread [%d] to quit.\n", i);
+            WaitForSingleObject(cblas_threads[i], INFINITE);
+            MT_TRACE("shutdown: thread [%d] has quit.\n", i);
+            CloseHandle(cblas_threads[i]);
+            cblas_threads[i] = NULL;
+        }
+    }
+    
+    LeaveCriticalSection(&server_lock);
 
     // cleanup event and locks
     CloseHandle(kickoff_event);
+    kickoff_event = NULL;
 
     DeleteCriticalSection(&queue_lock);
     DeleteCriticalSection(&server_lock);

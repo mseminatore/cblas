@@ -108,11 +108,35 @@ int cblas_init_server()
 //------------------------------------------------------
 void cblas_shutdown()
 {
+    if (!cblas_is_server_alive())
+        return;
+
+    cblas_set_server_alive(CBLAS_FALSE);
+
+    // Wake all threads and wait for them to exit gracefully
+    pthread_mutex_lock(&server_lock);
+    
+    int thread_count = cblas_max_threads;
+    cblas_max_threads = 1;  // Signal all threads to exit
+    
+    // Wake up all waiting threads
+    pthread_cond_broadcast(&kickoff_event);
+    
+    // Wait for all threads to complete
+    for (int i = 0; i < thread_count - 1; i++)
+    {
+        MT_TRACE("shutdown: waiting on thread [%d] to quit.\n", i);
+        pthread_join(cblas_thread_ids[i], NULL);
+        MT_TRACE("shutdown: thread [%d] has quit.\n", i);
+        cblas_thread_ids[i] = 0;
+    }
+    
+    pthread_mutex_unlock(&server_lock);
+
+    // Cleanup synchronization primitives
     pthread_mutex_destroy(&queue_lock);
     pthread_cond_destroy(&kickoff_event);
     pthread_mutex_destroy(&server_lock);
-
-    // TODO - delete threads?
 }
 
 //------------------------------------------------------
