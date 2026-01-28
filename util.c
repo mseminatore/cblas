@@ -73,25 +73,66 @@ const char *cblas_get_isa_features()
 
     unsigned int cpu = cpu_get_features();
 
+    char *pos = buf;
+    int remaining = CBLAS_SMALL_BUF;
+    int written = 0;
+    int first = 1;
+
     buf[0] = 0;
 
 #if defined(__APPLE__) || defined(__aarch64__)
-    if (cpu & CPU_NEON)
-        strcat(buf, "NEON");
+    if (cpu & CPU_NEON) {
+        written = snprintf(pos, remaining, "NEON");
+        if (written > 0 && written < remaining) {
+            pos += written;
+            remaining -= written;
+            first = 0;
+        }
+    }
 
-    if (cpu & CPU_NEON_FMA)
-        strcat(buf, ", FMA");
+    if (cpu & CPU_NEON_FMA) {
+        written = snprintf(pos, remaining, "%sFMA", first ? "" : ", ");
+        if (written > 0 && written < remaining) {
+            pos += written;
+            remaining -= written;
+            first = 0;
+        }
+    }
 #endif
 
 #if defined(__x86_64__) || defined(_M_X64)
-    if (cpu & CPU_SSE)
-        strcat(buf, "SSE");
-    if (cpu & CPU_AVX)
-        strcat(buf, ", AVX");
-    if (cpu & CPU_AVX2)
-        strcat(buf, ", AVX2");
-    if (cpu & CPU_x64_FMA3)
-        strcat(buf, ", FMA");
+    if (cpu & CPU_SSE) {
+        written = snprintf(pos, remaining, "SSE");
+        if (written > 0 && written < remaining) {
+            pos += written;
+            remaining -= written;
+            first = 0;
+        }
+    }
+    if (cpu & CPU_AVX) {
+        written = snprintf(pos, remaining, "%sAVX", first ? "" : ", ");
+        if (written > 0 && written < remaining) {
+            pos += written;
+            remaining -= written;
+            first = 0;
+        }
+    }
+    if (cpu & CPU_AVX2) {
+        written = snprintf(pos, remaining, "%sAVX2", first ? "" : ", ");
+        if (written > 0 && written < remaining) {
+            pos += written;
+            remaining -= written;
+            first = 0;
+        }
+    }
+    if (cpu & CPU_x64_FMA3) {
+        written = snprintf(pos, remaining, "%sFMA", first ? "" : ", ");
+        if (written > 0 && written < remaining) {
+            pos += written;
+            remaining -= written;
+            first = 0;
+        }
+    }
 #endif
 
     return buf;
