@@ -1,0 +1,583 @@
+# Recommended Issues for CBLAS
+
+This file contains tracking issues for codebase improvements. Copy each issue to GitHub Issues as needed.
+
+---
+
+## 🐛 Critical Bug Fixes
+
+### ~~Issue #1: Fix stride handling in cblas_level1_exec()~~ ✅ RESOLVED
+**Priority:** ~~Critical~~ FIXED  
+**Labels:** bug, correctness, level-1  
+**Status:** Fixed on 2026-01-28
+
+**Resolution:**
+Fixed stride handling in both `cblas_level1_exec()` and `cblas_level1_exec_result()` (util.c lines 154-155, 196-197). Pointer advancement now correctly multiplies by stride:
+```c
+x = (char*)x + partition_size * incx * byte_stride;
+y = (char*)y + partition_size * incy * byte_stride;
+```
+
+**Verification:**
+- ✅ Offset calculation fixed in both functions
+- ✅ test_strided.c added with incx=2, incy=2, incx=3 test cases
+- ✅ All 114 level-1 strided tests pass
+
+---
+
+### ~~Issue #2: Implement proper thread cleanup in cblas_shutdown()~~ ✅ RESOLVED
+**Priority:** ~~Critical~~ FIXED  
+**Labels:** bug, memory-leak, threading  
+**Status:** Fixed on 2026-01-28
+
+**Resolution:**
+Implemented graceful thread termination in both `server_win32.c` and `server.c`. The shutdown function now:
+1. Sets `cblas_max_threads = 1` to signal threads to exit
+2. Broadcasts condition variable to wake all sleeping threads
+3. Waits for all threads to complete with `WaitForSingleObject()`/`pthread_join()`
+4. Closes/nulls thread handles
+5. Cleans up synchronization primitives
+
+**Verification:**
+- ✅ No more segfaults when test_strided.exe runs under ctest
+- ✅ Threads properly terminate before resource cleanup
+- ✅ Works on both Windows (Win32 API) and POSIX (pthread) platforms
+
+---
+
+### ~~Issue #3: Fix buffer overflow in cblas_get_isa_features()~~ ✅ RESOLVED
+**Priority:** ~~High~~ FIXED  
+**Labels:** bug, security, buffer-overflow  
+**Status:** Fixed on 2026-01-28
+
+**Resolution:**
+Replaced unsafe `strcat()` calls with `snprintf()` in `cblas_get_isa_features()` (util.c lines 70-137). The function now:
+1. Tracks remaining buffer space with a `remaining` counter
+2. Uses `snprintf()` with bounds checking for each feature string
+3. Advances pointer only if write was successful and within bounds
+4. Properly handles comma separation with a `first` flag
+
+**Code Pattern:**
+```c
+char *pos = buf;
+int remaining = CBLAS_SMALL_BUF;
+int written = snprintf(pos, remaining, "%sAVX2", first ? "" : ", ");
+if (written > 0 && written < remaining) {
+    pos += written;
+    remaining -= written;
+    first = 0;
+}
+```
+
+**Verification:**
+- ✅ Replaced all strcat() calls with safe snprintf()
+- ✅ Buffer overflow impossible - writes stop when buffer is full
+- ✅ String truncation handled gracefully
+- ✅ All tests pass, ISA features display correctly
+
+---
+
+## ⚡ Performance Improvements
+
+### ~~Issue #4: Optimize gemm AddDot() pointer arithmetic~~ ✅ RESOLVED
+**Priority:** ~~High~~ FIXED  
+**Labels:** enhancement, performance, level-3  
+**Status:** Fixed on 2026-01-28
+
+**Resolution:**
+Fixed critical bugs and optimized the `AddDot()` function in gemm.c:
+
+1. **Fixed stride bug**: AddDot was using the same stride (`incx`) for both x and y arrays. Added separate `incy` parameter so y can stride correctly by `ldb` to step down columns of matrix B.
+
+2. **Optimized pointer arithmetic**: Replaced array indexing `x[p]` and `Y(p)` macro with pointer arithmetic:
+```c
+float *px = x;
+float *py = y;
+for (CBLAS_INDEX p = 0; p < k; p++) {
+    *gamma += (*px) * (*py);
+    px += incx;
+    py += incy;
+}
+```
+
+3. **Fixed all AddDot calls**: Updated all calls to pass stride `1` for x (row-major A) and `ldb` for y (stepping down columns of B).
+
+**Verification:**
+- ✅ Replaced array indexing with pointer arithmetic
+- ✅ Added test with 5x5 matrix (non-multiple of 4) to force AddDot execution
+- ✅ All 69 test cases pass including new non-mult-4 test
+- ✅ Results match expected values exactly
+
+---
+
+### Issue #5: Implement SIMD for nrm2, asum, and rot
+**Priority:** Medium  
+**Labels:** enhancement, performance, simd, level-1
+
+**Description:**
+Several level-1 operations lack SIMD implementations despite being highly vectorizable:
+- nrm2.c - Euclidean norm (sum of squares + sqrt)
+- asum.c - Sum of absolute values
+- rot.c - Plane rotation
+
+**Implementation Pattern:**
+Follow dot.c structure with SSE/AVX paths guarded by preprocessor flags.
+
+**Acceptance Criteria:**
+- [ ] Add SSE/AVX implementations for snrm2, dnrm2
+- [ ] Add SSE/AVX implementations for sasum, dasum
+- [ ] Add SSE/AVX implementations for srot, drot
+- [ ] Benchmark improvements (expect 2-4x speedup)
+- [ ] Verify numerical accuracy within epsilon
+
+---
+
+### Issue #6: Enable runtime FMA detection and dispatch
+**Priority:** Medium  
+**Labels:** enhancement, performance, simd
+
+**Description:**
+FMA (Fused Multiply-Add) is disabled by default in cblas.h:56. Instead of compile-time flag, implement runtime detection and kernel dispatch.
+
+**Current State:**
+```c
+//#define USE_INTEL_FMA  // Commented out
+```
+
+**Proposed Architecture:**
+- Detect FMA support via `cpu_get_features()`
+- Populate `blas_kernels` struct with FMA variants
+- Dispatch to FMA kernels when available
+
+**Affected Operations:**
+- GEMM (most impactful)
+- GER
+- DOT
+- AXPY
+
+**Acceptance Criteria:**
+- [ ] Create FMA variants of kernel functions
+- [ ] Add FMA detection to cpuid code
+- [ ] Implement runtime dispatch in blas_kernels
+- [ ] Benchmark FMA vs non-FMA on supported CPUs
+
+---
+
+## 🧪 Testing Improvements
+
+### Issue #7: Add comprehensive stride tests
+**Priority:** High  
+**Labels:** testing, correctness
+
+**Description:**
+No tests exist for `incx/incy != 1` cases. Multiple TODOs reference this (test.c:177, ger.c:422).
+
+**Required Test Coverage:**
+- All level-1 operations with incx=2, incy=2
+- All level-1 operations with incx=3, incy=3
+- Mixed strides: incx=1, incy=2
+- Negative strides (if supported)
+
+**Implementation:**
+Create `test_strided.c` with:
+```c
+void test_sdot_stride2();
+void test_scopy_stride2();
+void test_saxpy_stride2();
+// ... etc for all operations
+```
+
+**Acceptance Criteria:**
+- [ ] Create test_strided.c
+- [ ] Test all level-1 operations with various strides
+- [ ] Add to CMakeLists.txt and Makefile
+- [ ] All tests pass
+
+---
+
+### Issue #8: Add numerical accuracy tests
+**Priority:** Medium  
+**Labels:** testing, quality
+
+**Description:**
+Current tests only check exact equality. Need tests comparing against reference implementations for:
+- Accumulated rounding errors in large operations
+- Edge cases (denormals, infinities, NaN)
+- Comparison vs OpenBLAS or reference BLAS
+
+**Implementation:**
+Create `test_accuracy.c` with:
+- Large matrix operations (n > 10000)
+- Known difficult cases (ill-conditioned matrices)
+- Comparison thresholds based on operation complexity
+
+**Acceptance Criteria:**
+- [ ] Create test_accuracy.c
+- [ ] Define acceptable error bounds (e.g., n * epsilon)
+- [ ] Test GEMM accuracy for various matrix sizes
+- [ ] Test DOT accuracy with large vectors
+- [ ] Document expected error characteristics
+
+---
+
+### Issue #9: Add thread safety tests
+**Priority:** Medium  
+**Labels:** testing, threading, concurrency
+
+**Description:**
+No tests verify thread safety when multiple threads call BLAS functions simultaneously.
+
+**Test Scenarios:**
+- Multiple threads calling different BLAS operations
+- Multiple threads modifying cblas_set_num_threads()
+- Race conditions in work queue management
+- Thread local storage issues
+
+**Implementation:**
+Create `test_concurrent.c` with:
+- Spawn N threads, each calling BLAS operations
+- Stress test cblas_init()/cblas_shutdown() cycles
+- Test thread safety of cblas_set_num_threads()
+
+**Acceptance Criteria:**
+- [ ] Create test_concurrent.c
+- [ ] Run with ThreadSanitizer (TSAN)
+- [ ] Test with 2, 4, 8, 16 concurrent threads
+- [ ] No data races detected
+
+---
+
+### Issue #10: Fix memory leaks in test suite
+**Priority:** Medium  
+**Labels:** testing, memory-leak
+
+**Description:**
+test.c and test_stress.c allocate large arrays (sbig_ones, dbig_ones) but never call cblas_shutdown() or free memory.
+
+**Leaks:**
+```c
+sbig_ones = svec_fill(BIG_ARRAY, 1.0f);   // Never freed
+sbig_zeroes = svec_fill(BIG_ARRAY, 0.0f); // Never freed
+```
+
+**Fix:**
+Add cleanup in test teardown and call cblas_shutdown().
+
+**Acceptance Criteria:**
+- [ ] Add cleanup functions to test.c
+- [ ] Call cblas_shutdown() in main()
+- [ ] Run Valgrind with --leak-check=full
+- [ ] Zero reported leaks
+
+---
+
+## 🏗️ Code Quality
+
+### Issue #11: Consolidate duplicate error handling
+**Priority:** Low  
+**Labels:** refactoring, code-quality
+
+**Description:**
+Every BLAS function has nearly identical error checking code. Create shared validation macros to reduce duplication.
+
+**Current Duplication:**
+Every file has:
+```c
+#ifdef CBLAS_CHECK_INPUTS
+    int info = 0;
+    if (n <= 0) info = 1;
+    else if (!x) info = 2;
+    else if (!y) info = 4;
+    if (info) { XERBLA(info); return; }
+#endif
+```
+
+**Proposed Solution:**
+```c
+// In cblas.h
+#define CBLAS_VALIDATE_VEC_OP(n, x, incx, y, incy, ret) ...
+#define CBLAS_VALIDATE_MATRIX_OP(m, n, a, lda, ret) ...
+```
+
+**Acceptance Criteria:**
+- [ ] Create validation macros in cblas.h
+- [ ] Replace duplicate code in all .c files
+- [ ] Verify error codes remain consistent
+- [ ] No change in behavior
+
+---
+
+### Issue #12: Separate platform-specific code
+**Priority:** Low  
+**Labels:** refactoring, architecture
+
+**Description:**
+Platform-specific code is scattered throughout the codebase. Create abstraction layer.
+
+**Proposed Structure:**
+```
+platform/
+  threading.h   - Abstract pthread/Win32 threading
+  simd.h        - SIMD intrinsic wrappers
+  cpuid.h       - CPU detection interface
+```
+
+**Benefits:**
+- Easier to add new platforms (WebAssembly, etc.)
+- Cleaner conditional compilation
+- Better testability
+
+**Acceptance Criteria:**
+- [ ] Create platform/ directory structure
+- [ ] Move threading code to platform/threading.h
+- [ ] Move SIMD code to platform/simd.h
+- [ ] Update build systems
+- [ ] All platforms build successfully
+
+---
+
+### Issue #13: Enable compiler warnings
+**Priority:** High  
+**Labels:** code-quality, build
+
+**Description:**
+Neither Makefile nor CMakeLists.txt enables compiler warnings, missing potential bugs.
+
+**Add to Build:**
+```makefile
+CFLAGS += -Wall -Wextra -Wpedantic -Wconversion
+```
+
+**Expected Findings:**
+- Implicit conversions
+- Unused variables
+- Sign comparison issues
+- Potential null pointer dereferences
+
+**Acceptance Criteria:**
+- [ ] Add warning flags to Makefile
+- [ ] Add warning flags to CMakeLists.txt
+- [ ] Fix all warnings in codebase
+- [ ] Set warnings as errors (-Werror) in CI
+
+---
+
+## 📚 Documentation
+
+### Issue #14: Add API documentation to cblas.h
+**Priority:** Medium  
+**Labels:** documentation
+
+**Description:**
+No function in cblas.h has parameter documentation. Add Doxygen-style comments.
+
+**Format:**
+```c
+/**
+ * @brief Compute dot product of two vectors
+ * @param n Number of elements (must be > 0)
+ * @param x Input vector X (must be non-NULL)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @param y Input vector Y (must be non-NULL)
+ * @param incy Stride for Y (typically 1 for contiguous)
+ * @return Dot product result (X · Y)
+ * @note Thread-safe. Uses MT when n > CBLAS_MT_DOT.
+ */
+```
+
+**Acceptance Criteria:**
+- [ ] Document all public functions in cblas.h
+- [ ] Add parameter descriptions and constraints
+- [ ] Document thread-safety guarantees
+- [ ] Generate HTML docs with Doxygen
+
+---
+
+### Issue #15: Document threading architecture
+**Priority:** Medium  
+**Labels:** documentation, threading
+
+**Description:**
+No documentation explains when threading activates or how work queues function.
+
+**Create:** `docs/THREADING.md` covering:
+- MT threshold values and how to tune them
+- Work queue architecture and dispatch
+- Performance characteristics (overhead, scaling)
+- Thread safety guarantees
+- How to disable threading if needed
+
+**Acceptance Criteria:**
+- [ ] Create docs/THREADING.md
+- [ ] Explain work queue implementation
+- [ ] Document MT thresholds
+- [ ] Add architecture diagrams
+- [ ] Link from README.md
+
+---
+
+### Issue #16: Document cache-blocking strategy
+**Priority:** Low  
+**Labels:** documentation, performance
+
+**Description:**
+gemm.c uses specific tile sizes (mc=256, kc=128, nb=1024) with no explanation.
+
+**Add Comments Explaining:**
+- Why these specific sizes?
+- Relationship to L1/L2 cache sizes
+- How to tune for different architectures
+- Tradeoffs between tile sizes
+
+**Acceptance Criteria:**
+- [ ] Add inline comments to gemm.c
+- [ ] Document cache blocking algorithm
+- [ ] Provide tuning guidelines
+- [ ] Reference GotoBLAS paper
+
+---
+
+## 🔧 Build System
+
+### Issue #17: Add CMake configuration options
+**Priority:** Medium  
+**Labels:** enhancement, build
+
+**Description:**
+Configuration flags are hardcoded #defines in cblas.h. Make them CMake options.
+
+**Proposed Options:**
+```cmake
+option(CBLAS_ENABLE_MT "Enable multi-threading" ON)
+option(CBLAS_USE_SIMD "Enable SIMD optimizations" ON)
+option(CBLAS_CHECK_INPUTS "Enable input validation" ON)
+option(CBLAS_USE_STATIC_BUFFERS "Use static buffers" ON)
+set(CBLAS_MAX_THREADS "64" CACHE STRING "Maximum threads")
+```
+
+**Generate:** `cblas_config.h` from CMake
+
+**Acceptance Criteria:**
+- [ ] Add CMake options
+- [ ] Generate cblas_config.h
+- [ ] Update cblas.h to include config
+- [ ] Document options in README
+- [ ] Test various configurations
+
+---
+
+### Issue #18: Add CI performance benchmarks
+**Priority:** Low  
+**Labels:** ci, performance
+
+**Description:**
+GitHub Actions only builds and tests. Add performance regression detection.
+
+**Implementation:**
+- Run gemm_perf, dot_perf, ger_perf in CI
+- Store results as artifacts
+- Compare against baseline
+- Fail CI if performance drops >10%
+
+**Acceptance Criteria:**
+- [ ] Add perf benchmarks to CI workflow
+- [ ] Store baseline performance data
+- [ ] Implement regression detection
+- [ ] Report GFlops in CI logs
+
+---
+
+### Issue #19: Remove disabled code blocks
+**Priority:** Low  
+**Labels:** code-quality, cleanup
+
+**Description:**
+Several files have `#if 0` blocks with old SIMD implementations that are confusing.
+
+**Files:**
+- ger.c:32-86 - Disabled SIMD code that's reimplemented below
+
+**Action:**
+Delete or document why code is disabled. If experimental, move to separate branch.
+
+**Acceptance Criteria:**
+- [ ] Review all #if 0 blocks
+- [ ] Delete obsolete code
+- [ ] Document reasons if kept
+- [ ] No functional changes
+
+---
+
+## 📊 Observability
+
+### Issue #20: Add performance counters
+**Priority:** Low  
+**Labels:** enhancement, observability
+
+**Description:**
+Add runtime statistics for monitoring BLAS usage patterns.
+
+**API Design:**
+```c
+typedef struct {
+    uint64_t total_calls;
+    uint64_t total_elements;
+    uint64_t mt_activations;
+    double total_time_sec;
+} cblas_stats_t;
+
+cblas_stats_t* cblas_get_stats(const char* operation);
+void cblas_reset_stats();
+void cblas_print_stats();
+```
+
+**Use Cases:**
+- Profile which operations dominate
+- Detect inefficient usage patterns
+- Verify MT is activating appropriately
+
+**Acceptance Criteria:**
+- [ ] Add stats tracking structure
+- [ ] Instrument all BLAS operations
+- [ ] Add query API
+- [ ] Add stats to cblas_print_configuration()
+- [ ] Minimal performance overhead (<1%)
+
+---
+
+### Issue #21: Improve MT debug output
+**Priority:** Low  
+**Labels:** enhancement, debugging, threading
+
+**Description:**
+Current MT_DEBUG only prints basic info. Enhance for troubleshooting.
+
+**Add:**
+- Thread ID tracking
+- Work queue depth monitoring
+- Load imbalance detection
+- Execution time per thread
+- JSON output mode for parsing
+
+**Implementation:**
+```c
+MT_TRACE_THREAD(tid, "Processing work item %d/%d", current, total);
+MT_TRACE_TIMING(tid, operation, duration_us);
+MT_TRACE_QUEUE_DEPTH(depth);
+```
+
+**Acceptance Criteria:**
+- [ ] Add structured tracing macros
+- [ ] Track per-thread timing
+- [ ] Detect load imbalance (>20% variance)
+- [ ] Add JSON output option
+- [ ] Document debug workflow
+
+---
+
+## Summary
+
+**Critical (Do First):** Issues #1, #2, #3  
+**High Priority:** Issues #4, #7, #13  
+**Medium Priority:** Issues #5, #6, #8, #9, #10, #14, #15, #17  
+**Low Priority:** Issues #11, #12, #16, #18, #19, #20, #21
