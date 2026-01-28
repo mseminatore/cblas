@@ -691,6 +691,35 @@ static void test_gemm()
 	cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 4, 4, 4, 1.0, damtx, 4, dbmtx, 4, 1.0, dcmtx, 4);
 
 	TEST(EQUAL_ARRAY(damtx, dcmtx));
+
+	// Test with non-multiple of 4 size to ensure AddDot is called
+	SUITE("cblas_sgemm (non-mult-4)");
+	{
+		#define N5 5
+		float a5x5[25] = {
+			1, 2, 3, 4, 5,
+			6, 7, 8, 9, 10,
+			11, 12, 13, 14, 15,
+			16, 17, 18, 19, 20,
+			21, 22, 23, 24, 25
+		};
+
+		float b5x5_identity[25] = {
+			1,0,0,0,0,
+			0,1,0,0,0,
+			0,0,1,0,0,
+			0,0,0,1,0,
+			0,0,0,0,1
+		};
+
+		float c5x5[25] = { 0 };
+
+		TEST(cbu_sge_is_identity(b5x5_identity, N5, N5));
+
+		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, N5, N5, N5, 1.0f, a5x5, N5, b5x5_identity, N5, 1.0f, c5x5, N5);
+
+		TEST(EQUAL_ARRAY_SIZE(a5x5, c5x5, 25));
+	}
 }
 
 //------------------------------------------------------

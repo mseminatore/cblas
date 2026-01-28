@@ -42,13 +42,16 @@
 //------------------------------------------------------
 // compute dot product of row of X and col of Y
 //------------------------------------------------------
-static void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, float *gamma)
+static void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *gamma)
 {
+    float *px = x;
+    float *py = y;
+    
 	for (CBLAS_INDEX p = 0; p < k; p++)
     {
-        // TODO - turn x[p] into *x++
-        // TODO - optimize Y(p)
-		*gamma += x[p] * Y(p);
+		*gamma += (*px) * (*py);
+        px += incx;
+        py += incy;
 	}
 }
 
@@ -389,21 +392,21 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
         switch(n - col)
         {
             case 3:     
-                AddDot(k, &A(0, row), lda, &B(col + 2, 0), &C(col + 2, row));
-                AddDot(k, &A(0, row+1), lda, &B(col + 2, 0), &C(col + 2, row+1));
-                AddDot(k, &A(0, row+2), lda, &B(col + 2, 0), &C(col + 2, row+2));
-                AddDot(k, &A(0, row+3), lda, &B(col + 2, 0), &C(col + 2, row+3));
+                AddDot(k, &A(0, row), 1, &B(col + 2, 0), ldb, &C(col + 2, row));
+                AddDot(k, &A(0, row+1), 1, &B(col + 2, 0), ldb, &C(col + 2, row+1));
+                AddDot(k, &A(0, row+2), 1, &B(col + 2, 0), ldb, &C(col + 2, row+2));
+                AddDot(k, &A(0, row+3), 1, &B(col + 2, 0), ldb, &C(col + 2, row+3));
             case 2:
-                AddDot(k, &A(0, row), lda, &B(col + 1, 0), &C(col + 1, row));
-                AddDot(k, &A(0, row+1), lda, &B(col + 1, 0), &C(col + 1, row+1));
-                AddDot(k, &A(0, row+2), lda, &B(col + 1, 0), &C(col + 1, row+2));
-                AddDot(k, &A(0, row+3), lda, &B(col + 1, 0), &C(col + 1, row+3));
+                AddDot(k, &A(0, row), 1, &B(col + 1, 0), ldb, &C(col + 1, row));
+                AddDot(k, &A(0, row+1), 1, &B(col + 1, 0), ldb, &C(col + 1, row+1));
+                AddDot(k, &A(0, row+2), 1, &B(col + 1, 0), ldb, &C(col + 1, row+2));
+                AddDot(k, &A(0, row+3), 1, &B(col + 1, 0), ldb, &C(col + 1, row+3));
             case 1:
                 //AddDot1x4(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
-                AddDot(k, &A(0, row), lda, &B(col, 0), &C(col, row));
-                AddDot(k, &A(0, row+1), lda, &B(col, 0), &C(col, row+1));
-                AddDot(k, &A(0, row+2), lda, &B(col, 0), &C(col, row+2));
-                AddDot(k, &A(0, row+3), lda, &B(col, 0), &C(col, row+3));
+                AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row));
+                AddDot(k, &A(0, row+1), 1, &B(col, 0), ldb, &C(col, row+1));
+                AddDot(k, &A(0, row+2), 1, &B(col, 0), ldb, &C(col, row+2));
+                AddDot(k, &A(0, row+3), 1, &B(col, 0), ldb, &C(col, row+3));
             case 0: ;   // nothing to do!
         }
     }
@@ -411,9 +414,9 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
     // handle leftover rows    
     switch(m - row)
     {
-        case 3:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 2), lda, &B(col, 0), &C(col, row + 2));
-        case 2:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 1), lda, &B(col, 0), &C(col, row + 1));
-        case 1:    for (col = 0; col < n; col++) AddDot(k, &A(0, row), lda, &B(col, 0), &C(col, row));
+        case 3:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 2), 1, &B(col, 0), ldb, &C(col, row + 2));
+        case 2:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 1), 1, &B(col, 0), ldb, &C(col, row + 1));
+        case 1:    for (col = 0; col < n; col++) AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row));
         case 0: ;   // nothing to do!
     }
 
