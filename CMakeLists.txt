@@ -6,6 +6,7 @@ project(cblas VERSION 1.0 LANGUAGES C)
 # testing
 enable_testing()
 add_test(NAME blas_test COMMAND blas_test)
+add_test(NAME test_strided COMMAND test_strided)
 
 # add the includes
 include_directories(${PROJECT_SOURCE_DIR})
@@ -76,6 +77,9 @@ target_link_libraries(mem_perf cblas ${MATH_LIB})
 
 add_executable(win_test test_main.c win_test.c)
 target_link_libraries(win_test cblas ${MATH_LIB})
+
+add_executable(test_strided test_main.c test_strided.c)
+target_link_libraries(test_strided cblas ${MATH_LIB})
 
 # install targets
 install(TARGETS cblas DESTINATION lib)
