@@ -150,9 +150,9 @@ void cblas_level1_exec(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_IN
 
         n -= partition_size;
 
-        // TODO - the x/y is wrong when incx/incy is > 1
-        x = (void*)((CBLAS_INDEX)x + partition_size * incx * byte_stride);
-        y = (void*)((CBLAS_INDEX)y + partition_size * incy * byte_stride);
+        // Advance pointers by partition size accounting for stride
+        x = (char*)x + partition_size * incx * byte_stride;
+        y = (char*)y + partition_size * incy * byte_stride;
 
         queue[i].finished   = 0;
         queue[i].args       = &args[i];
@@ -189,13 +189,13 @@ void cblas_level1_exec_result(CBLAS_INDEX byte_stride, kernel_function kernel, C
         args[i].n = partition_size;
         args[i].x = x;
         args[i].y = y;
-        args[i].c = (void*)((char*)c + i * byte_stride /*sizeof(double) * 2 */);
+        args[i].c = (char*)c + i * byte_stride;
 
         n -= partition_size;
 
-        // TODO - the x/y is wrong when incx/incy is > 1
-        x = (void*)((CBLAS_INDEX)x + partition_size * incx * byte_stride);
-        y = (void*)((CBLAS_INDEX)y + partition_size * incy * byte_stride);
+        // Advance pointers by partition size accounting for stride
+        x = (char*)x + partition_size * incx * byte_stride;
+        y = (char*)y + partition_size * incy * byte_stride;
 
         queue[i].finished = 0;
         queue[i].args = &args[i];
