@@ -523,40 +523,7 @@ CBLAS_UNUSED static void sger_row_noalpha_plain(CBLAS_INDEX m, CBLAS_INDEX n, fl
 //------------------------------------------------------
 void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, float* x, CBLAS_INDEX incx, float* y, CBLAS_INDEX incy, float* a, CBLAS_INDEX lda)
 {
-#ifdef CBLAS_CHECK_INPUTS
-
-#ifdef CBLAS_XERBLA_INPUTS
-	int info = 0;
-	if (layout != CblasRowMajor && layout != CblasColMajor)
-		info = 1;
-	else if (!x)
-		info = 5;
-	else if (incx == 0)
-		info = 6;
-	else if (!y)
-		info = 7;
-	else if (incy == 0)
-		info = 8;
-	else if (!a)
-		info = 9;
-	else if (lda < MAX(1, m))
-		info = 10;
-
-	if (info) {
-		XERBLA(info);
-		return;
-	}
-#else
-	if (M < 0 || n < 0 || !x || incx == 0 || incy == 0 || !a || lda < MAX(1, m))
-	{
-		assert(m > 0 && n > 0 && incx != 0 && incy != 0 && alpha != 0.0f);
-		assert(x && y && a);
-		assert(layout == CblasRowMajor || layout == CblasColMajor);
-		assert(lda >= MAX(1, m));
-		return;
-	}
-#endif  // CBLAS_XERBLA_INPUTS
-#endif  // CBLAS_CHECK_INPUTS
+    CBLAS_VALIDATE_GER(layout, m, n, x, incx, y, incy, a, lda, );
 
 	// fast reject case
 	if (m == 0 ||  n == 0 || alpha == 0.0f)
@@ -620,40 +587,7 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 //------------------------------------------------------
 void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy, double *a, CBLAS_INDEX lda)
 {
-#ifdef CBLAS_CHECK_INPUTS
-
-#ifdef CBLAS_XERBLA_INPUTS
-	int info = 0;
-	if (layout != CblasRowMajor && layout != CblasColMajor)
-		info = 1;
-	else if (!x)
-		info = 5;
-	else if (incx == 0)
-		info = 6;
-	else if (!y)
-		info = 7;
-	else if (incy == 0)
-		info = 8;
-	else if (!a)
-		info = 9;
-	else if (lda < MAX(1, m))
-		info = 10;
-	
-	if (info)  {
-		XERBLA(info);
-		return;
-	}
-#else
-	if (M < 0 || n < 0 || !x || incx == 0 || incy == 0 || !a || lda < MAX(1,m))
-	{
-		assert(m > 0 && n > 0 && incx != 0 && incy != 0 && alpha != 0.0);
-		assert(x && y && a);
-		assert(layout == CblasRowMajor || layout == CblasColMajor);
-		assert(lda >= MAX(1, m));
-		return;
-	}
-#endif
-#endif
+    CBLAS_VALIDATE_GER(layout, m, n, x, incx, y, incy, a, lda, );
 	// fast reject case
 	if (m == 0 ||  n == 0 || alpha == 0.0f)
 		return;
