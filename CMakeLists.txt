@@ -91,6 +91,9 @@ target_link_libraries(win_test cblas ${MATH_LIB})
 add_executable(test_strided test_main.c test_strided.c)
 target_link_libraries(test_strided cblas ${MATH_LIB})
 
+add_executable(test_stats test_stats.c)
+target_link_libraries(test_stats cblas ${MATH_LIB})
+
 # install targets
 install(TARGETS cblas DESTINATION lib)
 install(FILES cblas.h DESTINATION include)

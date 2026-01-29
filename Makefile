@@ -24,7 +24,7 @@ else
 	endif
 endif
 
-all: $(LIBNAME) blas_stress blas_test test_strided gemm_perf ger_perf dot_perf nrm2_asum_rot_perf
+all: $(LIBNAME) blas_stress blas_test test_strided test_stats gemm_perf ger_perf dot_perf nrm2_asum_rot_perf
 	
 $(LIBNAME): $(OBJS)
 	ar rcs $(LIBNAME) $(OBJS)
@@ -36,6 +36,9 @@ blas_test: $(LIBNAME) test_main.o test.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 test_strided: $(LIBNAME) test_main.o test_strided.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
+test_stats: $(LIBNAME) test_stats.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 gemm_perf: $(LIBNAME) gemm_perf.o
