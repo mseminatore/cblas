@@ -114,6 +114,7 @@ target_link_libraries(test_threshold cblas ${MATH_LIB})
 # install targets
 install(TARGETS cblas DESTINATION lib)
 install(FILES cblas.h DESTINATION include)
+install(FILES ${PROJECT_BINARY_DIR}/cblas_config.h DESTINATION include)
 
 # cmake --build . --config Release
 # cmake --install . --prefix c:\opt -v
