@@ -325,6 +325,9 @@ void cblas_execute_async(CBLAS_INDEX items, work_queue_t* queue)
 
 #ifdef MT_DEBUG
     // Count queue depth for monitoring
+    // NOTE: This is O(n) and runs inside the critical section, so it adds overhead
+    // when MT_DEBUG is enabled. This is acceptable for debugging but should not
+    // be enabled in production builds.
     int depth = 0;
     work_queue_t* item = work_queue;
     while (item) {
@@ -369,6 +372,9 @@ void cblas_execute_async_join(CBLAS_INDEX items, work_queue_t* queue)
 
 #ifdef MT_DEBUG
     // Collect timing data and detect load imbalance
+    // NOTE: queue_start points to stack-allocated work items in the caller.
+    // This is safe here because we access them before returning (and thus before
+    // they go out of scope in the calling function).
     if (queue_start) {
         double times[MAX_THREADS];
         int count = 0;

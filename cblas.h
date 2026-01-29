@@ -96,20 +96,24 @@ typedef size_t CBLAS_INDEX;
 #   define MT_TRACE_TIMING(tid, op, duration_us) fprintf(stderr, "[Thread %d] %s took %.2f us\n", tid, op, duration_us)
 #   define MT_TRACE_QUEUE_DEPTH(depth) fprintf(stderr, "[Queue] Depth: %d\n", depth)
 #   define MT_TRACE_LOAD_BALANCE(thread_count, times) do { \
-        double min_time = times[0], max_time = times[0], sum = times[0]; \
-        for (int i = 1; i < thread_count; i++) { \
-            if (times[i] < min_time) min_time = times[i]; \
-            if (times[i] > max_time) max_time = times[i]; \
-            sum += times[i]; \
-        } \
-        double avg_time = sum / thread_count; \
-        double variance = ((max_time - min_time) / avg_time) * 100.0; \
-        if (variance > 20.0) { \
-            fprintf(stderr, "[Load Balance] WARNING: %.1f%% variance (min=%.2fus, max=%.2fus, avg=%.2fus)\n", \
-                    variance, min_time, max_time, avg_time); \
-        } else { \
-            fprintf(stderr, "[Load Balance] OK: %.1f%% variance (min=%.2fus, max=%.2fus, avg=%.2fus)\n", \
-                    variance, min_time, max_time, avg_time); \
+        if ((thread_count) > 0) { \
+            double min_time = times[0], max_time = times[0], sum = times[0]; \
+            for (int _mt_idx = 1; _mt_idx < (thread_count); _mt_idx++) { \
+                if (times[_mt_idx] < min_time) min_time = times[_mt_idx]; \
+                if (times[_mt_idx] > max_time) max_time = times[_mt_idx]; \
+                sum += times[_mt_idx]; \
+            } \
+            double avg_time = sum / (thread_count); \
+            if (avg_time > 0.0) { \
+                double variance = ((max_time - min_time) / avg_time) * 100.0; \
+                if (variance > 20.0) { \
+                    fprintf(stderr, "[Load Balance] WARNING: %.1f%% variance (min=%.2fus, max=%.2fus, avg=%.2fus)\n", \
+                            variance, min_time, max_time, avg_time); \
+                } else { \
+                    fprintf(stderr, "[Load Balance] OK: %.1f%% variance (min=%.2fus, max=%.2fus, avg=%.2fus)\n", \
+                            variance, min_time, max_time, avg_time); \
+                } \
+            } \
         } \
     } while(0)
 
