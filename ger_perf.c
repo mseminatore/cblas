@@ -73,5 +73,7 @@ int main(int argc, char *argv[])
 	
     test_ger();
 
+	cblas_shutdown();
+
 	return 0;
 }

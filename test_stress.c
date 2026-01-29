@@ -72,5 +72,7 @@ int test_main(int argc, char *argv[])
 	
 	test_stress();
 
+	cblas_shutdown();
+
 	return 0;
 }

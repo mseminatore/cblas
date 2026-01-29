@@ -50,5 +50,7 @@ int main(int argc, char *argv[])
 	
     test_gemm();
 
+	cblas_shutdown();
+
 	return 0;
 }
