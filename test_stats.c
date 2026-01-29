@@ -13,7 +13,8 @@ int main(void)
     printf("\n=== Testing Performance Counter Functionality ===\n\n");
     
     cblas_init(CBLAS_DEFAULT_THREADS);
-    
+    cblas_print_configuration();
+
     // Reset stats to start fresh
     cblas_reset_stats();
     

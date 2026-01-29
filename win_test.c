@@ -90,8 +90,14 @@ int test_main(int argc, char *argv[])
 
 	cblas_init(CBLAS_DEFAULT_THREADS);
 	cblas_print_configuration();
-	
+
+	// Reset stats to start fresh
+	cblas_reset_stats();
+
 	test_win_threads();
+
+	// Print all statistics
+	cblas_print_stats();
 
 	return 0;
 }
