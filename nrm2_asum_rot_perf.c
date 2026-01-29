@@ -127,6 +127,8 @@ void test_rot()
 //------------------------------------------------------
 int main(int argc, char *argv[])
 {
+	(void)argc;
+	(void)argv;
 	cblas_init(CBLAS_DEFAULT_THREADS);
 	cblas_print_configuration();
 	

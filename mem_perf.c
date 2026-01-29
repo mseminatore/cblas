@@ -65,7 +65,7 @@ float timer_get_delta(struct timer *t1, struct timer *t2)
 void test_mem_read()
 {
     struct timer t1, t2;
-    float dt, v = 0.0f;
+    float dt, v CBLAS_UNUSED = 0.0f;
     float* px = x;
 
     printf("Testing performance of memory reads\n\n");
@@ -89,8 +89,8 @@ void test_mem_read()
 void test_mem_write()
 {
     struct timer t1, t2;
-    float dt, v = 0.0f;
-    float* px = x;
+    float dt, v CBLAS_UNUSED = 0.0f;
+    float* px CBLAS_UNUSED = x;
 
     printf("Testing performance of memory writes\n\n");
 
@@ -112,6 +112,8 @@ void test_mem_write()
 //------------------------------------------------------
 int main(int argc, char *argv[])
 {
+	(void)argc;
+	(void)argv;
 	cblas_init(CBLAS_DEFAULT_THREADS);
 	cblas_print_configuration();
 

@@ -45,6 +45,7 @@ void cblas_set_server_alive(int yesno)
 //------------------------------------------------------
 void xerbla(const char *srcname, int info, size_t len)
 {
+    (void)len;
     printf("\nCBLAS error: parameter %d was invalid in call to %s()\n",info, srcname);
 }
 
@@ -260,7 +261,7 @@ void cblas_level2_exec()
     //work_queue_t queue[MAX_THREADS];
     //cblas_args_t args[MAX_THREADS];
 
-    CBLAS_INDEX thread_count = CLAMP(cblas_get_num_threads(), 1, MAX_THREADS);
+    // CBLAS_INDEX thread_count = CLAMP(cblas_get_num_threads(), 1, MAX_THREADS);
 
     //for (int i = 0; i < thread_count; i++)
     //{

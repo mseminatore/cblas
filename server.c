@@ -3,6 +3,7 @@
 // Copyright 2023 Mark Seminatore. All rights reserved.
 //------------------------------------------------------
 #include <stdio.h>
+#include <stdint.h>
 #include <pthread.h>
 #include "cblas.h"
 
@@ -68,7 +69,7 @@ void cblas_set_num_threads(int threads)
 
         for (int i = start; i < threads - 1; i++)
         {
-            pthread_create(&cblas_thread_ids[i], NULL, cblas_worker_thread, (void*)i);
+            pthread_create(&cblas_thread_ids[i], NULL, cblas_worker_thread, (void*)(intptr_t)i);
         }
 
         pthread_mutex_unlock(&server_lock);
@@ -93,7 +94,7 @@ int cblas_init_server()
     // create the worker threads
     for (int i = 0; i < cblas_max_threads - 1; i++)
     {
-        pthread_create(&cblas_thread_ids[i], NULL, cblas_worker_thread, (void*)i);
+        pthread_create(&cblas_thread_ids[i], NULL, cblas_worker_thread, (void*)(intptr_t)i);
     }
 
     cblas_set_server_alive(CBLAS_TRUE);
@@ -148,7 +149,7 @@ static void *cblas_worker_thread(void *pvoid)
 {
     work_queue_t* work_item;
 
-    int thread_num = (int)pvoid;
+    int thread_num = (int)(intptr_t)pvoid;
 
     MT_TRACE("thread [%d] created.\n", thread_num);
 
@@ -236,6 +237,7 @@ void cblas_execute(CBLAS_INDEX items, work_queue_t* queue)
 //------------------------------------------------------
 void cblas_execute_async(CBLAS_INDEX items, work_queue_t* queue)
 {
+   (void)items;
    assert(queue);
 
     MT_TRACE("adding %zu items to the queue.\n", items);
