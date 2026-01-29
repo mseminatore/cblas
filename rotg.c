@@ -36,15 +36,39 @@ void cblas_srotg(float *a, float *b, float *c, float *s)
 #endif  // CBLAS_XERBLA_INPUTS
 #endif  // CBLAS_CHECK_INPUTS
 
-    // float temp;
-    // for (CBLAS_INDEX i = 0; i < n; i++)
-    // {
-    //     temp = c * *x + s * *y;
-    //     *y = c * *y - s * *x;
-    //     *x = temp;
-    //     x += incx;
-    //     y += incy;
-    // }
+    CBLAS_STATS_START();
+
+    int mt_used = 0;
+
+    float r, roe, scale, z;
+    
+    roe = *b;
+    if (fabsf(*a) > fabsf(*b))
+        roe = *a;
+    
+    scale = fabsf(*a) + fabsf(*b);
+    
+    if (scale == 0.0f) {
+        *c = 1.0f;
+        *s = 0.0f;
+        r = 0.0f;
+        z = 0.0f;
+    } else {
+        r = scale * sqrtf((*a / scale) * (*a / scale) + (*b / scale) * (*b / scale));
+        r = copysignf(r, roe);
+        *c = *a / r;
+        *s = *b / r;
+        z = 1.0f;
+        if (fabsf(*a) > fabsf(*b))
+            z = *s;
+        if (fabsf(*b) >= fabsf(*a) && *c != 0.0f)
+            z = 1.0f / *c;
+    }
+    
+    *a = r;
+    *b = z;
+
+    CBLAS_STATS_END("srotg", 1, mt_used);
 }
 
 //------------------------------------------------------
@@ -78,13 +102,37 @@ void cblas_drotg(double *a, double *b, double *c, double *s)
 #endif  // CBLAS_XERBLA_INPUTS
 #endif  // CBLAS_CHECK_INPUTS
 
-    // double temp;
-    // for (CBLAS_INDEX i = 0; i < n; i++)
-    // {
-    //     temp = c * *x + s * *y;
-    //     *y = c * *y - s * *x;
-    //     *x = temp;
-    //     x += incx;
-    //     y += incy;
-    // }
+    CBLAS_STATS_START();
+
+    int mt_used = 0;
+
+    double r, roe, scale, z;
+    
+    roe = *b;
+    if (fabs(*a) > fabs(*b))
+        roe = *a;
+    
+    scale = fabs(*a) + fabs(*b);
+    
+    if (scale == 0.0) {
+        *c = 1.0;
+        *s = 0.0;
+        r = 0.0;
+        z = 0.0;
+    } else {
+        r = scale * sqrt((*a / scale) * (*a / scale) + (*b / scale) * (*b / scale));
+        r = copysign(r, roe);
+        *c = *a / r;
+        *s = *b / r;
+        z = 1.0;
+        if (fabs(*a) > fabs(*b))
+            z = *s;
+        if (fabs(*b) >= fabs(*a) && *c != 0.0)
+            z = 1.0 / *c;
+    }
+    
+    *a = r;
+    *b = z;
+
+    CBLAS_STATS_END("drotg", 1, mt_used);
 }

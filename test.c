@@ -605,7 +605,183 @@ static void test_rotg(void)
 {
 	SUITE("cblas_srotg");
 
+	// Test 1: Standard case (a > b)
+	{
+		float a = 3.0f;
+		float b = 4.0f;
+		float c, s;
+		
+		cblas_srotg(&a, &b, &c, &s);
+		
+		// Expected: r = 5.0, c = 0.6, s = 0.8
+		TEST(EQUAL_EPSILON(a, 5.0f));           // a should contain r
+		TEST(EQUAL_EPSILON(c, 0.6f));           // c = 3/5 = 0.6
+		TEST(EQUAL_EPSILON(s, 0.8f));           // s = 4/5 = 0.8
+		TEST(EQUAL_EPSILON(c*c + s*s, 1.0f));   // Verify c^2 + s^2 = 1
+	}
+
+	// Test 2: Standard case (b > a)
+	{
+		float a = 4.0f;
+		float b = 3.0f;
+		float c, s;
+		
+		cblas_srotg(&a, &b, &c, &s);
+		
+		// Expected: r = 5.0, c = 0.8, s = 0.6
+		TEST(EQUAL_EPSILON(a, 5.0f));           // a should contain r
+		TEST(EQUAL_EPSILON(c, 0.8f));           // c = 4/5 = 0.8
+		TEST(EQUAL_EPSILON(s, 0.6f));           // s = 3/5 = 0.6
+		TEST(EQUAL_EPSILON(c*c + s*s, 1.0f));   // Verify c^2 + s^2 = 1
+	}
+
+	// Test 3: Zero input case
+	{
+		float a = 0.0f;
+		float b = 0.0f;
+		float c, s;
+		
+		cblas_srotg(&a, &b, &c, &s);
+		
+		// Expected: r = 0, c = 1, s = 0
+		TEST(EQUAL_EPSILON(a, 0.0f));
+		TEST(EQUAL_EPSILON(b, 0.0f));
+		TEST(EQUAL_EPSILON(c, 1.0f));
+		TEST(EQUAL_EPSILON(s, 0.0f));
+	}
+
+	// Test 4: Only a is zero
+	{
+		float a = 0.0f;
+		float b = 5.0f;
+		float c, s;
+		
+		cblas_srotg(&a, &b, &c, &s);
+		
+		// Expected: r = 5.0, c = 0, s = 1
+		TEST(EQUAL_EPSILON(a, 5.0f));
+		TEST(EQUAL_EPSILON(c, 0.0f));
+		TEST(EQUAL_EPSILON(s, 1.0f));
+		TEST(EQUAL_EPSILON(c*c + s*s, 1.0f));
+	}
+
+	// Test 5: Only b is zero
+	{
+		float a = 5.0f;
+		float b = 0.0f;
+		float c, s;
+		
+		cblas_srotg(&a, &b, &c, &s);
+		
+		// Expected: r = 5.0, c = 1, s = 0
+		TEST(EQUAL_EPSILON(a, 5.0f));
+		TEST(EQUAL_EPSILON(c, 1.0f));
+		TEST(EQUAL_EPSILON(s, 0.0f));
+		TEST(EQUAL_EPSILON(c*c + s*s, 1.0f));
+	}
+
+	// Test 6: Negative values
+	{
+		float a = -3.0f;
+		float b = 4.0f;
+		float c, s;
+		
+		cblas_srotg(&a, &b, &c, &s);
+		
+		// r should have sign of larger magnitude value
+		TEST(EQUAL_EPSILON(fabsf(a), 5.0f));    // |r| = 5
+		TEST(EQUAL_EPSILON(c*c + s*s, 1.0f));   // Verify c^2 + s^2 = 1
+	}
+
 	SUITE("cblas_drotg");
+
+	// Test 1: Standard case (a > b)
+	{
+		double a = 3.0;
+		double b = 4.0;
+		double c, s;
+		
+		cblas_drotg(&a, &b, &c, &s);
+		
+		// Expected: r = 5.0, c = 0.6, s = 0.8
+		TEST(EQUAL_EPSILON(a, 5.0));            // a should contain r
+		TEST(EQUAL_EPSILON(c, 0.6));            // c = 3/5 = 0.6
+		TEST(EQUAL_EPSILON(s, 0.8));            // s = 4/5 = 0.8
+		TEST(EQUAL_EPSILON(c*c + s*s, 1.0));    // Verify c^2 + s^2 = 1
+	}
+
+	// Test 2: Standard case (b > a)
+	{
+		double a = 4.0;
+		double b = 3.0;
+		double c, s;
+		
+		cblas_drotg(&a, &b, &c, &s);
+		
+		// Expected: r = 5.0, c = 0.8, s = 0.6
+		TEST(EQUAL_EPSILON(a, 5.0));            // a should contain r
+		TEST(EQUAL_EPSILON(c, 0.8));            // c = 4/5 = 0.8
+		TEST(EQUAL_EPSILON(s, 0.6));            // s = 3/5 = 0.6
+		TEST(EQUAL_EPSILON(c*c + s*s, 1.0));    // Verify c^2 + s^2 = 1
+	}
+
+	// Test 3: Zero input case
+	{
+		double a = 0.0;
+		double b = 0.0;
+		double c, s;
+		
+		cblas_drotg(&a, &b, &c, &s);
+		
+		// Expected: r = 0, c = 1, s = 0
+		TEST(EQUAL_EPSILON(a, 0.0));
+		TEST(EQUAL_EPSILON(b, 0.0));
+		TEST(EQUAL_EPSILON(c, 1.0));
+		TEST(EQUAL_EPSILON(s, 0.0));
+	}
+
+	// Test 4: Only a is zero
+	{
+		double a = 0.0;
+		double b = 5.0;
+		double c, s;
+		
+		cblas_drotg(&a, &b, &c, &s);
+		
+		// Expected: r = 5.0, c = 0, s = 1
+		TEST(EQUAL_EPSILON(a, 5.0));
+		TEST(EQUAL_EPSILON(c, 0.0));
+		TEST(EQUAL_EPSILON(s, 1.0));
+		TEST(EQUAL_EPSILON(c*c + s*s, 1.0));
+	}
+
+	// Test 5: Only b is zero
+	{
+		double a = 5.0;
+		double b = 0.0;
+		double c, s;
+		
+		cblas_drotg(&a, &b, &c, &s);
+		
+		// Expected: r = 5.0, c = 1, s = 0
+		TEST(EQUAL_EPSILON(a, 5.0));
+		TEST(EQUAL_EPSILON(c, 1.0));
+		TEST(EQUAL_EPSILON(s, 0.0));
+		TEST(EQUAL_EPSILON(c*c + s*s, 1.0));
+	}
+
+	// Test 6: Negative values
+	{
+		double a = -3.0;
+		double b = 4.0;
+		double c, s;
+		
+		cblas_drotg(&a, &b, &c, &s);
+		
+		// r should have sign of larger magnitude value
+		TEST(EQUAL_EPSILON(fabs(a), 5.0));      // |r| = 5
+		TEST(EQUAL_EPSILON(c*c + s*s, 1.0));    // Verify c^2 + s^2 = 1
+	}
 
 }
 
