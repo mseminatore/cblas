@@ -212,97 +212,589 @@ typedef struct work_queue_t
 //------------------------------------------------------
 // BLAS Level 1 functions
 //------------------------------------------------------
+
+/**
+ * @brief Compute dot product of two single-precision vectors
+ * @param n Number of elements (must be > 0)
+ * @param x Input vector X (must be non-NULL)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @param y Input vector Y (must be non-NULL)
+ * @param incy Stride for Y (typically 1 for contiguous)
+ * @return Dot product result (X · Y)
+ * @note Thread-safe. Uses MT when n > CBLAS_MT_DOT.
+ */
 float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy);
+
+/**
+ * @brief Compute dot product of two double-precision vectors
+ * @param n Number of elements (must be > 0)
+ * @param x Input vector X (must be non-NULL)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @param y Input vector Y (must be non-NULL)
+ * @param incy Stride for Y (typically 1 for contiguous)
+ * @return Dot product result (X · Y)
+ * @note Thread-safe. Uses MT when n > CBLAS_MT_DOT.
+ */
 double cblas_ddot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy);
 
+/**
+ * @brief Copy single-precision vector X to vector Y
+ * @param n Number of elements (must be > 0)
+ * @param x Source vector X (must be non-NULL)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @param y Destination vector Y (must be non-NULL)
+ * @param incy Stride for Y (typically 1 for contiguous)
+ * @note Thread-safe. Uses MT when n > CBLAS_MT_COPY. Y = X
+ */
 void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy);
+
+/**
+ * @brief Copy double-precision vector X to vector Y
+ * @param n Number of elements (must be > 0)
+ * @param x Source vector X (must be non-NULL)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @param y Destination vector Y (must be non-NULL)
+ * @param incy Stride for Y (typically 1 for contiguous)
+ * @note Thread-safe. Uses MT when n > CBLAS_MT_COPY. Y = X
+ */
 void cblas_dcopy(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy);
 
+/**
+ * @brief Scale single-precision vector X by scalar alpha
+ * @param n Number of elements (must be > 0)
+ * @param alpha Scalar multiplier
+ * @param x Vector X to be scaled (must be non-NULL, modified in place)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @note Thread-safe. X = alpha * X
+ */
 void cblas_sscal(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx);
+
+/**
+ * @brief Scale double-precision vector X by scalar alpha
+ * @param n Number of elements (must be > 0)
+ * @param alpha Scalar multiplier
+ * @param x Vector X to be scaled (must be non-NULL, modified in place)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @note Thread-safe. X = alpha * X
+ */
 void cblas_dscal(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx);
 
+/**
+ * @brief Single-precision constant times a vector plus a vector
+ * @param n Number of elements (must be > 0)
+ * @param alpha Scalar multiplier
+ * @param x Input vector X (must be non-NULL)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @param y Vector Y (must be non-NULL, modified in place)
+ * @param incy Stride for Y (typically 1 for contiguous)
+ * @note Thread-safe. Y = alpha * X + Y
+ */
 void cblas_saxpy(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy);
+
+/**
+ * @brief Double-precision constant times a vector plus a vector
+ * @param n Number of elements (must be > 0)
+ * @param alpha Scalar multiplier
+ * @param x Input vector X (must be non-NULL)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @param y Vector Y (must be non-NULL, modified in place)
+ * @param incy Stride for Y (typically 1 for contiguous)
+ * @note Thread-safe. Y = alpha * X + Y
+ */
 void cblas_daxpy(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy);
 
+/**
+ * @brief Swap single-precision vectors X and Y
+ * @param n Number of elements (must be > 0)
+ * @param x Vector X (must be non-NULL, modified in place)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @param y Vector Y (must be non-NULL, modified in place)
+ * @param incy Stride for Y (typically 1 for contiguous)
+ * @note Thread-safe. X <-> Y
+ */
 void cblas_sswap(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy);
+
+/**
+ * @brief Swap double-precision vectors X and Y
+ * @param n Number of elements (must be > 0)
+ * @param x Vector X (must be non-NULL, modified in place)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @param y Vector Y (must be non-NULL, modified in place)
+ * @param incy Stride for Y (typically 1 for contiguous)
+ * @note Thread-safe. X <-> Y
+ */
 void cblas_dswap(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy);
 
+/**
+ * @brief Apply Givens rotation to single-precision vectors
+ * @param n Number of elements (must be > 0)
+ * @param x Vector X (must be non-NULL, modified in place)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @param y Vector Y (must be non-NULL, modified in place)
+ * @param incy Stride for Y (typically 1 for contiguous)
+ * @param c Cosine of rotation angle
+ * @param s Sine of rotation angle
+ * @note Thread-safe. Applies plane rotation: x' = c*x + s*y, y' = c*y - s*x
+ */
 void cblas_srot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float c, float s);
+
+/**
+ * @brief Apply Givens rotation to double-precision vectors
+ * @param n Number of elements (must be > 0)
+ * @param x Vector X (must be non-NULL, modified in place)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @param y Vector Y (must be non-NULL, modified in place)
+ * @param incy Stride for Y (typically 1 for contiguous)
+ * @param c Cosine of rotation angle
+ * @param s Sine of rotation angle
+ * @note Thread-safe. Applies plane rotation: x' = c*x + s*y, y' = c*y - s*x
+ */
 void cblas_drot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy, double c, double s);
 
+/**
+ * @brief Sum of absolute values of single-precision vector elements
+ * @param n Number of elements (must be > 0)
+ * @param x Input vector X (must be non-NULL)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @return Sum of |x[i]| for all elements
+ * @note Thread-safe.
+ */
 float cblas_sasum(CBLAS_INDEX n, float *x, CBLAS_INDEX incx);
+
+/**
+ * @brief Sum of absolute values of double-precision vector elements
+ * @param n Number of elements (must be > 0)
+ * @param x Input vector X (must be non-NULL)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @return Sum of |x[i]| for all elements
+ * @note Thread-safe.
+ */
 double cblas_dasum(CBLAS_INDEX n, double *x, CBLAS_INDEX incx);
 
+/**
+ * @brief Euclidean norm (L2 norm) of single-precision vector
+ * @param n Number of elements (must be > 0)
+ * @param x Input vector X (must be non-NULL)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @return Euclidean norm: sqrt(sum of x[i]^2)
+ * @note Thread-safe.
+ */
 float cblas_snrm2(CBLAS_INDEX n, float *x, CBLAS_INDEX incx);
+
+/**
+ * @brief Euclidean norm (L2 norm) of double-precision vector
+ * @param n Number of elements (must be > 0)
+ * @param x Input vector X (must be non-NULL)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @return Euclidean norm: sqrt(sum of x[i]^2)
+ * @note Thread-safe.
+ */
 double cblas_dnrm2(CBLAS_INDEX n, double *x, CBLAS_INDEX incx);
 
+/**
+ * @brief Construct Givens rotation for single-precision values
+ * @param a Pointer to first value (modified to contain r on output)
+ * @param b Pointer to second value (modified to contain z on output)
+ * @param c Pointer to store cosine of rotation angle
+ * @param s Pointer to store sine of rotation angle
+ * @note Computes rotation such that [c s; -s c] * [a; b] = [r; 0]
+ */
 void cblas_srotg(float *a, float *b, float *c, float *s);
+
+/**
+ * @brief Construct Givens rotation for double-precision values
+ * @param a Pointer to first value (modified to contain r on output)
+ * @param b Pointer to second value (modified to contain z on output)
+ * @param c Pointer to store cosine of rotation angle
+ * @param s Pointer to store sine of rotation angle
+ * @note Computes rotation such that [c s; -s c] * [a; b] = [r; 0]
+ */
 void cblas_drotg(double *a, double *b, double *c, double *s);
 
 // non-standard extensions
+/**
+ * @brief Set all elements of single-precision vector to a value
+ * @param n Number of elements (must be > 0)
+ * @param x Vector X (must be non-NULL, modified in place)
+ * @param v Value to set
+ * @note Non-standard extension. Thread-safe. X[i] = v for all i
+ */
 void cblas_ssetv(CBLAS_INDEX n, float *x, float v);
+
+/**
+ * @brief Set all elements of double-precision vector to a value
+ * @param n Number of elements (must be > 0)
+ * @param x Vector X (must be non-NULL, modified in place)
+ * @param v Value to set
+ * @note Non-standard extension. Thread-safe. X[i] = v for all i
+ */
 void cblas_dsetv(CBLAS_INDEX n, double *x, double v);
 
+/**
+ * @brief Single-precision alpha*X plus beta*Y
+ * @param n Number of elements (must be > 0)
+ * @param alpha Scalar multiplier for X
+ * @param x Input vector X (must be non-NULL)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @param beta Scalar multiplier for Y
+ * @param y Vector Y (must be non-NULL, modified in place)
+ * @param incy Stride for Y (typically 1 for contiguous)
+ * @note Non-standard extension. Thread-safe. Y = alpha * X + beta * Y
+ */
 void cblas_saxpby(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float beta, float *y, CBLAS_INDEX incy);
+
+/**
+ * @brief Double-precision alpha*X plus beta*Y
+ * @param n Number of elements (must be > 0)
+ * @param alpha Scalar multiplier for X
+ * @param x Input vector X (must be non-NULL)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @param beta Scalar multiplier for Y
+ * @param y Vector Y (must be non-NULL, modified in place)
+ * @param incy Stride for Y (typically 1 for contiguous)
+ * @note Non-standard extension. Thread-safe. Y = alpha * X + beta * Y
+ */
 void cblas_daxpby(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, double beta, double *y, CBLAS_INDEX incy);
 
 //------------------------------------------------------
 // BLAS Level 2 functions
 //------------------------------------------------------
+
+/**
+ * @brief Single-precision general matrix rank-1 update
+ * @param layout Matrix storage layout (CblasRowMajor or CblasColMajor)
+ * @param m Number of rows in matrix A (must be > 0)
+ * @param n Number of columns in matrix A (must be > 0)
+ * @param alpha Scalar multiplier
+ * @param x Input vector X of length m (must be non-NULL)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @param y Input vector Y of length n (must be non-NULL)
+ * @param incy Stride for Y (typically 1 for contiguous)
+ * @param a Matrix A (must be non-NULL, modified in place)
+ * @param lda Leading dimension of A (must be >= n for row-major, >= m for col-major)
+ * @note Thread-safe. Uses MT when m*n > CBLAS_MT_GER. A = alpha * X * Y^T + A
+ */
 void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda);
+
+/**
+ * @brief Double-precision general matrix rank-1 update
+ * @param layout Matrix storage layout (CblasRowMajor or CblasColMajor)
+ * @param m Number of rows in matrix A (must be > 0)
+ * @param n Number of columns in matrix A (must be > 0)
+ * @param alpha Scalar multiplier
+ * @param x Input vector X of length m (must be non-NULL)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @param y Input vector Y of length n (must be non-NULL)
+ * @param incy Stride for Y (typically 1 for contiguous)
+ * @param a Matrix A (must be non-NULL, modified in place)
+ * @param lda Leading dimension of A (must be >= n for row-major, >= m for col-major)
+ * @note Thread-safe. Uses MT when m*n > CBLAS_MT_GER. A = alpha * X * Y^T + A
+ */
 void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy, double *a, CBLAS_INDEX lda);
 
+/**
+ * @brief Single-precision general matrix-vector multiplication
+ * @param layout Matrix storage layout (CblasRowMajor or CblasColMajor)
+ * @param trans Operation on matrix A (CblasTrans or CblasNoTrans)
+ * @param m Number of rows in matrix A (must be > 0)
+ * @param n Number of columns in matrix A (must be > 0)
+ * @param alpha Scalar multiplier for A*X
+ * @param a Matrix A (must be non-NULL)
+ * @param lda Leading dimension of A (must be >= n for row-major, >= m for col-major)
+ * @param x Input vector X (must be non-NULL)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @param beta Scalar multiplier for Y
+ * @param y Vector Y (must be non-NULL, modified in place)
+ * @param incy Stride for Y (typically 1 for contiguous)
+ * @note Thread-safe. Uses MT when m*n > CBLAS_MT_GEMV. Y = alpha * op(A) * X + beta * Y
+ */
 void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, float *a, CBLAS_INDEX lda, float *x, CBLAS_INDEX incx, float beta, float *y, CBLAS_INDEX incy);
+
+/**
+ * @brief Double-precision general matrix-vector multiplication
+ * @param layout Matrix storage layout (CblasRowMajor or CblasColMajor)
+ * @param trans Operation on matrix A (CblasTrans or CblasNoTrans)
+ * @param m Number of rows in matrix A (must be > 0)
+ * @param n Number of columns in matrix A (must be > 0)
+ * @param alpha Scalar multiplier for A*X
+ * @param a Matrix A (must be non-NULL)
+ * @param lda Leading dimension of A (must be >= n for row-major, >= m for col-major)
+ * @param x Input vector X (must be non-NULL)
+ * @param incx Stride for X (typically 1 for contiguous)
+ * @param beta Scalar multiplier for Y
+ * @param y Vector Y (must be non-NULL, modified in place)
+ * @param incy Stride for Y (typically 1 for contiguous)
+ * @note Thread-safe. Uses MT when m*n > CBLAS_MT_GEMV. Y = alpha * op(A) * X + beta * Y
+ */
 void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLAS_INDEX n, double alpha, double *a, CBLAS_INDEX lda, double *x, CBLAS_INDEX incx, double beta, double *y, CBLAS_INDEX incy);
 
 //------------------------------------------------------
 // BLAS Level 3 functions
 //------------------------------------------------------
+
+/**
+ * @brief Single-precision general matrix-matrix multiplication
+ * @param layout Matrix storage layout (CblasRowMajor or CblasColMajor)
+ * @param transa Operation on matrix A (CblasTrans or CblasNoTrans)
+ * @param transb Operation on matrix B (CblasTrans or CblasNoTrans)
+ * @param m Number of rows in op(A) and C (must be > 0)
+ * @param n Number of columns in op(B) and C (must be > 0)
+ * @param k Number of columns in op(A) and rows in op(B) (must be > 0)
+ * @param alpha Scalar multiplier for A*B
+ * @param a Matrix A (must be non-NULL)
+ * @param lda Leading dimension of A
+ * @param b Matrix B (must be non-NULL)
+ * @param ldb Leading dimension of B
+ * @param beta Scalar multiplier for C
+ * @param c Matrix C (must be non-NULL, modified in place)
+ * @param ldc Leading dimension of C
+ * @note Thread-safe. Uses MT when m*n*k > CBLAS_MT_GEMM. C = alpha * op(A) * op(B) + beta * C
+ * @note Optimized with cache blocking and SIMD. Uses FMA if available.
+ */
 void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float alpha, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float beta, float *c, CBLAS_INDEX ldc);
+
+/**
+ * @brief Single-precision general matrix-matrix multiplication (naive reference)
+ * @param layout Matrix storage layout (CblasRowMajor or CblasColMajor)
+ * @param transa Operation on matrix A (CblasTrans or CblasNoTrans)
+ * @param transb Operation on matrix B (CblasTrans or CblasNoTrans)
+ * @param m Number of rows in op(A) and C (must be > 0)
+ * @param n Number of columns in op(B) and C (must be > 0)
+ * @param k Number of columns in op(A) and rows in op(B) (must be > 0)
+ * @param alpha Scalar multiplier for A*B
+ * @param a Matrix A (must be non-NULL)
+ * @param lda Leading dimension of A
+ * @param b Matrix B (must be non-NULL)
+ * @param ldb Leading dimension of B
+ * @param beta Scalar multiplier for C
+ * @param c Matrix C (must be non-NULL, modified in place)
+ * @param ldc Leading dimension of C
+ * @note Unoptimized reference implementation. Use cblas_sgemm for production.
+ * @note C = alpha * op(A) * op(B) + beta * C
+ */
 void cblas_sgemm_naive(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float alpha, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float beta, float *c, CBLAS_INDEX ldc);
+
+/**
+ * @brief Double-precision general matrix-matrix multiplication
+ * @param layout Matrix storage layout (CblasRowMajor or CblasColMajor)
+ * @param transa Operation on matrix A (CblasTrans or CblasNoTrans)
+ * @param transb Operation on matrix B (CblasTrans or CblasNoTrans)
+ * @param m Number of rows in op(A) and C (must be > 0)
+ * @param n Number of columns in op(B) and C (must be > 0)
+ * @param k Number of columns in op(A) and rows in op(B) (must be > 0)
+ * @param alpha Scalar multiplier for A*B
+ * @param a Matrix A (must be non-NULL)
+ * @param lda Leading dimension of A
+ * @param b Matrix B (must be non-NULL)
+ * @param ldb Leading dimension of B
+ * @param beta Scalar multiplier for C
+ * @param c Matrix C (must be non-NULL, modified in place)
+ * @param ldc Leading dimension of C
+ * @note Thread-safe. Uses MT when m*n*k > CBLAS_MT_GEMM. C = alpha * op(A) * op(B) + beta * C
+ * @note Optimized with cache blocking and SIMD.
+ */
 void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, double alpha, double *a, CBLAS_INDEX lda, double *b, CBLAS_INDEX ldb, double beta, double *c, CBLAS_INDEX ldc);
 
 //------------------------------------------------------
 // Utility functions
 //------------------------------------------------------
+
+/**
+ * @brief Initialize CBLAS library and thread server
+ * @param threads Number of threads to use (or CBLAS_DEFAULT_THREADS for auto-detect)
+ * @note Must be called before using any BLAS functions. Thread-safe.
+ * @note CBLAS_DEFAULT_THREADS (-1) uses the number of CPU cores
+ */
 void cblas_init(int threads);
+
+/**
+ * @brief Shutdown CBLAS library and cleanup thread server
+ * @note Should be called when finished using BLAS functions to release resources.
+ * @note Waits for all threads to complete and releases synchronization primitives.
+ */
 void cblas_shutdown();
+
+/**
+ * @brief Set the number of worker threads
+ * @param threads Number of threads to use (1 to MAX_THREADS)
+ * @note Thread-safe. Can be called at runtime to adjust parallelism.
+ * @note Setting to 1 effectively disables multi-threading.
+ */
 void cblas_set_num_threads(int threads);
+
+/**
+ * @brief Get the current number of worker threads
+ * @return Current thread count
+ * @note Thread-safe.
+ */
 int cblas_get_num_threads(void);
+
+/**
+ * @brief Initialize thread server (internal use)
+ * @return Status code (non-zero on success)
+ * @note For internal use. Called by cblas_init().
+ */
 int cblas_init_server();
 
+/**
+ * @brief Execute work queue synchronously
+ * @param items Number of work items in queue
+ * @param queue Pointer to work queue
+ * @note For internal use by BLAS functions.
+ */
 void cblas_execute(CBLAS_INDEX items, work_queue_t* queue);
+
+/**
+ * @brief Execute work queue asynchronously
+ * @param items Number of work items in queue
+ * @param queue Pointer to work queue
+ * @note For internal use by BLAS functions.
+ */
 void cblas_execute_async(CBLAS_INDEX items, work_queue_t* queue);
+
+/**
+ * @brief Execute work queue asynchronously and wait for completion
+ * @param items Number of work items in queue
+ * @param queue Pointer to work queue
+ * @note For internal use by BLAS functions.
+ */
 void cblas_execute_async_join(CBLAS_INDEX items, work_queue_t* queue);
 
+/**
+ * @brief Execute Level-1 BLAS operation (internal)
+ * @param stride Byte stride for elements
+ * @param kernel Kernel function to execute
+ * @param n Number of elements
+ * @param x Pointer to vector X
+ * @param incx Stride for X
+ * @param y Pointer to vector Y
+ * @param incy Stride for Y
+ * @note For internal use by Level-1 BLAS functions.
+ */
 void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy);
+
+/**
+ * @brief Execute Level-1 BLAS operation with result (internal)
+ * @param byte_stride Byte stride for elements
+ * @param kernel Kernel function to execute
+ * @param n Number of elements
+ * @param x Pointer to vector X
+ * @param incx Stride for X
+ * @param y Pointer to vector Y
+ * @param incy Stride for Y
+ * @param c Pointer to result storage
+ * @note For internal use by Level-1 BLAS functions that return values.
+ */
 void cblas_level1_exec_result(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy, void* c);
 
+/**
+ * @brief Get library configuration string
+ * @return Configuration string describing compile-time options
+ * @note Thread-safe.
+ */
 const char *cblas_get_config();
+
+/**
+ * @brief Get CPU core name
+ * @return String describing CPU model
+ * @note Thread-safe.
+ */
 const char *cblas_get_corename();
+
+/**
+ * @brief Get number of CPU cores
+ * @return Number of logical processors
+ * @note Thread-safe.
+ */
 int  cblas_get_num_procs();
+
+/**
+ * @brief BLAS standard error reporting function
+ * @param srcname Name of function reporting error
+ * @param info Parameter number that caused error
+ * @param len Length of srcname string
+ * @note For internal use by BLAS functions when CBLAS_XERBLA_INPUTS is defined.
+ */
 void xerbla(const char *srcname, int info, size_t len);
 
 //------------------------------------------------------
 // CPU ID functions
 //------------------------------------------------------
+
+/**
+ * @brief Get number of CPU cores
+ * @return Number of logical processors/cores
+ * @note Thread-safe. Platform-specific implementation.
+ */
 int cpu_get_core_count();
+
+/**
+ * @brief Get CPU core name/model
+ * @return String describing CPU model (e.g., "Intel Core i7")
+ * @note Thread-safe. Returns brand string from CPUID.
+ */
 const char *cpu_get_core_name();
+
+/**
+ * @brief Get CPU cache line size
+ * @return Cache line size in bytes (typically 64)
+ * @note Thread-safe. Used for alignment optimization.
+ */
 int cpu_get_cacheline_size();
+
+/**
+ * @brief Get CPU feature flags
+ * @return Bitmask of CPU features (CPU_SSE, CPU_AVX, CPU_AVX2, CPU_NEON, etc.)
+ * @note Thread-safe. Used for runtime ISA detection and kernel dispatch.
+ */
 unsigned int cpu_get_features();
+
+/**
+ * @brief Get human-readable ISA features string
+ * @return Comma-separated list of supported ISA extensions
+ * @note Thread-safe. Returns string like "SSE, AVX2, FMA3".
+ */
 const char *cblas_get_isa_features();
+
+/**
+ * @brief Print library configuration to stdout
+ * @note Displays version, threads, CPU info, ISA features.
+ */
 void cblas_print_configuration();
+
+/**
+ * @brief Get L2 cache size
+ * @return L2 cache size in bytes
+ * @note Thread-safe. Used for cache blocking tuning.
+ */
 int cpu_get_l2_cache_size();
 
 //------------------------------------------------------
 // internal functions
 //------------------------------------------------------
+
+/**
+ * @brief Check if thread server is alive (internal)
+ * @return Non-zero if server is running
+ * @note For internal use only.
+ */
 int cblas_is_server_alive();
+
+/**
+ * @brief Set thread server alive status (internal)
+ * @param yesno Non-zero to mark alive, zero to mark dead
+ * @note For internal use only.
+ */
 void cblas_set_server_alive(int yesno);
 
 //------------------------------------------------------
 // testing functions/structs
 //------------------------------------------------------
+
+/**
+ * @brief High-resolution timer structure
+ * @note Platform-specific implementation (LARGE_INTEGER on Windows, timespec on POSIX)
+ */
 struct cblas_timer
 {
 #ifdef _WIN32
@@ -312,24 +804,103 @@ struct cblas_timer
 #endif
 };
 
+/**
+ * @brief Get current time
+ * @param t Pointer to timer structure to populate
+ * @note For benchmarking and performance testing.
+ */
 void cbu_timer_get_time(struct cblas_timer* t);
+
+/**
+ * @brief Calculate elapsed time between two timestamps
+ * @param t1 Start time
+ * @param t2 End time
+ * @return Elapsed time in seconds (floating-point)
+ * @note For benchmarking and performance testing.
+ */
 float cbu_timer_get_delta(struct cblas_timer* t1, struct cblas_timer* t2);
 
-// Utility functions
+/**
+ * @brief Set single-precision matrix to identity
+ * @param mtx Matrix pointer (must be non-NULL)
+ * @param cols Number of columns
+ * @param rows Number of rows
+ * @note Utility function for testing. Sets diagonal to 1.0, off-diagonal to 0.0.
+ */
 void cbu_sge_set_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows);
+
+/**
+ * @brief Set double-precision matrix to identity
+ * @param mtx Matrix pointer (must be non-NULL)
+ * @param cols Number of columns
+ * @param rows Number of rows
+ * @note Utility function for testing. Sets diagonal to 1.0, off-diagonal to 0.0.
+ */
 void cbu_dge_set_identity(double* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows);
+
+/**
+ * @brief Check if single-precision matrix is identity
+ * @param mtx Matrix pointer (must be non-NULL)
+ * @param cols Number of columns
+ * @param rows Number of rows
+ * @return Non-zero if matrix is identity, zero otherwise
+ * @note Utility function for testing.
+ */
 int cbu_sge_is_identity(float* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows);
+
+/**
+ * @brief Check if double-precision matrix is identity
+ * @param mtx Matrix pointer (must be non-NULL)
+ * @param cols Number of columns
+ * @param rows Number of rows
+ * @return Non-zero if matrix is identity, zero otherwise
+ * @note Utility function for testing.
+ */
 int cbu_dge_is_identity(double* mtx, CBLAS_INDEX cols, CBLAS_INDEX rows);
+
+/**
+ * @brief Allocate and create single-precision identity matrix
+ * @param cols Number of columns
+ * @param rows Number of rows
+ * @return Pointer to newly allocated identity matrix
+ * @note Caller must free returned pointer. Utility function for testing.
+ */
 float *cbu_sge_make_identity(int cols, int rows);
+
+/**
+ * @brief Allocate and create double-precision identity matrix
+ * @param cols Number of columns
+ * @param rows Number of rows
+ * @return Pointer to newly allocated identity matrix
+ * @note Caller must free returned pointer. Utility function for testing.
+ */
 double* cbu_dge_make_identity(int cols, int rows);
 
 //------------------------------------------------------
 // kernel dispatch
 //------------------------------------------------------
+
+/**
+ * @brief Global kernel function dispatch table
+ * @note Populated at runtime based on CPU features by cpu_get_features().
+ * @note Contains optimized kernel pointers for different ISA extensions.
+ */
 extern kernels_t blas_kernels;
+
+/**
+ * @brief Single-precision GEMM kernel (standard implementation)
+ * @param args Kernel arguments structure
+ * @note For internal use. Called via blas_kernels dispatch table.
+ */
 void sgemm_k(cblas_args_t* args);
 
 #if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+/**
+ * @brief Single-precision GEMM kernel with FMA instructions
+ * @param args Kernel arguments structure
+ * @note For internal use. Used when CPU_x64_FMA3 feature is detected.
+ * @note Requires FMA3 instruction set (Haswell or newer).
+ */
 void sgemm_k_fma(cblas_args_t* args);
 #endif
 
