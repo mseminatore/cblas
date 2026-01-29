@@ -605,7 +605,7 @@ static void test_rotg(void)
 {
 	SUITE("cblas_srotg");
 
-	// Test 1: Standard case (a > b)
+	// Test 1: Standard case (b > a)
 	{
 		float a = 3.0f;
 		float b = 4.0f;
@@ -620,7 +620,7 @@ static void test_rotg(void)
 		TEST(EQUAL_EPSILON(c*c + s*s, 1.0f));   // Verify c^2 + s^2 = 1
 	}
 
-	// Test 2: Standard case (b > a)
+	// Test 2: Standard case (a > b)
 	{
 		float a = 4.0f;
 		float b = 3.0f;
@@ -695,7 +695,7 @@ static void test_rotg(void)
 
 	SUITE("cblas_drotg");
 
-	// Test 1: Standard case (a > b)
+	// Test 1: Standard case (b > a)
 	{
 		double a = 3.0;
 		double b = 4.0;
@@ -710,7 +710,7 @@ static void test_rotg(void)
 		TEST(EQUAL_EPSILON(c*c + s*s, 1.0));    // Verify c^2 + s^2 = 1
 	}
 
-	// Test 2: Standard case (b > a)
+	// Test 2: Standard case (a > b)
 	{
 		double a = 4.0;
 		double b = 3.0;
