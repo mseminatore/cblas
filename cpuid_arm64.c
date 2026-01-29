@@ -35,7 +35,7 @@ static unsigned int cpu_features = CPU_NONE;
 //------------------------------------------------------
 // return the name of the current processor
 //------------------------------------------------------
-const char *cpu_get_core_name()
+const char *cpu_get_core_name(void)
 {
 #ifdef __APPLE__
     uint32_t entry;
@@ -59,7 +59,7 @@ const char *cpu_get_core_name()
 //------------------------------------------------------
 // query and return any ISA features of this CPU
 //------------------------------------------------------
-static unsigned int __cpu_get_features()
+static unsigned int __cpu_get_features(void)
 {
 #if defined(__APPLE__) || defined(__aarch64__)
     cpu_features |= CPU_NEON;
@@ -77,7 +77,7 @@ static unsigned int __cpu_get_features()
 //------------------------------------------------------
 // get and cache cpu features
 //------------------------------------------------------
-unsigned int cpu_get_features()
+unsigned int cpu_get_features(void)
 {
 	if (cpu_features == CPU_NONE)
 		cpu_features = __cpu_get_features();
@@ -88,7 +88,7 @@ unsigned int cpu_get_features()
 //------------------------------------------------------
 // return the number of CPU cores available
 //------------------------------------------------------
-int cpu_get_core_count()
+int cpu_get_core_count(void)
 {    
 #ifdef __APPLE__
     uint32_t entry;
@@ -115,7 +115,7 @@ int cpu_get_core_count()
 //------------------------------------------------------
 // return the CPU L1 cache line size
 //------------------------------------------------------
-int cpu_get_cacheline_size()
+int cpu_get_cacheline_size(void)
 {
 #ifdef __APPLE__
     long int entry;
@@ -138,7 +138,7 @@ int cpu_get_cacheline_size()
 //------------------------------------------------------
 // return the L2$ size
 //------------------------------------------------------
-int cpu_get_l2_cache_size()
+int cpu_get_l2_cache_size(void)
 {
     long l2_cache_size = 0;
 
