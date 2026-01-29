@@ -41,6 +41,9 @@ test_strided: $(LIBNAME) test_main.o test_strided.o
 test_stats: $(LIBNAME) test_stats.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
+test_overhead: $(LIBNAME) test_overhead.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
 gemm_perf: $(LIBNAME) gemm_perf.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
