@@ -31,6 +31,7 @@ Operations are parallelized by dividing work into partitions and dispatching the
 typedef struct work_queue_t {
     struct work_queue_t* next;  // Next task in queue
     cblas_args_t* args;         // Parameters for kernel function
+    int type;                   // Type of call
     kernel_function kernel;      // Function to execute
     volatile int finished;       // Completion flag
     int thread_num, tid;        // Thread tracking
@@ -137,9 +138,9 @@ Speedups are relative to single-threaded execution. Memory-bound operations (dot
 GEMM uses cache-aware blocking to maximize data reuse:
 
 ```c
-#define CBLAS_MC 256    // Rows of A in L2 cache
-#define CBLAS_KC 128    // Columns of A / Rows of B
-#define CBLAS_NB 1024   // Columns of B in L2 cache
+#define mc 256    // Rows of A in L2 cache
+#define kc 128    // Columns of A / Rows of B
+#define nb 1024   // Columns of B in L2 cache
 ```
 
 These tile sizes are tuned for typical L1/L2 cache hierarchies. Each thread processes independent tiles to minimize cache interference.
