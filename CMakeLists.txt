@@ -7,6 +7,7 @@ project(cblas VERSION 1.0 LANGUAGES C)
 enable_testing()
 add_test(NAME blas_test COMMAND blas_test)
 add_test(NAME test_strided COMMAND test_strided)
+add_test(NAME test_threshold COMMAND test_threshold)
 
 # add the includes
 include_directories(${PROJECT_SOURCE_DIR})
@@ -93,6 +94,9 @@ target_link_libraries(test_strided cblas ${MATH_LIB})
 
 add_executable(test_stats test_stats.c)
 target_link_libraries(test_stats cblas ${MATH_LIB})
+
+add_executable(test_threshold test_threshold.c)
+target_link_libraries(test_threshold cblas ${MATH_LIB})
 
 # install targets
 install(TARGETS cblas DESTINATION lib)
