@@ -5,21 +5,24 @@ This is an experimental, performance-focused subset of the BLAS (Basic Linear Al
 ## Architecture Overview
 
 **Three-tier BLAS hierarchy:**
-- Level 1: Vector-vector ops (dot, axpy, scal, copy, swap, etc.) in individual .c files
+- Level 1: Vector-vector ops (dot, axpy, scal, copy, swap, asum, nrm2, rot, rotg) in individual .c files
 - Level 2: Matrix-vector ops (ger, gemv)  
-- Level 3: Matrix-matrix ops (gemm) - primary optimization target
+- Level 3: Matrix-matrix ops (gemm) - primary optimization target with naive reference implementation
 
 **Threading architecture:**
 - Platform-specific thread servers: [server.c](server.c) (pthread) and [server_win32.c](server_win32.c) (Windows)
 - Work queue system with `work_queue_t` structures dispatched to worker threads
 - Kernels execute via `cblas_args_t` parameter bundles through function pointers
-- MT thresholds in [cblas.h](cblas.h): `CBLAS_MT_DOT`, `CBLAS_MT_GEMM`, etc. control when threading activates
+- MT thresholds in [cblas.h](cblas.h): `CBLAS_MT_DOT`, `CBLAS_MT_GEMM`, etc. control when threading activates (default: 10000 elements)
+- Thread management: `cblas_init()`, `cblas_set_num_threads()`, `cblas_shutdown()`
 
 **Performance strategy:**
 - Kernel specialization: Most operations have optimized `_k_noinc` variants when `incx == 1 && incy == 1`
+- Loop unrolling: Inner loops use 4-way unrolling with separate accumulators (e.g., `sum0`, `sum1`, `sum2`, `sum3`) to reduce dependencies
 - SIMD paths conditionally compiled via `USE_SSE`, `USE_SIMD`, `USE_INTEL_FMA` preprocessor flags
-- Cache blocking: gemm uses `mc`, `kc`, `nb` tile sizes with packed buffers (`packedA`, `packedB`)
-- Platform detection: [cpuid_x64.c](cpuid_x64.c) and [cpuid_arm64.c](cpuid_arm64.c) detect CPU features
+- Cache blocking: gemm uses `mc=256`, `kc=128`, `nb=1024` tile sizes with packed buffers (`packedA`, `packedB`)
+- Platform detection: [cpuid_x64.c](cpuid_x64.c) and [cpuid_arm64.c](cpuid_arm64.c) detect CPU features at runtime
+- Kernel dispatch: [util.c](util.c) populates `blas_kernels` struct with CPU-specific optimized kernels based on detected ISA features
 
 ## Build System
 
@@ -54,11 +57,12 @@ CMake auto-selects platform files: [CMakeLists.txt](CMakeLists.txt) lines 32-44 
 #define A(col, row) a[((row) * lda + (col))]  // In gemm.c
 #define Y(i) y[(i) * incx]                     // Common pattern
 ```
+Leading dimension (`lda`, `ldb`, `ldc`) handles non-contiguous matrix storage for submatrices.
 
 **Error handling:**
 - Guarded by `CBLAS_CHECK_INPUTS` and `CBLAS_XERBLA_INPUTS` preprocessor flags
 - Use `XERBLA(param_num)` macro which calls `xerbla()` in [util.c](util.c)
-- Early return with default values on invalid input
+- Early return with default values on invalid input (e.g., `sum = 0.0f` for dot product)
 
 **Configuration switches in [cblas.h](cblas.h) lines 44-72:**
 - `MT_ENABLED`: Enable multi-threading

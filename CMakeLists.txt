@@ -79,6 +79,9 @@ target_link_libraries(ger_perf cblas ${MATH_LIB})
 add_executable(dot_perf dot_perf.c)
 target_link_libraries(dot_perf cblas ${MATH_LIB})
 
+add_executable(nrm2_asum_rot_perf nrm2_asum_rot_perf.c)
+target_link_libraries(nrm2_asum_rot_perf cblas ${MATH_LIB})
+
 add_executable(mem_perf mem_perf.c)
 target_link_libraries(mem_perf cblas ${MATH_LIB})
 
