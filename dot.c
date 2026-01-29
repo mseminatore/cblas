@@ -100,7 +100,7 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
         if (incx == 1 && incy == 1)
         {
             CBLAS_INDEX i = 0;
-            register float sum0, sum1, sum2, sum3 = 0.0f;
+            register float sum0 = 0.0f, sum1 = 0.0f, sum2 = 0.0f, sum3 = 0.0f;
 
             for (; i + 4 <= n; i += 4)
             {
@@ -137,7 +137,7 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
     if (incx == 1 && incy == 1)
     {
         CBLAS_INDEX i = 0;
-        register float sum0, sum1, sum2, sum3 = 0.0f;
+        register float sum0 = 0.0f, sum1 = 0.0f, sum2 = 0.0f, sum3 = 0.0f;
 
         for (; i + 4 <= n; i += 4)
         {
