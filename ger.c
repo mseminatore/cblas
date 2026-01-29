@@ -78,7 +78,7 @@ static void AddProd4x1(float x, float *y, float *a)
 }
 
 //------------------------------------------------------
-// compute 8 cols x 4 rows product
+// compute 8 cols x 4 rows product (non-FMA version)
 //------------------------------------------------------
 static void AddProd8x4_AVX(float* x, float* y, float* a, CBLAS_INDEX lda)
 {
@@ -100,8 +100,7 @@ static void AddProd8x4_AVX(float* x, float* y, float* a, CBLAS_INDEX lda)
 	a2 = _mm256_load_ps(a + 2 * lda);
 	a3 = _mm256_load_ps(a + 3 * lda);
 
-	// compute 8x4 products
-	// TODO - FMAD here???
+	// compute 8x4 products (non-FMA)
 	a0 = _mm256_add_ps(a0, _mm256_mul_ps(x0, y0));
 	a1 = _mm256_add_ps(a1, _mm256_mul_ps(x1, y0));
 	a2 = _mm256_add_ps(a2, _mm256_mul_ps(x2, y0));
@@ -114,6 +113,44 @@ static void AddProd8x4_AVX(float* x, float* y, float* a, CBLAS_INDEX lda)
 	_mm256_store_ps(a + 3 * lda, a3);
 #endif
 }
+
+#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+
+//------------------------------------------------------
+// compute 8 cols x 4 rows product (FMA version)
+//------------------------------------------------------
+static void AddProd8x4_AVX_fma(float* x, float* y, float* a, CBLAS_INDEX lda)
+{
+	__m256 x0, x1, x2, x3, y0, a0, a1, a2, a3;
+
+	// copy single FP to all 8 elements of vector
+	x0 = _mm256_broadcast_ss(x);
+	x1 = _mm256_broadcast_ss(x + 1);
+	x2 = _mm256_broadcast_ss(x + 2);
+	x3 = _mm256_broadcast_ss(x + 3);
+
+	y0 = _mm256_load_ps(y);
+
+	// load 4 rows of destination
+	a0 = _mm256_load_ps(a);
+	a1 = _mm256_load_ps(a + lda);
+	a2 = _mm256_load_ps(a + 2 * lda);
+	a3 = _mm256_load_ps(a + 3 * lda);
+
+	// compute 8x4 products using FMA
+	a0 = _mm256_fmadd_ps(x0, y0, a0);
+	a1 = _mm256_fmadd_ps(x1, y0, a1);
+	a2 = _mm256_fmadd_ps(x2, y0, a2);
+	a3 = _mm256_fmadd_ps(x3, y0, a3);
+
+	// store results
+	_mm256_store_ps(a, a0);
+	_mm256_store_ps(a + lda, a1);
+	_mm256_store_ps(a + 2 * lda, a2);
+	_mm256_store_ps(a + 3 * lda, a3);
+}
+
+#endif
 
 //------------------------------------------------------
 // compute 4 cols x 4 rows product
