@@ -84,6 +84,8 @@ static void test_win_threads()
 //------------------------------------------------------
 int test_main(int argc, char *argv[])
 {
+	(void)argc;
+	(void)argv;
 //	cblas_set_num_threads(1);
 
 	cblas_init(CBLAS_DEFAULT_THREADS);
