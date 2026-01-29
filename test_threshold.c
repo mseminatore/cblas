@@ -131,7 +131,7 @@ static int test_mt_threshold_enforcement(void)
         free(x);
         free(y);
         
-        if (fabs(result - expected) > 1e-5) {
+        if (fabs(result - expected) > EPSILON) {
             fprintf(stderr, "cblas_sdot failed: got %f, expected %f\n", result, expected);
             return 0;
         }

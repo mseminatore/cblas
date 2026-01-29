@@ -114,8 +114,12 @@ target_link_libraries(test_threshold cblas ${MATH_LIB})
 
 add_executable(test_concurrent test_main.c test_concurrent.c)
 target_link_libraries(test_concurrent cblas ${MATH_LIB})
+
 find_package(Threads REQUIRED)
 target_link_libraries(test_concurrent Threads::Threads)
+
+add_executable(test_mt_debug test_mt_debug.c)
+target_link_libraries(test_mt_debug cblas ${MATH_LIB})
 
 # install targets
 install(TARGETS cblas DESTINATION lib)

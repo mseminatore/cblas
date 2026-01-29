@@ -71,6 +71,10 @@
 #   define EPSILON 1e-5
 #endif
 
+#ifndef DOUBLE_EPSILON
+#   define DOUBLE_EPSILON 1e-10
+#endif
+
 #define EQUAL_EPSILON(a, b)     (fabs((a) - (b)) < EPSILON)
 
 #ifndef ARRAY_SIZE

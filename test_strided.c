@@ -51,7 +51,7 @@ static int equal_strided_float(const float *a, const float *b, CBLAS_INDEX n, CB
 {
     for (CBLAS_INDEX i = 0; i < n; i++)
     {
-        if (fabsf(a[i * inc] - b[i * inc]) > 1e-5f)
+        if (fabsf(a[i * inc] - b[i * inc]) > EPSILON)
             return 0;
     }
     return 1;
@@ -61,7 +61,7 @@ static int equal_strided_double(const double *a, const double *b, CBLAS_INDEX n,
 {
     for (CBLAS_INDEX i = 0; i < n; i++)
     {
-        if (fabs(a[i * inc] - b[i * inc]) > 1e-10)
+        if (fabs(a[i * inc] - b[i * inc]) > DOUBLE_EPSILON)
             return 0;
     }
     return 1;
@@ -187,7 +187,7 @@ static void test_sdot_stride2(void)
     float expected = 1.0f*1.0f + 2.0f*2.0f + 3.0f*3.0f + 4.0f*4.0f + 5.0f*5.0f + 
                      6.0f*6.0f + 7.0f*7.0f + 8.0f*8.0f + 9.0f*9.0f + 10.0f*10.0f;
     
-    TEST(fabsf(result - expected) < 1e-5f);
+    TEST(fabsf(result - expected) < EPSILON);
 }
 
 //------------------------------------------------------
@@ -206,7 +206,7 @@ static void test_ddot_stride2(void)
     double expected = 1.0*1.0 + 2.0*2.0 + 3.0*3.0 + 4.0*4.0 + 5.0*5.0 + 
                       6.0*6.0 + 7.0*7.0 + 8.0*8.0 + 9.0*9.0 + 10.0*10.0;
     
-    TEST(fabs(result - expected) < 1e-10);
+    TEST(fabs(result - expected) < DOUBLE_EPSILON);
 }
 
 //------------------------------------------------------
@@ -226,7 +226,7 @@ static void test_saxpy_stride2(void)
     for (CBLAS_INDEX i = 0; i < LOGICAL_SIZE; i++)
     {
         float expected = 2.0f * (1.0f + i) + i;
-        TEST(fabsf(sb[i * 2] - expected) < 1e-5f);
+        TEST(fabsf(sb[i * 2] - expected) < EPSILON);
     }
 }
 
@@ -245,7 +245,7 @@ static void test_daxpy_stride2(void)
     for (CBLAS_INDEX i = 0; i < LOGICAL_SIZE; i++)
     {
         double expected = 2.0 * (1.0 + i) + i;
-        TEST(fabs(db[i * 2] - expected) < 1e-10);
+        TEST(fabs(db[i * 2] - expected) < DOUBLE_EPSILON);
     }
 }
 
@@ -263,7 +263,7 @@ static void test_sscal_stride2(void)
     for (CBLAS_INDEX i = 0; i < LOGICAL_SIZE; i++)
     {
         float expected = 3.0f * (1.0f + i);
-        TEST(fabsf(sa[i * 2] - expected) < 1e-5f);
+        TEST(fabsf(sa[i * 2] - expected) < EPSILON);
     }
 }
 
@@ -281,7 +281,7 @@ static void test_dscal_stride2(void)
     for (CBLAS_INDEX i = 0; i < LOGICAL_SIZE; i++)
     {
         double expected = 3.0 * (1.0 + i);
-        TEST(fabs(da[i * 2] - expected) < 1e-10);
+        TEST(fabs(da[i * 2] - expected) < DOUBLE_EPSILON);
     }
 }
 
@@ -301,7 +301,7 @@ static void test_saxpby_stride2(void)
     for (CBLAS_INDEX i = 0; i < LOGICAL_SIZE; i++)
     {
         float expected = 2.0f * (1.0f + i) + 3.0f * (10.0f + i);
-        TEST(fabsf(sb[i * 2] - expected) < 1e-5f);
+        TEST(fabsf(sb[i * 2] - expected) < EPSILON);
     }
 }
 
@@ -320,7 +320,7 @@ static void test_daxpby_stride2(void)
     for (CBLAS_INDEX i = 0; i < LOGICAL_SIZE; i++)
     {
         double expected = 2.0 * (1.0 + i) + 3.0 * (10.0 + i);
-        TEST(fabs(db[i * 2] - expected) < 1e-10);
+        TEST(fabs(db[i * 2] - expected) < DOUBLE_EPSILON);
     }
 }
 
@@ -338,7 +338,7 @@ static void test_sasum_stride2(void)
     // Sum of abs(-5)+abs(-4)+...+abs(4) = 5+4+3+2+1+0+1+2+3+4 = 25
     float expected = 5.0f + 4.0f + 3.0f + 2.0f + 1.0f + 0.0f + 1.0f + 2.0f + 3.0f + 4.0f;
     
-    TEST(fabsf(result - expected) < 1e-5f);
+    TEST(fabsf(result - expected) < EPSILON);
 }
 
 //------------------------------------------------------
@@ -353,7 +353,7 @@ static void test_dasum_stride2(void)
     double result = cblas_dasum(LOGICAL_SIZE, da, 2);
     double expected = 5.0 + 4.0 + 3.0 + 2.0 + 1.0 + 0.0 + 1.0 + 2.0 + 3.0 + 4.0;
     
-    TEST(fabs(result - expected) < 1e-10);
+    TEST(fabs(result - expected) < DOUBLE_EPSILON);
 }
 
 //------------------------------------------------------
@@ -372,7 +372,7 @@ static void test_snrm2_stride2(void)
     // sqrt(1^2 + 2^2 + 3^2 + 4^2 + 0^2) = sqrt(30)
     float expected = sqrtf(1.0f + 4.0f + 9.0f + 16.0f);
     
-    TEST(fabsf(result - expected) < 1e-5f);
+    TEST(fabsf(result - expected) < EPSILON);
 }
 
 //------------------------------------------------------
@@ -388,7 +388,7 @@ static void test_dnrm2_stride2(void)
     double result = cblas_dnrm2(5, da, 2);
     double expected = sqrt(1.0 + 4.0 + 9.0 + 16.0);
     
-    TEST(fabs(result - expected) < 1e-10);
+    TEST(fabs(result - expected) < DOUBLE_EPSILON);
 }
 
 //------------------------------------------------------
@@ -408,8 +408,8 @@ static void test_srot_stride2(void)
     {
         float expected_a = (float)i;
         float expected_b = -(1.0f + i);
-        TEST(fabsf(sa[i * 2] - expected_a) < 1e-5f);
-        TEST(fabsf(sb[i * 2] - expected_b) < 1e-5f);
+        TEST(fabsf(sa[i * 2] - expected_a) < EPSILON);
+        TEST(fabsf(sb[i * 2] - expected_b) < EPSILON);
     }
 }
 
@@ -429,8 +429,8 @@ static void test_drot_stride2(void)
     {
         double expected_a = (double)i;
         double expected_b = -(1.0 + i);
-        TEST(fabs(da[i * 2] - expected_a) < 1e-10);
-        TEST(fabs(db[i * 2] - expected_b) < 1e-10);
+        TEST(fabs(da[i * 2] - expected_a) < DOUBLE_EPSILON);
+        TEST(fabs(db[i * 2] - expected_b) < DOUBLE_EPSILON);
     }
 }
 
@@ -499,7 +499,7 @@ static void test_sdot_stride3(void)
     float result = cblas_sdot(LOGICAL_SIZE, sa3, 3, sb3, 3);
     float expected = 0.0f + 1.0f + 4.0f + 9.0f + 16.0f + 25.0f + 36.0f + 49.0f + 64.0f + 81.0f; // 285
     
-    TEST(fabsf(result - expected) < 1e-5f);
+    TEST(fabsf(result - expected) < EPSILON);
 }
 
 //------------------------------------------------------
@@ -518,7 +518,7 @@ static void test_ddot_stride3(void)
     double result = cblas_ddot(LOGICAL_SIZE, da3, 3, db3, 3);
     double expected = 0.0 + 1.0 + 4.0 + 9.0 + 16.0 + 25.0 + 36.0 + 49.0 + 64.0 + 81.0; // 285
     
-    TEST(fabs(result - expected) < 1e-10);
+    TEST(fabs(result - expected) < DOUBLE_EPSILON);
 }
 
 //------------------------------------------------------
@@ -668,7 +668,7 @@ static void test_sasum_stride3(void)
     float result = cblas_sasum(LOGICAL_SIZE, sa3, 3);
     float expected = 0.0f + 1.0f + 2.0f + 3.0f + 4.0f + 5.0f + 6.0f + 7.0f + 8.0f + 9.0f; // 45
     
-    TEST(fabsf(result - expected) < 1e-5f);
+    TEST(fabsf(result - expected) < EPSILON);
 }
 
 //------------------------------------------------------
@@ -684,7 +684,7 @@ static void test_dasum_stride3(void)
     double result = cblas_dasum(LOGICAL_SIZE, da3, 3);
     double expected = 0.0 + 1.0 + 2.0 + 3.0 + 4.0 + 5.0 + 6.0 + 7.0 + 8.0 + 9.0; // 45
     
-    TEST(fabs(result - expected) < 1e-10);
+    TEST(fabs(result - expected) < DOUBLE_EPSILON);
 }
 
 //------------------------------------------------------
@@ -700,7 +700,7 @@ static void test_snrm2_stride3(void)
     float result = cblas_snrm2(LOGICAL_SIZE, sa3, 3);
     float expected = sqrtf(0.0f + 1.0f + 4.0f + 9.0f + 16.0f + 25.0f + 36.0f + 49.0f + 64.0f + 81.0f); // sqrt(285)
     
-    TEST(fabsf(result - expected) < 1e-5f);
+    TEST(fabsf(result - expected) < EPSILON);
 }
 
 //------------------------------------------------------
@@ -716,7 +716,7 @@ static void test_dnrm2_stride3(void)
     double result = cblas_dnrm2(LOGICAL_SIZE, da3, 3);
     double expected = sqrt(0.0 + 1.0 + 4.0 + 9.0 + 16.0 + 25.0 + 36.0 + 49.0 + 64.0 + 81.0); // sqrt(285)
     
-    TEST(fabs(result - expected) < 1e-10);
+    TEST(fabs(result - expected) < DOUBLE_EPSILON);
 }
 
 //------------------------------------------------------
@@ -738,7 +738,7 @@ static void test_srot_stride3(void)
     cblas_srot(LOGICAL_SIZE, sa3, 3, sb3, 3, c, s);
     
     // First element should be: c*1.0 + s*2.0 = 0.6 + 1.6 = 2.2
-    TEST(fabsf(sa3[0] - 2.2f) < 1e-5f);
+    TEST(fabsf(sa3[0] - 2.2f) < EPSILON);
 }
 
 //------------------------------------------------------
@@ -760,7 +760,7 @@ static void test_drot_stride3(void)
     cblas_drot(LOGICAL_SIZE, da3, 3, db3, 3, c, s);
     
     // First element should be: c*1.0 + s*2.0 = 0.6 + 1.6 = 2.2
-    TEST(fabs(da3[0] - 2.2) < 1e-10);
+    TEST(fabs(da3[0] - 2.2) < DOUBLE_EPSILON);
 }
 
 int test_main(int argc, char* argv[])
