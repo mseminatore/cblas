@@ -189,20 +189,20 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
 
     int thread_num = (int)pvArg;
 
-    MT_TRACE("thread [%d] created.\n", thread_num);
+    MT_TRACE_THREAD(thread_num, "created.\n");
 
     while(1)
     {
-        //MT_TRACE("thread [%d] waits.\n", thread_num);
+        //MT_TRACE_THREAD(thread_num, "waits.\n");
 
         // event raised when work is added to the queue
         WaitForSingleObject(kickoff_event, INFINITE);
 
-        //MT_TRACE("thread [%d] is awake.\n", thread_num);
+        //MT_TRACE_THREAD(thread_num, "is awake.\n");
   
         if (thread_num > cblas_max_threads - 2)
         {
-            MT_TRACE("thread [%d] exiting.\n", thread_num);
+            MT_TRACE_THREAD(thread_num, "exiting.\n");
 
             // excess thread, so worker thread exits
             break;
@@ -234,7 +234,7 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
         // if no work, reset event and then go to sleep to wait for more work
         if (!work_item)
         {
-            //MT_TRACE("thread [%d] no work, trying again.\n", thread_num);
+            //MT_TRACE_THREAD(thread_num, "no work, trying again.\n");
             YieldProcessor();
             continue;
         }
@@ -242,7 +242,12 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
         work_item->thread_num = thread_num;
         work_item->tid = cblas_thread_ids[thread_num];
 
-        MT_TRACE("thread [%d] executing a task.\n", thread_num);
+        MT_TRACE_THREAD(thread_num, "executing a task.\n");
+
+#ifdef MT_DEBUG
+        // Track timing for this work item
+        work_item->start_time_us = mt_get_time_us();
+#endif
 
         // execute the task
         work_item->kernel(work_item->args);
@@ -252,7 +257,14 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
 
         assert(r == 1);
 
-        MT_TRACE("thread [%d] task completed.\n", thread_num);
+#ifdef MT_DEBUG
+        // Calculate and log execution time
+        work_item->end_time_us = mt_get_time_us();
+        double duration = work_item->end_time_us - work_item->start_time_us;
+        MT_TRACE_TIMING(thread_num, "task", duration);
+#endif
+
+        MT_TRACE_THREAD(thread_num, "task completed.\n");
     }
 
     return 0;
@@ -311,6 +323,17 @@ void cblas_execute_async(CBLAS_INDEX items, work_queue_t* queue)
         queue_item->next = queue;
     }
 
+#ifdef MT_DEBUG
+    // Count queue depth for monitoring
+    int depth = 0;
+    work_queue_t* item = work_queue;
+    while (item) {
+        depth++;
+        item = item->next;
+    }
+    MT_TRACE_QUEUE_DEPTH(depth);
+#endif
+
     LeaveCriticalSection(&queue_lock);
 
     // wake up the worker threads
@@ -328,6 +351,11 @@ void cblas_execute_async_join(CBLAS_INDEX items, work_queue_t* queue)
 
     MT_TRACE("waiting on queue to complete %zu items.\n", items);
 
+#ifdef MT_DEBUG
+    // Save the start of the queue to collect timing stats later
+    work_queue_t* queue_start = queue;
+#endif
+
     while (items)
     {
         while (!queue->finished)
@@ -338,6 +366,27 @@ void cblas_execute_async_join(CBLAS_INDEX items, work_queue_t* queue)
     }
 
     MT_TRACE("queued tasks finished.\n");
+
+#ifdef MT_DEBUG
+    // Collect timing data and detect load imbalance
+    if (queue_start) {
+        double times[MAX_THREADS];
+        int count = 0;
+        work_queue_t* item = queue_start;
+        
+        while (item && count < MAX_THREADS) {
+            if (item->end_time_us > 0 && item->start_time_us > 0) {
+                times[count] = item->end_time_us - item->start_time_us;
+                count++;
+            }
+            item = item->next;
+        }
+        
+        if (count > 1) {
+            MT_TRACE_LOAD_BALANCE(count, times);
+        }
+    }
+#endif
 
     // if work was added to the queue after this batch we can't sleep the worker threads
     // by resetting the event
