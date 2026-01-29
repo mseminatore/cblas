@@ -153,6 +153,8 @@ static void AddDot4x4_fma(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CB
 
 static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
 {
+    (void)lda;
+    (void)ldb;
     float32x4_t c_row1, c_row2, c_row3, c_row4;
     float32x4_t b_row;
     float32x4_t a_p0, a_p1, a_p2, a_p3;
