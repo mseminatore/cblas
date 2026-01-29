@@ -35,11 +35,7 @@ endif()
 
 message("Compiler = ${CMAKE_C_COMPILER_ID}")
 
-if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -Wextra -Wpedantic -Werror")    
-elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "AppleClang")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -Wextra -Wpedantic -Werror")    
-elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+if ("${CMAKE_C_COMPILER_ID}" MATCHES "Clang|AppleClang|GNU")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -Wextra -Wpedantic -Werror")
 elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /WX /arch:AVX /std:c11")
