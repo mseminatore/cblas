@@ -3,6 +3,19 @@ cmake_minimum_required(VERSION 3.10)
 # set the project name and version
 project(cblas VERSION 1.0 LANGUAGES C)
 
+# Configuration options
+option(CBLAS_ENABLE_MT "Enable multi-threading" ON)
+option(CBLAS_USE_SIMD "Enable SIMD optimizations" ON)
+option(CBLAS_CHECK_INPUTS "Enable input validation" ON)
+option(CBLAS_USE_STATIC_BUFFERS "Use static buffers" ON)
+set(CBLAS_MAX_THREADS "64" CACHE STRING "Maximum threads")
+
+# Generate cblas_config.h from cblas_config.h.in
+configure_file(cblas_config.h.in cblas_config.h @ONLY)
+
+# Add the binary directory to include path so generated config header can be found
+include_directories(${PROJECT_BINARY_DIR})
+
 # testing
 enable_testing()
 add_test(NAME blas_test COMMAND blas_test)

@@ -33,34 +33,15 @@
 // configurable library parameters
 //[]------------------------------------------------------[]
 
-// set the most threads supported by the library
-#ifndef MAX_THREADS
-#   define MAX_THREADS 64
-#endif
+// Include CMake-generated configuration
+#include "cblas_config.h"
 
 // set the sizes of various buffers
 #define CBLAS_SMALL_BUF 256
 #define CBLAS_LARGE_BUF 1024
 
-// library functions check inputs for validity
-#define CBLAS_CHECK_INPUTS
-
-// library functions use blas standard error reporting function
-#define CBLAS_XERBLA_INPUTS
-
-// uncomment to enable SSE SIMD instruction usage
-#define USE_SSE
-
-#define USE_SIMD
-
 // uncomment to enable FMA3 instruction usage
 //#define USE_INTEL_FMA
-
-// uncomment to enable use of static vs. stack-based buffers
-#define USE_STATIC_BUFFERS
-
-// uncomment to enable multi-threading
-#define MT_ENABLED
 
 // uncomment to enable multi-threading debug messages
 //#define MT_DEBUG
