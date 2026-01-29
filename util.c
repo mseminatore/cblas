@@ -28,10 +28,18 @@ static stats_entry_t stats_table[STATS_TABLE_SIZE];
 static int stats_initialized = 0;
 
 #ifdef MT_ENABLED
+#ifdef _WIN32
+#include <windows.h>
+static CRITICAL_SECTION stats_mutex;
+static int stats_mutex_initialized = 0;
+#define STATS_LOCK() EnterCriticalSection(&stats_mutex)
+#define STATS_UNLOCK() LeaveCriticalSection(&stats_mutex)
+#else
 #include <pthread.h>
 static pthread_mutex_t stats_mutex = PTHREAD_MUTEX_INITIALIZER;
 #define STATS_LOCK() pthread_mutex_lock(&stats_mutex)
 #define STATS_UNLOCK() pthread_mutex_unlock(&stats_mutex)
+#endif
 #else
 #define STATS_LOCK()
 #define STATS_UNLOCK()
@@ -44,6 +52,13 @@ static void init_stats_table(void)
 {
     if (stats_initialized)
         return;
+    
+#if defined(MT_ENABLED) && defined(_WIN32)
+    if (!stats_mutex_initialized) {
+        InitializeCriticalSection(&stats_mutex);
+        stats_mutex_initialized = 1;
+    }
+#endif
     
     STATS_LOCK();
     if (!stats_initialized) {
@@ -173,6 +188,20 @@ void cblas_print_stats(void)
         printf("(no operations recorded)\n");
     }
     printf("\n");
+}
+
+//------------------------------------------------------
+// Cleanup stats resources
+//------------------------------------------------------
+void cblas_cleanup_stats(void)
+{
+#if defined(MT_ENABLED) && defined(_WIN32)
+    if (stats_mutex_initialized) {
+        DeleteCriticalSection(&stats_mutex);
+        stats_mutex_initialized = 0;
+    }
+#endif
+    stats_initialized = 0;
 }
 
 //------------------------------------------------------

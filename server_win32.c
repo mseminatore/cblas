@@ -178,6 +178,9 @@ void cblas_shutdown()
 
     DeleteCriticalSection(&queue_lock);
     DeleteCriticalSection(&server_lock);
+
+    // cleanup stats resources
+    cblas_cleanup_stats();
 }
 
 //------------------------------------------------------

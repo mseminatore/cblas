@@ -1113,6 +1113,12 @@ void cblas_reset_stats(void);
  */
 void cblas_print_stats(void);
 
+/**
+ * @brief Cleanup stats resources
+ * @note Called internally by cblas_shutdown(). Not for direct user call.
+ */
+void cblas_cleanup_stats(void);
+
 //------------------------------------------------------
 // testing functions/structs
 //------------------------------------------------------

@@ -75,9 +75,9 @@ int main(void)
     for (int i = 0; i < num_ops; i++) {
         const cblas_stats_t* stats = cblas_get_stats(ops[i]);
         if (stats && stats->total_calls > 0) {
-            printf("  ✓ %s tracked\n", ops[i]);
+            printf("  " CHECK_MARK " %s tracked\n", ops[i]);
         } else {
-            printf("  ✗ %s NOT tracked\n", ops[i]);
+            printf("  " X_MARK " %s NOT tracked\n", ops[i]);
             all_found = 0;
         }
     }
@@ -93,9 +93,9 @@ int main(void)
     
     const cblas_stats_t* stats = cblas_get_stats("sdot");
     if (stats && stats->total_calls == 0) {
-        printf("  ✓ Stats successfully reset\n");
+        printf("  " CHECK_MARK " Stats successfully reset\n");
     } else {
-        printf("  ✗ Stats not properly reset\n");
+        printf("  " X_MARK " Stats not properly reset\n");
         return 1;
     }
     

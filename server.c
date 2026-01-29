@@ -140,6 +140,9 @@ void cblas_shutdown(void)
     // Destroying them can cause undefined behavior on some platforms,
     // particularly GitHub Actions runners. They will be cleaned up automatically
     // when the program exits.
+
+    // cleanup stats resources
+    cblas_cleanup_stats();
 }
 
 //------------------------------------------------------
