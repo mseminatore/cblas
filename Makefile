@@ -66,7 +66,7 @@ test_threshold: $(LIBNAME) test_threshold.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 test_concurrent: $(LIBNAME) test_main.o test_concurrent.o
-	$(CC) -o $@ $^ $(LFLAGS)
+	$(CC) -o $@ $^ $(LFLAGS) -lpthread
 
 gemm_perf: $(LIBNAME) gemm_perf.o
 	$(CC) -o $@ $^ $(LFLAGS)

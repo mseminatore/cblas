@@ -215,6 +215,7 @@ static void test_concurrent_blas_operations(int num_threads)
     }
     
     // Create threads
+    int created_count = 0;
     for (int i = 0; i < num_threads; i++) {
         args[i].thread_id = i;
         args[i].num_iterations = ITERATIONS_PER_THREAD;
@@ -223,10 +224,16 @@ static void test_concurrent_blas_operations(int num_threads)
         
         if (pthread_create(&threads[i], NULL, test_blas_operations_thread, &args[i]) != 0) {
             printf("    %s Failed to create thread %d\n", X_MARK, i);
+            // Clean up already created threads
+            for (int j = 0; j < created_count; j++) {
+                pthread_join(threads[j], NULL);
+            }
+            pthread_mutex_destroy(&error_lock);
             free(threads);
             free(args);
             return;
         }
+        created_count++;
     }
     
     // Wait for all threads
@@ -265,6 +272,7 @@ static void test_concurrent_matrix_operations(int num_threads)
     }
     
     // Create threads
+    int created_count = 0;
     for (int i = 0; i < num_threads; i++) {
         args[i].thread_id = i;
         args[i].num_iterations = 10; // Fewer iterations for matrix ops
@@ -273,10 +281,16 @@ static void test_concurrent_matrix_operations(int num_threads)
         
         if (pthread_create(&threads[i], NULL, test_matrix_operations_thread, &args[i]) != 0) {
             printf("    %s Failed to create thread %d\n", X_MARK, i);
+            // Clean up already created threads
+            for (int j = 0; j < created_count; j++) {
+                pthread_join(threads[j], NULL);
+            }
+            pthread_mutex_destroy(&error_lock);
             free(threads);
             free(args);
             return;
         }
+        created_count++;
     }
     
     // Wait for all threads
@@ -315,6 +329,7 @@ static void test_concurrent_set_num_threads(int num_threads)
     }
     
     // Create threads
+    int created_count = 0;
     for (int i = 0; i < num_threads; i++) {
         args[i].thread_id = i;
         args[i].num_iterations = 20;
@@ -323,10 +338,16 @@ static void test_concurrent_set_num_threads(int num_threads)
         
         if (pthread_create(&threads[i], NULL, test_set_num_threads_thread, &args[i]) != 0) {
             printf("    %s Failed to create thread %d\n", X_MARK, i);
+            // Clean up already created threads
+            for (int j = 0; j < created_count; j++) {
+                pthread_join(threads[j], NULL);
+            }
+            pthread_mutex_destroy(&error_lock);
             free(threads);
             free(args);
             return;
         }
+        created_count++;
     }
     
     // Wait for all threads
