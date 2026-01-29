@@ -1,1 +1,0 @@
-/home/runner/work/cblas/.codeql-scratch/dbs/cpp/working/autobuild/bin/cc  -g -O2 -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/dot_perf.dir/link.d CMakeFiles/dot_perf.dir/dot_perf.c.o -o dot_perf  libcblas.a -lm

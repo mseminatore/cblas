@@ -1,1 +1,0 @@
-/home/runner/work/cblas/.codeql-scratch/dbs/cpp/working/autobuild/bin/cc  -g -O2 -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/mem_perf.dir/link.d CMakeFiles/mem_perf.dir/mem_perf.c.o -o mem_perf  libcblas.a -lm

@@ -1,1 +1,0 @@
-/home/runner/work/cblas/.codeql-scratch/dbs/cpp/working/autobuild/bin/cc  -g -O2 -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/test_strided.dir/link.d CMakeFiles/test_strided.dir/test_main.c.o CMakeFiles/test_strided.dir/test_strided.c.o -o test_strided  libcblas.a -lm

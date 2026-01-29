@@ -1,2 +1,0 @@
-/usr/bin/ar qc libcblas.a CMakeFiles/cblas.dir/copy.c.o CMakeFiles/cblas.dir/axpy.c.o CMakeFiles/cblas.dir/dot.c.o CMakeFiles/cblas.dir/swap.c.o CMakeFiles/cblas.dir/scal.c.o CMakeFiles/cblas.dir/axpby.c.o CMakeFiles/cblas.dir/rot.c.o CMakeFiles/cblas.dir/asum.c.o CMakeFiles/cblas.dir/nrm2.c.o CMakeFiles/cblas.dir/ger.c.o CMakeFiles/cblas.dir/gemv.c.o CMakeFiles/cblas.dir/gemm.c.o CMakeFiles/cblas.dir/rotg.c.o CMakeFiles/cblas.dir/util.c.o CMakeFiles/cblas.dir/setv.c.o CMakeFiles/cblas.dir/server.c.o CMakeFiles/cblas.dir/cpuid_x64.c.o
-/usr/bin/ranlib libcblas.a
