@@ -1,0 +1,1 @@
+/usr/bin/cc -fsanitize=thread -g -O1 -g -O2 -Wall -Wextra -Wpedantic -mavx2 -mfma -Wl,--dependency-file=CMakeFiles/nrm2_asum_rot_perf.dir/link.d CMakeFiles/nrm2_asum_rot_perf.dir/nrm2_asum_rot_perf.c.o -o nrm2_asum_rot_perf  libcblas.a -lm

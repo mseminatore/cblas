@@ -1,0 +1,1 @@
+/usr/bin/cc -fsanitize=thread -g -O1 -g -O2 -Wall -Wextra -Wpedantic -mavx2 -mfma -Wl,--dependency-file=CMakeFiles/test_threshold.dir/link.d CMakeFiles/test_threshold.dir/test_threshold.c.o -o test_threshold  libcblas.a -lm

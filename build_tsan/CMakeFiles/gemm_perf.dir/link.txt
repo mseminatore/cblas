@@ -1,0 +1,1 @@
+/usr/bin/cc -fsanitize=thread -g -O1 -g -O2 -Wall -Wextra -Wpedantic -mavx2 -mfma -Wl,--dependency-file=CMakeFiles/gemm_perf.dir/link.d CMakeFiles/gemm_perf.dir/gemm_perf.c.o -o gemm_perf  libcblas.a -lm

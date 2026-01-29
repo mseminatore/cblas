@@ -1,0 +1,43 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/cblas.dir/asum.c.o"
+  "CMakeFiles/cblas.dir/asum.c.o.d"
+  "CMakeFiles/cblas.dir/axpby.c.o"
+  "CMakeFiles/cblas.dir/axpby.c.o.d"
+  "CMakeFiles/cblas.dir/axpy.c.o"
+  "CMakeFiles/cblas.dir/axpy.c.o.d"
+  "CMakeFiles/cblas.dir/copy.c.o"
+  "CMakeFiles/cblas.dir/copy.c.o.d"
+  "CMakeFiles/cblas.dir/cpuid_x64.c.o"
+  "CMakeFiles/cblas.dir/cpuid_x64.c.o.d"
+  "CMakeFiles/cblas.dir/dot.c.o"
+  "CMakeFiles/cblas.dir/dot.c.o.d"
+  "CMakeFiles/cblas.dir/gemm.c.o"
+  "CMakeFiles/cblas.dir/gemm.c.o.d"
+  "CMakeFiles/cblas.dir/gemv.c.o"
+  "CMakeFiles/cblas.dir/gemv.c.o.d"
+  "CMakeFiles/cblas.dir/ger.c.o"
+  "CMakeFiles/cblas.dir/ger.c.o.d"
+  "CMakeFiles/cblas.dir/nrm2.c.o"
+  "CMakeFiles/cblas.dir/nrm2.c.o.d"
+  "CMakeFiles/cblas.dir/rot.c.o"
+  "CMakeFiles/cblas.dir/rot.c.o.d"
+  "CMakeFiles/cblas.dir/rotg.c.o"
+  "CMakeFiles/cblas.dir/rotg.c.o.d"
+  "CMakeFiles/cblas.dir/scal.c.o"
+  "CMakeFiles/cblas.dir/scal.c.o.d"
+  "CMakeFiles/cblas.dir/server.c.o"
+  "CMakeFiles/cblas.dir/server.c.o.d"
+  "CMakeFiles/cblas.dir/setv.c.o"
+  "CMakeFiles/cblas.dir/setv.c.o.d"
+  "CMakeFiles/cblas.dir/swap.c.o"
+  "CMakeFiles/cblas.dir/swap.c.o.d"
+  "CMakeFiles/cblas.dir/util.c.o"
+  "CMakeFiles/cblas.dir/util.c.o.d"
+  "libcblas.a"
+  "libcblas.pdb"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang C)
+  include(CMakeFiles/cblas.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()
