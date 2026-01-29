@@ -9,7 +9,9 @@ nrm2_asum_rot_perf
 test_strided
 test_mt_debug
 test_threshold
+test_concurrent
 build/
+build_*/
 _codeql_build_dir/
 _codeql_detected_source_root
 test_stats

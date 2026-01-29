@@ -21,6 +21,7 @@ enable_testing()
 add_test(NAME blas_test COMMAND blas_test)
 add_test(NAME test_strided COMMAND test_strided)
 add_test(NAME test_threshold COMMAND test_threshold)
+add_test(NAME test_concurrent COMMAND test_concurrent)
 
 # add the includes
 include_directories(${PROJECT_SOURCE_DIR})
@@ -110,6 +111,12 @@ target_link_libraries(test_stats cblas ${MATH_LIB})
 
 add_executable(test_threshold test_threshold.c)
 target_link_libraries(test_threshold cblas ${MATH_LIB})
+
+add_executable(test_concurrent test_main.c test_concurrent.c)
+target_link_libraries(test_concurrent cblas ${MATH_LIB})
+
+find_package(Threads REQUIRED)
+target_link_libraries(test_concurrent Threads::Threads)
 
 add_executable(test_mt_debug test_mt_debug.c)
 target_link_libraries(test_mt_debug cblas ${MATH_LIB})
