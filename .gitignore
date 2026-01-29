@@ -6,6 +6,7 @@ ger_perf
 gemm_perf
 dot_perf
 build/
+test_strided
 
 .DS_Store
 
