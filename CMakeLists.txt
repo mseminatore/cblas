@@ -31,6 +31,13 @@ elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
 #    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /STACK:0x800000")
 endif()
 
+# Add Intel specific compiler flags for x86_64 architecture
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
+    if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx2 -mfma")
+    endif()
+endif()
+
 message("CFLAGS = ${CMAKE_C_FLAGS}")
 
 # link with correct thread server
