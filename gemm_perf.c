@@ -14,7 +14,7 @@ float a[MAX_SIZE * MAX_SIZE], b[MAX_SIZE * MAX_SIZE], c[MAX_SIZE * MAX_SIZE];
 //------------------------------------------------------
 //
 //------------------------------------------------------
-void test_gemm()
+void test_gemm(void)
 {
     struct cblas_timer t1, t2;
     CBLAS_INDEX m, n, k;

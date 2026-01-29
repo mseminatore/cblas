@@ -16,7 +16,7 @@ kernels_t blas_kernels;
 //------------------------------------------------------
 // return the current server status
 //------------------------------------------------------
-int cblas_is_server_alive()
+int cblas_is_server_alive(void)
 {
     return cblas_server_alive;
 }
@@ -52,7 +52,7 @@ void xerbla(const char *srcname, int info, size_t len)
 //------------------------------------------------------
 // return the current config
 //------------------------------------------------------
-const char *cblas_get_config()
+const char *cblas_get_config(void)
 {
     static char buf[CBLAS_SMALL_BUF];
 
@@ -68,7 +68,7 @@ const char *cblas_get_config()
 //------------------------------------------------------
 // return bit flags defining available ISA extensions 
 //------------------------------------------------------
-const char *cblas_get_isa_features()
+const char *cblas_get_isa_features(void)
 {
     static char buf[CBLAS_SMALL_BUF];
 
@@ -142,7 +142,7 @@ const char *cblas_get_isa_features()
 //------------------------------------------------------
 // return the name of the host CPU
 //------------------------------------------------------
-const char *cblas_get_corename()
+const char *cblas_get_corename(void)
 {
     return cpu_get_core_name();
 }
@@ -150,7 +150,7 @@ const char *cblas_get_corename()
 //------------------------------------------------------
 // return number of CPUs on the host system
 //------------------------------------------------------
-int cblas_get_num_procs()
+int cblas_get_num_procs(void)
 {
     return cpu_get_core_count();
 }
@@ -158,7 +158,7 @@ int cblas_get_num_procs()
 //------------------------------------------------------
 // standard configuration print banner
 //------------------------------------------------------
-void cblas_print_configuration()
+void cblas_print_configuration(void)
 {
     printf("%s\n", cblas_get_config());
     printf("     CPU uArch: %s\n", cblas_get_corename());
@@ -256,7 +256,7 @@ void cblas_level1_exec_result(CBLAS_INDEX byte_stride, kernel_function kernel, C
 //------------------------------------------------------
 // level 2 dispatch
 //------------------------------------------------------
-void cblas_level2_exec()
+void cblas_level2_exec(void)
 {
     //work_queue_t queue[MAX_THREADS];
     //cblas_args_t args[MAX_THREADS];
@@ -296,7 +296,7 @@ void cblas_level2_exec()
 //------------------------------------------------------
 // level 3 dispatch
 //------------------------------------------------------
-void cblas_level3_exec()
+void cblas_level3_exec(void)
 {
 
 }

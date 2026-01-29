@@ -14,7 +14,7 @@ float x[MAX_SIZE], y[MAX_SIZE];
 //------------------------------------------------------
 //
 //------------------------------------------------------
-void test_dot()
+void test_dot(void)
 {
     struct cblas_timer t1, t2;
     float dt;

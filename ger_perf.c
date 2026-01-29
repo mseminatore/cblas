@@ -36,7 +36,7 @@ float a[MAX_SIZE * MAX_SIZE], b[MAX_SIZE * MAX_SIZE];
 //------------------------------------------------------
 //
 //------------------------------------------------------
-void test_ger()
+void test_ger(void)
 {
     struct cblas_timer t1, t2;
     float dt;

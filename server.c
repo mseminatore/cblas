@@ -81,7 +81,7 @@ void cblas_set_num_threads(int threads)
 //------------------------------------------------------
 // initialize the thread server system
 //------------------------------------------------------
-int cblas_init_server()
+int cblas_init_server(void)
 {
     if (cblas_is_server_alive() || cblas_max_threads <= 1)
         return CBLAS_FALSE;
@@ -107,7 +107,7 @@ int cblas_init_server()
 //------------------------------------------------------
 // shutdown the thread server
 //------------------------------------------------------
-void cblas_shutdown()
+void cblas_shutdown(void)
 {
     if (!cblas_is_server_alive())
         return;

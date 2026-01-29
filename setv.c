@@ -6,7 +6,7 @@
 #include "cblas.h"
 
 //------------------------------------------------------
-//
+// single precision set vector
 //------------------------------------------------------
 void cblas_ssetv(CBLAS_INDEX n, float *x, float v)
 {
@@ -17,7 +17,7 @@ void cblas_ssetv(CBLAS_INDEX n, float *x, float v)
 }
 
 //------------------------------------------------------
-//
+// double precision set vector
 //------------------------------------------------------
 void cblas_dsetv(CBLAS_INDEX n, double *x, double v)
 {

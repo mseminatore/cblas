@@ -485,10 +485,10 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 // Utility functions
 //------------------------------------------------------
 void cblas_init(int threads);
-void cblas_shutdown();
+void cblas_shutdown(void);
 void cblas_set_num_threads(int threads);
 int cblas_get_num_threads(void);
-int cblas_init_server();
+int cblas_init_server(void);
 
 void cblas_execute(CBLAS_INDEX items, work_queue_t* queue);
 void cblas_execute_async(CBLAS_INDEX items, work_queue_t* queue);
@@ -497,26 +497,26 @@ void cblas_execute_async_join(CBLAS_INDEX items, work_queue_t* queue);
 void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy);
 void cblas_level1_exec_result(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy, void* c);
 
-const char *cblas_get_config();
-const char *cblas_get_corename();
-int  cblas_get_num_procs();
+const char *cblas_get_config(void);
+const char *cblas_get_corename(void);
+int  cblas_get_num_procs(void);
 void xerbla(const char *srcname, int info, size_t len);
 
 //------------------------------------------------------
 // CPU ID functions
 //------------------------------------------------------
-int cpu_get_core_count();
-const char *cpu_get_core_name();
-int cpu_get_cacheline_size();
-unsigned int cpu_get_features();
-const char *cblas_get_isa_features();
-void cblas_print_configuration();
-int cpu_get_l2_cache_size();
+int cpu_get_core_count(void);
+const char *cpu_get_core_name(void);
+int cpu_get_cacheline_size(void);
+unsigned int cpu_get_features(void);
+const char *cblas_get_isa_features(void);
+void cblas_print_configuration(void);
+int cpu_get_l2_cache_size(void);
 
 //------------------------------------------------------
 // internal functions
 //------------------------------------------------------
-int cblas_is_server_alive();
+int cblas_is_server_alive(void);
 void cblas_set_server_alive(int yesno);
 
 //------------------------------------------------------

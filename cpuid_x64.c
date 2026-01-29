@@ -33,7 +33,7 @@ static unsigned int cpu_features = CPU_NONE;
 //------------------------------------------------------
 // return the CPU name
 //------------------------------------------------------
-const char *cpu_get_core_name()
+const char *cpu_get_core_name(void)
 {
 	static char mfgID[13];
 #if defined(_MSC_VER)
@@ -65,7 +65,7 @@ const char *cpu_get_core_name()
 //------------------------------------------------------
 // return the CPU L1 cache line size
 //------------------------------------------------------
-int cpu_get_cacheline_size()
+int cpu_get_cacheline_size(void)
 {
 	int line_size = 64;
 
@@ -95,7 +95,7 @@ int cpu_get_cacheline_size()
 //------------------------------------------------------
 // return the L2$ size in KBytes
 //------------------------------------------------------
-int cpu_get_l2_cache_size()
+int cpu_get_l2_cache_size(void)
 {
     long l2_cache_size = 0;
 
@@ -148,7 +148,7 @@ const char* cpu_get_brand_string(void)
 //------------------------------------------------------
 // query for cpu features
 //------------------------------------------------------
-static unsigned int __cpu_get_features()
+static unsigned int __cpu_get_features(void)
 {
 #if defined(_MSC_VER)
 	int info[4];
@@ -216,7 +216,7 @@ static unsigned int __cpu_get_features()
 //------------------------------------------------------
 // get and cache cpu features
 //------------------------------------------------------
-unsigned int cpu_get_features()
+unsigned int cpu_get_features(void)
 {
 	if (cpu_features == CPU_NONE)
 		cpu_features = __cpu_get_features();
@@ -227,9 +227,8 @@ unsigned int cpu_get_features()
 //------------------------------------------------------
 // return the number of usable cores
 //------------------------------------------------------
-int cpu_get_core_count()
+int cpu_get_core_count(void)
 {
-	const char* vendor_string = cpu_get_core_name();
 	static int cores = -1;
 
 	// use cached value if it exists
@@ -252,6 +251,7 @@ int cpu_get_core_count()
 
 #if defined(_MSC_VER)
 	int info[4];
+	const char* vendor_string = cpu_get_core_name();
 
 	if (!strcmp(vendor_string, "GenuineIntel"))
 	{
@@ -282,6 +282,7 @@ int cpu_get_core_count()
 		return cores;
 	#else
 		unsigned int eax, ebx, ecx, edx;
+		const char* vendor_string = cpu_get_core_name();
 
 		if (!strcmp(vendor_string, "GenuineIntel"))
 		{

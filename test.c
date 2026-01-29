@@ -158,7 +158,7 @@ CBLAS_UNUSED static void print_darray(int n, double* x)
 //------------------------------------------------------
 // test cases for s/dswap()
 //------------------------------------------------------
-static void test_swap()
+static void test_swap(void)
 {
 	SUITE("cblas_sswap");
 
@@ -202,7 +202,7 @@ static void test_swap()
 //------------------------------------------------------
 // test cases for s/ddot()
 //------------------------------------------------------
-static void test_dot()
+static void test_dot(void)
 {
 	SUITE("cblas_sdot");
 
@@ -242,7 +242,7 @@ static void test_dot()
 //------------------------------------------------------
 // test cases for s/dcopy()
 //------------------------------------------------------
-static void test_copy()
+static void test_copy(void)
 {
 	SUITE("cblas_scopy");
 
@@ -272,7 +272,7 @@ static void test_copy()
 //------------------------------------------------------
 // test cases for s/daxpy()
 //------------------------------------------------------
-static void test_axpy()
+static void test_axpy(void)
 {
 	SUITE("cblas_saxpy");
 
@@ -294,7 +294,7 @@ static void test_axpy()
 //------------------------------------------------------
 // test cases for s/daxpby()
 //------------------------------------------------------
-static void test_axpby()
+static void test_axpby(void)
 {
 	SUITE("cblas_saxpby");
 
@@ -316,7 +316,7 @@ static void test_axpby()
 //------------------------------------------------------
 // test cases for s/dscal()
 //------------------------------------------------------
-static void test_scal()
+static void test_scal(void)
 {
 	SUITE("cblas_sscal");
 
@@ -338,7 +338,7 @@ static void test_scal()
 //------------------------------------------------------
 // test cases for s/drot()
 //------------------------------------------------------
-static void test_rot()
+static void test_rot(void)
 {
 	SUITE("cblas_srot");
 	{
@@ -406,7 +406,7 @@ static void test_rot()
 //------------------------------------------------------
 // test cases for s/dasum()
 //------------------------------------------------------
-static void test_asum()
+static void test_asum(void)
 {
 	SUITE("cblas_sasum");
 
@@ -429,16 +429,16 @@ static void test_asum()
 
 		// sum of ones is count(ones)
 		dr = cblas_dasum(ARRAY_SIZE(dones), dones, 1);
-		TEST(dr == ARRAY_SIZE(dones) * 1.0f);
+		TEST(dr == ARRAY_SIZE(dones) * 1.0);
 
 		dr = cblas_dasum(ARRAY_SIZE(da), da, 1);
-		TEST(sr == 45.0);
+		TEST(dr == 45.0);
 }
 
 //------------------------------------------------------
 // test cases for s/dnrm2()
 //------------------------------------------------------
-static void test_nrm2()
+static void test_nrm2(void)
 {
 	SUITE("cblas_snrm2");
 
@@ -466,7 +466,7 @@ static void test_nrm2()
 //------------------------------------------------------
 // test single and double precision ?ger()
 //------------------------------------------------------
-static void test_ger()
+static void test_ger(void)
 {
 	SUITE("cblas_sger");
 		{
@@ -541,7 +541,7 @@ static void test_ger()
 //------------------------------------------------------
 // test single and double precision ?gemv()
 //------------------------------------------------------
-static void test_gemv()
+static void test_gemv(void)
 {
 	SUITE("cblas_sgemv");
 
@@ -601,7 +601,7 @@ static void test_gemv()
 //------------------------------------------------------
 // test cases for s/drotg()
 //------------------------------------------------------
-static void test_rotg()
+static void test_rotg(void)
 {
 	SUITE("cblas_srotg");
 
@@ -612,7 +612,7 @@ static void test_rotg()
 //------------------------------------------------------
 // test cases for s/dgemm()
 //------------------------------------------------------
-static void test_gemm()
+static void test_gemm(void)
 {
 	SUITE("cblas_sgemm");
 
@@ -725,7 +725,7 @@ static void test_gemm()
 //------------------------------------------------------
 // BLAS level 1 testing
 //------------------------------------------------------
-static void test_level1()
+static void test_level1(void)
 {
 	MODULE("BLAS Level1");
 
@@ -744,7 +744,7 @@ static void test_level1()
 //------------------------------------------------------
 // BLAS level 2 testing
 //------------------------------------------------------
-static void test_level2()
+static void test_level2(void)
 {
 	MODULE("BLAS Level2");
 
@@ -755,7 +755,7 @@ static void test_level2()
 //------------------------------------------------------
 // BLAS level 3 testing
 //------------------------------------------------------
-static void test_level3()
+static void test_level3(void)
 {
 	MODULE("BLAS Level3");
 

@@ -15,7 +15,7 @@ float x[MAX_SIZE], y[MAX_SIZE];
 //------------------------------------------------------
 // Test nrm2 performance
 //------------------------------------------------------
-void test_nrm2()
+void test_nrm2(void)
 {
     struct cblas_timer t1, t2;
     float dt;
@@ -50,7 +50,7 @@ void test_nrm2()
 //------------------------------------------------------
 // Test asum performance
 //------------------------------------------------------
-void test_asum()
+void test_asum(void)
 {
     struct cblas_timer t1, t2;
     float dt;
@@ -85,7 +85,7 @@ void test_asum()
 //------------------------------------------------------
 // Test rot performance
 //------------------------------------------------------
-void test_rot()
+void test_rot(void)
 {
     struct cblas_timer t1, t2;
     float dt;
