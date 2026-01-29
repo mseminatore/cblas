@@ -111,4 +111,8 @@ function | Description
 -------- | -----------
 cblas_sgemm | general matrix multiply **C** = alpha * **A** * **B** + beta * **C**
 
+# Documentation
+
+- [Threading Architecture](docs/THREADING.md) - Comprehensive guide to CBLAS multi-threading system
+
 
