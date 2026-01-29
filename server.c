@@ -351,4 +351,3 @@ void cblas_execute_async_join(CBLAS_INDEX items, work_queue_t* queue)
 
     // pthread_mutex_unlock(&queue_lock);
 }
-}

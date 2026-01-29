@@ -238,19 +238,46 @@ Uncomment `MT_DEBUG` in `cblas.h` and recompile:
 #define MT_DEBUG
 ```
 
-This enables detailed logging:
+This enables detailed logging with enhanced diagnostics:
 ```
 set threads = 4
-thread [0] created.
-thread [1] created.
-thread [2] created.
+[Thread 0] created.
+[Thread 1] created.
+[Thread 2] created.
 adding 3 items to the queue.
+[Queue] Depth: 3
 waking worker threads.
-thread [1] executing a task.
-thread [0] executing a task.
-thread [2] executing a task.
-thread [1] task completed.
+[Thread 1] executing a task.
+[Thread 0] executing a task.
+[Thread 2] executing a task.
+[Thread 1] task took 245.32 us
+[Thread 1] task completed.
+[Thread 0] task took 248.15 us
+[Thread 0] task completed.
+[Thread 2] task took 251.78 us
+[Thread 2] task completed.
+[Load Balance] OK: 2.6% variance (min=245.32us, max=251.78us, avg=248.42us)
 ...
+```
+
+### Enhanced Debug Macros
+
+When `MT_DEBUG` is enabled, the following structured tracing macros are available:
+
+- **MT_TRACE_THREAD(tid, ...)** - Thread-specific logging with thread ID prefix
+- **MT_TRACE_TIMING(tid, op, duration_us)** - Per-thread execution time tracking (microseconds)
+- **MT_TRACE_QUEUE_DEPTH(depth)** - Work queue depth monitoring
+- **MT_TRACE_LOAD_BALANCE(thread_count, times)** - Automatic load imbalance detection
+
+**Load Balance Detection:**
+- Calculates variance between fastest and slowest thread
+- Warns if variance exceeds 20% (indicates imbalanced work distribution)
+- Reports min/max/average execution times
+
+**Example Output:**
+```
+[Load Balance] WARNING: 45.2% variance (min=100.50us, max=300.25us, avg=206.84us)
+[Load Balance] OK: 8.3% variance (min=195.12us, max=212.45us, avg=203.91us)
 ```
 
 ### Common Issues
@@ -270,6 +297,11 @@ thread [1] task completed.
 **4. Incorrect results**
 - Cause: Possible stride bug or race condition
 - Solution: Verify with single-threaded execution (`cblas_set_num_threads(1)`) and enable debug tracing
+
+**5. High load imbalance**
+- Cause: Work partition sizes vary significantly across threads
+- Detection: Check for `WARNING` messages in load balance output
+- Solution: Adjust problem size or thread count; investigate work distribution algorithm
 
 ## Architecture Diagram
 
