@@ -49,11 +49,16 @@ void cblas_set_num_threads(int threads)
 
         for (int i = threads - 1; i < thread_count - 1; i++)
         {
-            MT_TRACE("set_num_threads: waiting on thread [%d] to quit.\n", i);
+            if (cblas_thread_ids[i] != 0)
+            {
+                MT_TRACE("set_num_threads: waiting on thread [%d] to quit.\n", i);
 
-            pthread_join(cblas_thread_ids[i], NULL);
+                pthread_join(cblas_thread_ids[i], NULL);
 
-            MT_TRACE("set_num_threads: thread [%d] has quit.\n", i);
+                MT_TRACE("set_num_threads: thread [%d] has quit.\n", i);
+                
+                cblas_thread_ids[i] = 0;
+            }
         }
 
         pthread_mutex_unlock(&server_lock);
