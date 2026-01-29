@@ -4,6 +4,8 @@
 
 The `test_concurrent.c` test suite provides comprehensive thread safety testing for the CBLAS library. It validates that BLAS operations can be safely called from multiple threads simultaneously and detects potential race conditions.
 
+**Platform Support:** The tests are fully cross-platform, using POSIX threads (pthread) on Unix/Linux/macOS and Windows threads on Windows.
+
 ## Test Coverage
 
 ### 1. Concurrent BLAS Operations
@@ -155,9 +157,18 @@ The test suite can be integrated into CI/CD pipelines:
 
 ## Requirements
 
-- POSIX threads (pthread) support
-- For ThreadSanitizer: GCC 4.8+, Clang 3.2+, or compatible compiler
+- **Unix/Linux/macOS**: POSIX threads (pthread) support
+- **Windows**: Windows threads API (built-in)
+- For ThreadSanitizer: GCC 4.8+, Clang 3.2+, or compatible compiler (Unix/Linux/macOS only)
 - Sufficient memory for concurrent thread execution
+
+## Platform-Specific Notes
+
+### Windows
+The tests use Windows threading API (`CreateThread`, `WaitForSingleObject`, `CRITICAL_SECTION`) when compiled on Windows. ThreadSanitizer is not available on Windows, but the functional tests work correctly.
+
+### Unix/Linux/macOS
+The tests use POSIX threads (pthread) and can be run with ThreadSanitizer for advanced race detection.
 
 ## Performance Considerations
 
