@@ -281,10 +281,6 @@ typedef size_t CBLAS_INDEX;
         int info = 0; \
         if ((layout) != CblasRowMajor && (layout) != CblasColMajor) \
             info = 1; \
-        else if ((m) < 0) \
-            info = 2; \
-        else if ((n) < 0) \
-            info = 3; \
         else if (!(x)) \
             info = 5; \
         else if ((incx) == 0) \

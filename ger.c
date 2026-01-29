@@ -80,7 +80,7 @@ static void AddProd4x1(float x, float *y, float *a)
 //------------------------------------------------------
 // compute 8 cols x 4 rows product (non-FMA version)
 //------------------------------------------------------
-static void AddProd8x4_AVX(float* x, float* y, float* a, CBLAS_INDEX lda)
+CBLAS_UNUSED static void AddProd8x4_AVX(float* x, float* y, float* a, CBLAS_INDEX lda)
 {
 #if defined(__aarch64__)
 #else
