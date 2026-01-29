@@ -78,7 +78,7 @@ static void AddProd4x1(float x, float *y, float *a)
 }
 
 //------------------------------------------------------
-// compute 8 cols x 4 rows product
+// compute 8 cols x 4 rows product (non-FMA version)
 //------------------------------------------------------
 static void AddProd8x4_AVX(float* x, float* y, float* a, CBLAS_INDEX lda)
 {
@@ -100,8 +100,7 @@ static void AddProd8x4_AVX(float* x, float* y, float* a, CBLAS_INDEX lda)
 	a2 = _mm256_load_ps(a + 2 * lda);
 	a3 = _mm256_load_ps(a + 3 * lda);
 
-	// compute 8x4 products
-	// TODO - FMAD here???
+	// compute 8x4 products (non-FMA)
 	a0 = _mm256_add_ps(a0, _mm256_mul_ps(x0, y0));
 	a1 = _mm256_add_ps(a1, _mm256_mul_ps(x1, y0));
 	a2 = _mm256_add_ps(a2, _mm256_mul_ps(x2, y0));
@@ -114,6 +113,44 @@ static void AddProd8x4_AVX(float* x, float* y, float* a, CBLAS_INDEX lda)
 	_mm256_store_ps(a + 3 * lda, a3);
 #endif
 }
+
+#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+
+//------------------------------------------------------
+// compute 8 cols x 4 rows product (FMA version)
+//------------------------------------------------------
+static void AddProd8x4_AVX_fma(float* x, float* y, float* a, CBLAS_INDEX lda)
+{
+	__m256 x0, x1, x2, x3, y0, a0, a1, a2, a3;
+
+	// copy single FP to all 8 elements of vector
+	x0 = _mm256_broadcast_ss(x);
+	x1 = _mm256_broadcast_ss(x + 1);
+	x2 = _mm256_broadcast_ss(x + 2);
+	x3 = _mm256_broadcast_ss(x + 3);
+
+	y0 = _mm256_load_ps(y);
+
+	// load 4 rows of destination
+	a0 = _mm256_load_ps(a);
+	a1 = _mm256_load_ps(a + lda);
+	a2 = _mm256_load_ps(a + 2 * lda);
+	a3 = _mm256_load_ps(a + 3 * lda);
+
+	// compute 8x4 products using FMA
+	a0 = _mm256_fmadd_ps(x0, y0, a0);
+	a1 = _mm256_fmadd_ps(x1, y0, a1);
+	a2 = _mm256_fmadd_ps(x2, y0, a2);
+	a3 = _mm256_fmadd_ps(x3, y0, a3);
+
+	// store results
+	_mm256_store_ps(a, a0);
+	_mm256_store_ps(a + lda, a1);
+	_mm256_store_ps(a + 2 * lda, a2);
+	_mm256_store_ps(a + 3 * lda, a3);
+}
+
+#endif
 
 //------------------------------------------------------
 // compute 4 cols x 4 rows product
@@ -174,8 +211,7 @@ static void AddProd4x4_SIMD(float* x, float* y, float* a, CBLAS_INDEX lda)
 	a2 = _mm_loadu_ps(a + 2 * lda);
 	a3 = _mm_loadu_ps(a + 3 * lda);
 
-	// compute 4x4 product
-	// TODO - FMAD here???
+	// compute 4x4 product (non-FMA)
 	a0 = _mm_add_ps(a0, _mm_mul_ps(x0, y0));
 	a1 = _mm_add_ps(a1, _mm_mul_ps(x1, y0));
 	a2 = _mm_add_ps(a2, _mm_mul_ps(x2, y0));
@@ -188,6 +224,42 @@ static void AddProd4x4_SIMD(float* x, float* y, float* a, CBLAS_INDEX lda)
 	_mm_storeu_ps(a + 3 * lda, a3);
 #endif
 }
+
+#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+
+//------------------------------------------------------
+// compute 4 cols x 4 rows product (FMA version)
+//------------------------------------------------------
+static void AddProd4x4_SIMD_fma(float* x, float* y, float* a, CBLAS_INDEX lda)
+{
+	__m128 x0, x1, x2, x3, y0, a0, a1, a2, a3;
+
+	x0 = _mm_load_ps1(x);
+	x1 = _mm_load_ps1(x + 1);
+	x2 = _mm_load_ps1(x + 2);
+	x3 = _mm_load_ps1(x + 3);
+	
+	y0 = _mm_load_ps(y);
+	
+	a0 = _mm_loadu_ps(a);
+	a1 = _mm_loadu_ps(a + lda);
+	a2 = _mm_loadu_ps(a + 2 * lda);
+	a3 = _mm_loadu_ps(a + 3 * lda);
+
+	// compute 4x4 product using FMA
+	a0 = _mm_fmadd_ps(x0, y0, a0);
+	a1 = _mm_fmadd_ps(x1, y0, a1);
+	a2 = _mm_fmadd_ps(x2, y0, a2);
+	a3 = _mm_fmadd_ps(x3, y0, a3);
+
+	// store results
+	_mm_storeu_ps(a, a0);
+	_mm_storeu_ps(a + lda, a1);
+	_mm_storeu_ps(a + 2 * lda, a2);
+	_mm_storeu_ps(a + 3 * lda, a3);
+}
+
+#endif
 
 //------------------------------------------------------
 // compute 4 cols x 4 rows product
@@ -324,6 +396,56 @@ static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_IN
 	}
 }
 
+#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+
+//------------------------------------------------------
+// FMA version of sger_row_noalpha4x4
+//------------------------------------------------------
+static void sger_row_noalpha4x4_fma(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_INDEX incx, float* y, CBLAS_INDEX incy, float* a, CBLAS_INDEX lda)
+{
+	float *xr, *yc, *ap;
+	CBLAS_INDEX col, row;
+
+	for (row = 0; row + 4 <= m; row += 4)
+	{
+		xr = &X(row);
+		yc = y;
+		ap = &A(0, row);
+
+		for (col = 0; col + 4 <= n; col += 4)
+		{
+			AddProd4x4_SIMD_fma(xr, yc, ap, lda);
+			yc += 4;
+			ap += 4;
+		}
+
+		// handle leftover cols handling each of the 4 rows in this block
+		for (CBLAS_INDEX i = 0; i < 4; i++)
+		{
+			switch (n - col)
+			{
+			case 3: AddProd(*xr, Y(col + 2), &A(col + 2, row + i));
+			case 2: AddProd(*xr, Y(col + 1), &A(col + 1, row + i));
+			case 1: AddProd(*xr, Y(col), &A(col, row + i));
+			case 0:;	// do nothing!
+			}
+
+			xr = &X(row + i);
+		}
+	}
+
+	// handle leftover rows
+	switch (m - row)
+	{
+	case 3: for (col = 0; col < n; col++) AddProd(X(row + 2), Y(col), &A(col, row + 2));
+	case 2: for (col = 0; col < n; col++) AddProd(X(row + 1), Y(col), &A(col, row + 1));
+	case 1: for (col = 0; col < n; col++) AddProd(X(row), Y(col), &A(col, row));
+	case 0:;	// do nothing!
+	}
+}
+
+#endif
+
 //------------------------------------------------------
 //
 //------------------------------------------------------
@@ -424,7 +546,17 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
     {
 		if (alpha == 1.0f)
 		{
-			sger_row_noalpha4x4(m, n,  x, incx, y, incy, a, lda);
+#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+			// Use FMA version if CPU supports it
+			if (cpu_get_features() & CPU_x64_FMA3)
+			{
+				sger_row_noalpha4x4_fma(m, n, x, incx, y, incy, a, lda);
+			}
+			else
+#endif
+			{
+				sger_row_noalpha4x4(m, n,  x, incx, y, incy, a, lda);
+			}
 			// sger_row_noalpha8x4(m, n,  x, incx, y, incy, a, lda);
 		}
 		else
