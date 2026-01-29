@@ -106,6 +106,45 @@ Combine multiple options:
 cmake .. -DCBLAS_ENABLE_MT=ON -DCBLAS_MAX_THREADS=32 -DCBLAS_USE_SIMD=ON
 ```
 
+## Makefile Configuration Options
+
+The Makefile provides the same configuration options as CMake for consistency:
+
+Option | Default | Description
+------ | ------- | -----------
+`CBLAS_ENABLE_MT` | 1 | Enable multi-threading support
+`CBLAS_USE_SIMD` | 1 | Enable SIMD optimizations (SSE/AVX)
+`CBLAS_CHECK_INPUTS` | 1 | Enable input validation and error checking
+`CBLAS_USE_STATIC_BUFFERS` | 1 | Use static buffers instead of stack-based
+`CBLAS_MAX_THREADS` | 64 | Maximum number of threads supported
+
+### Configuration Examples
+
+Build with multi-threading disabled:
+```bash
+make CBLAS_ENABLE_MT=0
+```
+
+Build with SIMD optimizations disabled:
+```bash
+make CBLAS_USE_SIMD=0
+```
+
+Build with custom maximum threads:
+```bash
+make CBLAS_MAX_THREADS=128
+```
+
+Build with input validation disabled (for maximum performance):
+```bash
+make CBLAS_CHECK_INPUTS=0
+```
+
+Combine multiple options:
+```bash
+make CBLAS_ENABLE_MT=1 CBLAS_MAX_THREADS=32 CBLAS_USE_SIMD=1
+```
+
 # Which BLAS functions are supported
 
 The following BLAS library functions are currently supported by the library.

@@ -8,12 +8,16 @@ dot_perf
 nrm2_asum_rot_perf
 test_strided
 test_mt_debug
+test_threshold
 build/
 _codeql_build_dir/
 _codeql_detected_source_root
 test_strided
 test_stats
 test_overhead
+
+# Generated configuration
+cblas_config.h
 
 .DS_Store
 

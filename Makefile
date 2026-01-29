@@ -3,10 +3,18 @@ ARCH = $(shell uname -m)
 TARGET = blas_test
 OBJS = swap.o dot.o copy.o axpy.o scal.o axpby.o asum.o nrm2.o rot.o ger.o \
 	gemv.o gemm.o rotg.o util.o server.o setv.o
-DEPS = cblas.h test.h
+DEPS = cblas.h cblas_config.h test.h
 CFLAGS += -g -O2 -Wall -Wextra -Wpedantic #-DNDEBUG
 LIBNAME = libcblas.a
 LFLAGS += -L. -lcblas -lm
+
+# Configuration options - can be overridden on command line
+# e.g., make CBLAS_ENABLE_MT=0 to disable multi-threading
+CBLAS_ENABLE_MT ?= 1
+CBLAS_USE_SIMD ?= 1
+CBLAS_CHECK_INPUTS ?= 1
+CBLAS_USE_STATIC_BUFFERS ?= 1
+CBLAS_MAX_THREADS ?= 64
 
 # add Intel specific compiler flags
 ifeq ($(ARCH), x86_64)
@@ -24,7 +32,17 @@ else
 	endif
 endif
 
-all: $(LIBNAME) blas_stress blas_test test_strided test_stats test_threshold gemm_perf ger_perf dot_perf nrm2_asum_rot_perf
+all: cblas_config.h $(LIBNAME) blas_stress blas_test test_strided test_stats test_threshold gemm_perf ger_perf dot_perf nrm2_asum_rot_perf
+
+# Generate cblas_config.h from configuration variables
+cblas_config.h: cblas_config.h.in Makefile
+	@echo "Generating cblas_config.h..."
+	@sed -e 's/@CBLAS_MAX_THREADS@/$(CBLAS_MAX_THREADS)/g' \
+	     -e 's/#cmakedefine01 CBLAS_ENABLE_MT/#define CBLAS_ENABLE_MT $(CBLAS_ENABLE_MT)/g' \
+	     -e 's/#cmakedefine01 CBLAS_USE_SIMD/#define CBLAS_USE_SIMD $(CBLAS_USE_SIMD)/g' \
+	     -e 's/#cmakedefine01 CBLAS_CHECK_INPUTS/#define CBLAS_CHECK_INPUTS $(CBLAS_CHECK_INPUTS)/g' \
+	     -e 's/#cmakedefine01 CBLAS_USE_STATIC_BUFFERS/#define CBLAS_USE_STATIC_BUFFERS $(CBLAS_USE_STATIC_BUFFERS)/g' \
+	     cblas_config.h.in > cblas_config.h
 	
 $(LIBNAME): $(OBJS)
 	ar rcs $(LIBNAME) $(OBJS)
@@ -66,10 +84,11 @@ install:
 	sudo mkdir -p /opt/cblas/lib /opt/cblas/include
 	sudo cp libcblas.a /opt/cblas/lib
 	sudo cp cblas.h /opt/cblas/include
+	sudo cp cblas_config.h /opt/cblas/include
 
 test: all
 	./blas_test
 
 clean:
-	rm $(TARGET) $(OBJS) $(LIBNAME) test_main.o test.o test_stress.o blas_stress blas_test.o blas_test test_threshold.o test_threshold gemm_perf.o gemm_perf ger_perf.o ger_perf dot_perf.o dot_perf nrm2_asum_rot_perf.o nrm2_asum_rot_perf
+	rm -f $(TARGET) $(OBJS) $(LIBNAME) test_main.o test.o test_stress.o blas_stress blas_test.o blas_test test_threshold.o test_threshold gemm_perf.o gemm_perf ger_perf.o ger_perf dot_perf.o dot_perf nrm2_asum_rot_perf.o nrm2_asum_rot_perf cblas_config.h test_strided.o test_strided test_stats.o test_stats
 
