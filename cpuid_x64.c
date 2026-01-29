@@ -194,9 +194,20 @@ static unsigned int __cpu_get_features()
 
 #endif
 
+	// Initialize kernel function pointers based on CPU features
 	if (cpu_features & CPU_AVX)
 	{
-		blas_kernels.sgemm_k = sgemm_k;
+#if defined(USE_SSE) && defined(USE_SIMD)
+		// Check for FMA3 support and dispatch accordingly
+		if (cpu_features & CPU_x64_FMA3)
+		{
+			blas_kernels.sgemm_k = sgemm_k_fma;
+		}
+		else
+#endif
+		{
+			blas_kernels.sgemm_k = sgemm_k;
+		}
 	}
 
 	return cpu_features;

@@ -329,6 +329,10 @@ double* cbu_dge_make_identity(int cols, int rows);
 extern kernels_t blas_kernels;
 void sgemm_k(cblas_args_t* args);
 
+#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+void sgemm_k_fma(cblas_args_t* args);
+#endif
+
 #ifdef __cplusplus
     }
 #endif

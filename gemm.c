@@ -58,7 +58,7 @@ static void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, CBLAS_IN
 #if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
 
 //------------------------------------------------------
-// compute 16 dot products at a time, 4 cols x 4 rows
+// compute 16 dot products at a time, 4 cols x 4 rows (non-FMA version)
 //------------------------------------------------------
 static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
 {
@@ -87,19 +87,55 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
 
         b += 4;
 
-        // rows 1 - 4 using FMADD
-#ifdef USE_INTEL_FMA
-        c_row1 = _mm_fmadd_ps(a_p0, b_row, c_row1);
-        c_row2 = _mm_fmadd_ps(a_p1, b_row, c_row2);
-        c_row3 = _mm_fmadd_ps(a_p2, b_row, c_row3);
-        c_row4 = _mm_fmadd_ps(a_p3, b_row, c_row4);
-#else
         // rows 1 - 4 using SSE3
         c_row1 = _mm_add_ps(c_row1, _mm_mul_ps(a_p0, b_row));
         c_row2 = _mm_add_ps(c_row2, _mm_mul_ps(a_p1, b_row));
         c_row3 = _mm_add_ps(c_row3, _mm_mul_ps(a_p2, b_row));
         c_row4 = _mm_add_ps(c_row4, _mm_mul_ps(a_p3, b_row));
-#endif
+    }
+
+    // Use unaligned stores for c matrix since it may not be 16-byte aligned
+    _mm_storeu_ps(&C(0, 0), c_row1);
+    _mm_storeu_ps(&C(0, 1), c_row2);
+    _mm_storeu_ps(&C(0, 2), c_row3);
+    _mm_storeu_ps(&C(0, 3), c_row4);
+}
+
+//------------------------------------------------------
+// compute 16 dot products at a time, 4 cols x 4 rows (FMA version)
+//------------------------------------------------------
+static void AddDot4x4_fma(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
+{
+    __m128 c_row1, c_row2, c_row3, c_row4;
+    __m128 b_row;
+    __m128 a_p0, a_p1, a_p2, a_p3;
+    
+    // Use unaligned loads for c matrix since it may not be 16-byte aligned
+    c_row1 = _mm_loadu_ps(&C(0,0));
+    c_row2 = _mm_loadu_ps(&C(0,1));
+    c_row3 = _mm_loadu_ps(&C(0,2));
+    c_row4 = _mm_loadu_ps(&C(0,3));
+
+	for (CBLAS_INDEX p = 0; p < k; p++) 
+    {
+        // load and duplicate 
+        a_p0 = _mm_load_ps1(a);
+        a_p1 = _mm_load_ps1(a + 1);
+        a_p2 = _mm_load_ps1(a + 2);
+        a_p3 = _mm_load_ps1(a + 3);
+
+        a += 4;
+
+        // Use unaligned load for b since alignment is not guaranteed
+        b_row = _mm_loadu_ps(b);
+
+        b += 4;
+
+        // rows 1 - 4 using FMA
+        c_row1 = _mm_fmadd_ps(a_p0, b_row, c_row1);
+        c_row2 = _mm_fmadd_ps(a_p1, b_row, c_row2);
+        c_row3 = _mm_fmadd_ps(a_p2, b_row, c_row3);
+        c_row4 = _mm_fmadd_ps(a_p3, b_row, c_row4);
     }
 
     // Use unaligned stores for c matrix since it may not be 16-byte aligned
@@ -425,12 +461,98 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
 }
 
 //------------------------------------------------------
-//
+// GEMM kernel (non-FMA)
 //------------------------------------------------------
 void sgemm_k(cblas_args_t* args)
 {
     InnerKernel(args->ib, args->n, args->pb, args->a, args->lda, args->b, args->ldb, args->c, args->ldc);
 }
+
+#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+
+//------------------------------------------------------
+// GEMM kernel with FMA support (x86-64)
+//------------------------------------------------------
+static void InnerKernel_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float* c, CBLAS_INDEX ldc)
+{
+#if !defined(USE_STATIC_BUFFERS)
+    #ifdef _WIN32
+        int aguard = 0xbaadf00d;
+        float* packedA = _malloca(mc * kc * sizeof(float));
+        int bguard = 0xbaadf00d;
+        float* packedB = _malloca(kc * nb * sizeof(float));
+        int cguard = 0xbaadf00d;
+    #else
+        int aguard = 0xbaadf00d;
+        float* packedA = alloca(mc * kc * sizeof(float));
+        int bguard = 0xbaadf00d;
+        float* packedB = alloca(kc * nb * sizeof(float));
+        int cguard = 0xbaadf00d;
+    #endif
+#endif
+    CHECK_GUARDS();
+
+    CBLAS_INDEX row, col;
+
+    // Loop over the rows and columns of C unrolled by 4
+    for (row = 0; row + 4 <= m; row += 4)
+    {
+        // we are pre-caching all cols so we need to do it only once
+        if (row == 0)
+            PackMatrixB(k, &B(0, row), ldb, &packedB[row * k]);
+
+        for (col = 0; col + 4 <= n; col += 4)
+        {
+            // we are pre-caching all rows so we need to do it only once
+            if (col == 0) 
+                PackMatrixA(k, &A(col, 0), lda, &packedA[row * k]);
+
+            AddDot4x4_fma(k, &packedA[row * k], 4, &packedB[col * k], k, &C(col, row), ldc);
+        }
+
+        // handle leftover columns
+        switch(n - col)
+        {
+            case 3:     
+                AddDot(k, &A(0, row), 1, &B(col + 2, 0), ldb, &C(col + 2, row));
+                AddDot(k, &A(0, row+1), 1, &B(col + 2, 0), ldb, &C(col + 2, row+1));
+                AddDot(k, &A(0, row+2), 1, &B(col + 2, 0), ldb, &C(col + 2, row+2));
+                AddDot(k, &A(0, row+3), 1, &B(col + 2, 0), ldb, &C(col + 2, row+3));
+            case 2:
+                AddDot(k, &A(0, row), 1, &B(col + 1, 0), ldb, &C(col + 1, row));
+                AddDot(k, &A(0, row+1), 1, &B(col + 1, 0), ldb, &C(col + 1, row+1));
+                AddDot(k, &A(0, row+2), 1, &B(col + 1, 0), ldb, &C(col + 1, row+2));
+                AddDot(k, &A(0, row+3), 1, &B(col + 1, 0), ldb, &C(col + 1, row+3));
+            case 1:
+                AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row));
+                AddDot(k, &A(0, row+1), 1, &B(col, 0), ldb, &C(col, row+1));
+                AddDot(k, &A(0, row+2), 1, &B(col, 0), ldb, &C(col, row+2));
+                AddDot(k, &A(0, row+3), 1, &B(col, 0), ldb, &C(col, row+3));
+            case 0: ;   // nothing to do!
+        }
+    }
+
+    // handle leftover rows    
+    switch(m - row)
+    {
+        case 3:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 2), 1, &B(col, 0), ldb, &C(col, row + 2));
+        case 2:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 1), 1, &B(col, 0), ldb, &C(col, row + 1));
+        case 1:    for (col = 0; col < n; col++) AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row));
+        case 0: ;   // nothing to do!
+    }
+
+    CHECK_GUARDS();
+}
+
+//------------------------------------------------------
+// GEMM kernel wrapper (FMA version)
+//------------------------------------------------------
+void sgemm_k_fma(cblas_args_t* args)
+{
+    InnerKernel_fma(args->ib, args->n, args->pb, args->a, args->lda, args->b, args->ldb, args->c, args->ldc);
+}
+
+#endif
 
 //------------------------------------------------------
 // single-precision general matrix multiply
