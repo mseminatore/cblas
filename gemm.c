@@ -66,10 +66,11 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
     __m128 b_row;
     __m128 a_p0, a_p1, a_p2, a_p3;
     
-    c_row1 = _mm_load_ps(&C(0,0));
-    c_row2 = _mm_load_ps(&C(0,1));
-    c_row3 = _mm_load_ps(&C(0,2));
-    c_row4 = _mm_load_ps(&C(0,3));
+    // Use unaligned loads for c matrix since it may not be 16-byte aligned
+    c_row1 = _mm_loadu_ps(&C(0,0));
+    c_row2 = _mm_loadu_ps(&C(0,1));
+    c_row3 = _mm_loadu_ps(&C(0,2));
+    c_row4 = _mm_loadu_ps(&C(0,3));
 
 	for (CBLAS_INDEX p = 0; p < k; p++) 
     {
@@ -81,9 +82,8 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
 
         a += 4;
 
-        CHECK_ALIGN(b, 16);
-
-        b_row = _mm_load_ps(b);
+        // Use unaligned load for b since alignment is not guaranteed
+        b_row = _mm_loadu_ps(b);
 
         b += 4;
 
@@ -102,10 +102,11 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
 #endif
     }
 
-    _mm_store_ps(&C(0, 0), c_row1);
-    _mm_store_ps(&C(0, 1), c_row2);
-    _mm_store_ps(&C(0, 2), c_row3);
-    _mm_store_ps(&C(0, 3), c_row4);
+    // Use unaligned stores for c matrix since it may not be 16-byte aligned
+    _mm_storeu_ps(&C(0, 0), c_row1);
+    _mm_storeu_ps(&C(0, 1), c_row2);
+    _mm_storeu_ps(&C(0, 2), c_row3);
+    _mm_storeu_ps(&C(0, 3), c_row4);
 }
 
 #elif defined(__aarch64__) && defined(USE_SIMD)

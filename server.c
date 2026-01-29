@@ -133,10 +133,12 @@ void cblas_shutdown()
     
     pthread_mutex_unlock(&server_lock);
 
-    // Cleanup synchronization primitives
-    pthread_mutex_destroy(&queue_lock);
-    pthread_cond_destroy(&kickoff_event);
-    pthread_mutex_destroy(&server_lock);
+    // Note: We do not destroy statically initialized synchronization primitives
+    // (queue_lock, kickoff_event, server_lock) as they are initialized with
+    // PTHREAD_MUTEX_INITIALIZER and PTHREAD_COND_INITIALIZER.
+    // Destroying them can cause undefined behavior on some platforms,
+    // particularly GitHub Actions runners. They will be cleaned up automatically
+    // when the program exits.
 }
 
 //------------------------------------------------------
