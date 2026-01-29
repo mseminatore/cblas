@@ -99,5 +99,7 @@ int test_main(int argc, char *argv[])
 	// Print all statistics
 	cblas_print_stats();
 
+	cblas_shutdown();
+
 	return 0;
 }

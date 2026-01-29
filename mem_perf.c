@@ -120,5 +120,7 @@ int main(int argc, char *argv[])
     test_mem_read();
     test_mem_write();
 
+	cblas_shutdown();
+
 	return 0;
 }
