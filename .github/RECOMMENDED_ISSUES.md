@@ -474,26 +474,76 @@ Comprehensive Doxygen-style API documentation has been added to all public funct
 
 ---
 
-### Issue #15: Document threading architecture
-**Priority:** Medium  
-**Labels:** documentation, threading
+### ~~Issue #15: Document threading architecture~~ ✅ RESOLVED
+**Priority:** ~~Medium~~ FIXED  
+**Labels:** documentation, threading  
+**Status:** Fixed on 2026-01-29
 
-**Description:**
-No documentation explains when threading activates or how work queues function.
+**Resolution:**
+Created comprehensive threading documentation in `docs/THREADING.md` (408 lines) covering all aspects of the multi-threading system.
 
-**Create:** `docs/THREADING.md` covering:
-- MT threshold values and how to tune them
-- Work queue architecture and dispatch
-- Performance characteristics (overhead, scaling)
-- Thread safety guarantees
-- How to disable threading if needed
+**Documentation Coverage:**
 
-**Acceptance Criteria:**
-- [ ] Create docs/THREADING.md
-- [ ] Explain work queue implementation
-- [ ] Document MT thresholds
-- [ ] Add architecture diagrams
-- [ ] Link from README.md
+1. **Threading Components** (lines 7-25):
+   - Thread server initialization and management
+   - Platform-specific implementations (POSIX/Windows)
+   - API functions: `cblas_init()`, `cblas_shutdown()`, `cblas_set_num_threads()`, `cblas_get_num_threads()`
+
+2. **Work Queue System** (lines 27-52):
+   - Work queue structures and operations
+   - Kernel function dispatch mechanism
+   - Queue operations: execute, execute_async, execute_async_join
+
+3. **Work Dispatch** (lines 54-72):
+   - Level-1 operation dispatch functions
+   - Work partitioning algorithm with round-robin load balancing
+   - Detailed explanation of element distribution across threads
+
+4. **Multi-Threading Thresholds** (lines 74-105):
+   - Default threshold values for all operations (CBLAS_MT_DOT, CBLAS_MT_GEMM, etc.)
+   - Comprehensive tuning guidelines
+   - Break-even point calculations with real-world examples
+   - Instructions for modifying thresholds
+
+5. **Performance Characteristics** (lines 107-148):
+   - Thread overhead analysis (1-5 microseconds)
+   - Scaling efficiency metrics
+   - Expected speedup table for different problem sizes
+   - Cache blocking strategy for Level-3 operations
+
+6. **Thread Safety** (lines 150-193):
+   - Safe concurrent usage patterns with code examples
+   - Unsafe patterns and race conditions to avoid
+   - Internal synchronization mechanisms (mutex, condition variables)
+
+7. **Disabling Multi-Threading** (lines 195-231):
+   - Compile-time disable with `MT_ENABLED` flag
+   - Runtime disable options
+   - Per-operation disable via threshold tuning
+
+8. **Debugging Threading Issues** (lines 233-273):
+   - MT_DEBUG tracing output
+   - Common issues and solutions (slowdowns, poor scaling, hangs)
+
+9. **Architecture Diagram** (lines 275-353):
+   - Comprehensive ASCII diagram showing full flow from API call to worker threads
+   - Work queue management visualization
+   - Thread synchronization flow
+
+10. **Best Practices** (lines 355-363):
+    - Six practical guidelines for optimal threading usage
+
+11. **Example Usage** (lines 365-400):
+    - Complete working code example
+    - Demonstrates initialization, automatic threading, and cleanup
+
+**Verification:**
+- ✅ docs/THREADING.md created with 408 lines of comprehensive documentation
+- ✅ Work queue implementation fully explained
+- ✅ MT thresholds documented with tuning guidelines
+- ✅ Architecture diagram included
+- ✅ Linked from README.md (line 116)
+- ✅ Covers thread safety, performance, debugging, and best practices
 
 ---
 
@@ -658,9 +708,7 @@ MT_TRACE_QUEUE_DEPTH(depth);
 
 ## Summary
 
-**Resolved Issues:** #1 ✅, #2 ✅, #3 ✅, #4 ✅, #5 ✅, #6 ✅, #7 ✅, #11 ✅, #14 ✅ (mostly)  
-
-**Remaining Issues by Priority:**  
-**High Priority:** Issue #13  
-**Medium Priority:** Issues #8, #9, #10, #15, #17  
-**Low Priority:** Issues #12, #16, #18, #19, #20, #21
+**Critical (Do First):** ~~Issues #1, #2, #3~~ ✅ ALL RESOLVED  
+**High Priority:** ~~Issues #4, #7~~ ✅ RESOLVED, #13  
+**Medium Priority:** ~~Issues #5, #6~~ ✅ RESOLVED, #8, #9, #10, #14, ~~#15~~ ✅ RESOLVED, #17  
+**Low Priority:** ~~Issue #11~~ ✅ RESOLVED, #12, #16, #18, #19, #20, #21
