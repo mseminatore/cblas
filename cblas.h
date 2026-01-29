@@ -72,6 +72,20 @@
 #define CBLAS_MT_GEMV   10000
 
 //------------------------------------------------------
+// Compiler-independent macros for code quality
+//------------------------------------------------------
+#if defined(__GNUC__) || defined(__clang__)
+#   define CBLAS_UNUSED __attribute__((unused))
+#   define CBLAS_FALLTHROUGH __attribute__((fallthrough))
+#elif defined(_MSC_VER)
+#   define CBLAS_UNUSED __pragma(warning(suppress: 4100 4101))
+#   define CBLAS_FALLTHROUGH
+#else
+#   define CBLAS_UNUSED
+#   define CBLAS_FALLTHROUGH
+#endif
+
+//------------------------------------------------------
 // size type for indices
 //------------------------------------------------------
 typedef size_t CBLAS_INDEX;

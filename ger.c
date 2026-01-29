@@ -119,7 +119,7 @@ static void AddProd8x4_AVX(float* x, float* y, float* a, CBLAS_INDEX lda)
 //------------------------------------------------------
 // compute 8 cols x 4 rows product (FMA version)
 //------------------------------------------------------
-__attribute__((unused)) static void AddProd8x4_AVX_fma(float* x, float* y, float* a, CBLAS_INDEX lda)
+CBLAS_UNUSED static void AddProd8x4_AVX_fma(float* x, float* y, float* a, CBLAS_INDEX lda)
 {
 	__m256 x0, x1, x2, x3, y0, a0, a1, a2, a3;
 
@@ -264,7 +264,7 @@ static void AddProd4x4_SIMD_fma(float* x, float* y, float* a, CBLAS_INDEX lda)
 //------------------------------------------------------
 // compute 4 cols x 4 rows product
 //------------------------------------------------------
-__attribute__((unused)) static void AddProd4x4(float* x, float* y, float* a, CBLAS_INDEX lda)
+CBLAS_UNUSED static void AddProd4x4(float* x, float* y, float* a, CBLAS_INDEX lda)
 {
 	// first row
 	*a = *x * *y;
@@ -303,7 +303,7 @@ __attribute__((unused)) static void AddProd4x4(float* x, float* y, float* a, CBL
 //------------------------------------------------------
 //
 //------------------------------------------------------
-__attribute__((unused)) static void sger_row_noalpha8x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_INDEX incx, float* y, CBLAS_INDEX incy, float* a, CBLAS_INDEX lda)
+CBLAS_UNUSED static void sger_row_noalpha8x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_INDEX incx, float* y, CBLAS_INDEX incy, float* a, CBLAS_INDEX lda)
 {
 	float* xr, * yc, * ap;
 	CBLAS_INDEX col, row;
@@ -327,19 +327,19 @@ __attribute__((unused)) static void sger_row_noalpha8x4(CBLAS_INDEX m, CBLAS_IND
 			switch (n - col)
 			{
 			case 7: AddProd(*xr, Y(col + 6), &A(col + 6, row + i));
-				__attribute__((fallthrough));
+				CBLAS_FALLTHROUGH;
 			case 6: AddProd(*xr, Y(col + 5), &A(col + 5, row + i));
-				__attribute__((fallthrough));
+				CBLAS_FALLTHROUGH;
 			case 5: AddProd(*xr, Y(col + 4), &A(col + 4, row + i));
-				__attribute__((fallthrough));
+				CBLAS_FALLTHROUGH;
 			case 4: AddProd(*xr, Y(col + 3), &A(col + 3, row + i));
-				__attribute__((fallthrough));
+				CBLAS_FALLTHROUGH;
 			case 3: AddProd(*xr, Y(col + 2), &A(col + 2, row + i));
-				__attribute__((fallthrough));
+				CBLAS_FALLTHROUGH;
 			case 2: AddProd(*xr, Y(col + 1), &A(col + 1, row + i));
-				__attribute__((fallthrough));
+				CBLAS_FALLTHROUGH;
 			case 1: AddProd(*xr, Y(col), &A(col, row + i));
-				__attribute__((fallthrough));
+				CBLAS_FALLTHROUGH;
 			case 0:;	// do nothing!
 			}
 
@@ -351,11 +351,11 @@ __attribute__((unused)) static void sger_row_noalpha8x4(CBLAS_INDEX m, CBLAS_IND
 	switch (m - row)
 	{
 	case 3: for (col = 0; col < n; col++) AddProd(X(row + 2), Y(col), &A(col, row + 2));
-		__attribute__((fallthrough));
+		CBLAS_FALLTHROUGH;
 	case 2: for (col = 0; col < n; col++) AddProd(X(row + 1), Y(col), &A(col, row + 1));
-		__attribute__((fallthrough));
+		CBLAS_FALLTHROUGH;
 	case 1: for (col = 0; col < n; col++) AddProd(X(row), Y(col), &A(col, row));
-		__attribute__((fallthrough));
+		CBLAS_FALLTHROUGH;
 	case 0:;	// do nothing!
 	}
 }
@@ -387,11 +387,11 @@ static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_IN
 			switch (n - col)
 			{
 			case 3: AddProd(*xr, Y(col + 2), &A(col + 2, row + i));
-				__attribute__((fallthrough));
+				CBLAS_FALLTHROUGH;
 			case 2: AddProd(*xr, Y(col + 1), &A(col + 1, row + i));
-				__attribute__((fallthrough));
+				CBLAS_FALLTHROUGH;
 			case 1: AddProd(*xr, Y(col), &A(col, row + i));
-				__attribute__((fallthrough));
+				CBLAS_FALLTHROUGH;
 			case 0:;	// do nothing!
 			}
 
@@ -403,11 +403,11 @@ static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_IN
 	switch (m - row)
 	{
 	case 3: for (col = 0; col < n; col++) AddProd(X(row + 2), Y(col), &A(col, row + 2));
-		__attribute__((fallthrough));
+		CBLAS_FALLTHROUGH;
 	case 2: for (col = 0; col < n; col++) AddProd(X(row + 1), Y(col), &A(col, row + 1));
-		__attribute__((fallthrough));
+		CBLAS_FALLTHROUGH;
 	case 1: for (col = 0; col < n; col++) AddProd(X(row), Y(col), &A(col, row));
-		__attribute__((fallthrough));
+		CBLAS_FALLTHROUGH;
 	case 0:;	// do nothing!
 	}
 }
@@ -441,11 +441,11 @@ static void sger_row_noalpha4x4_fma(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLA
 			switch (n - col)
 			{
 			case 3: AddProd(*xr, Y(col + 2), &A(col + 2, row + i));
-				__attribute__((fallthrough));
+				CBLAS_FALLTHROUGH;
 			case 2: AddProd(*xr, Y(col + 1), &A(col + 1, row + i));
-				__attribute__((fallthrough));
+				CBLAS_FALLTHROUGH;
 			case 1: AddProd(*xr, Y(col), &A(col, row + i));
-				__attribute__((fallthrough));
+				CBLAS_FALLTHROUGH;
 			case 0:;	// do nothing!
 			}
 
@@ -457,11 +457,11 @@ static void sger_row_noalpha4x4_fma(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLA
 	switch (m - row)
 	{
 	case 3: for (col = 0; col < n; col++) AddProd(X(row + 2), Y(col), &A(col, row + 2));
-		__attribute__((fallthrough));
+		CBLAS_FALLTHROUGH;
 	case 2: for (col = 0; col < n; col++) AddProd(X(row + 1), Y(col), &A(col, row + 1));
-		__attribute__((fallthrough));
+		CBLAS_FALLTHROUGH;
 	case 1: for (col = 0; col < n; col++) AddProd(X(row), Y(col), &A(col, row));
-		__attribute__((fallthrough));
+		CBLAS_FALLTHROUGH;
 	case 0:;	// do nothing!
 	}
 }
@@ -471,7 +471,7 @@ static void sger_row_noalpha4x4_fma(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLA
 //------------------------------------------------------
 //
 //------------------------------------------------------
-__attribute__((unused)) static void sger_row_noalpha(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda)
+CBLAS_UNUSED static void sger_row_noalpha(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda)
 {
 	register float xr;
 	float *yc, *ap;
@@ -504,7 +504,7 @@ __attribute__((unused)) static void sger_row_noalpha(CBLAS_INDEX m, CBLAS_INDEX 
 //------------------------------------------------------
 // 
 //------------------------------------------------------
-__attribute__((unused)) static void sger_row_noalpha_plain(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda)
+CBLAS_UNUSED static void sger_row_noalpha_plain(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda)
 {
 	(void)incx;
 	(void)incy;

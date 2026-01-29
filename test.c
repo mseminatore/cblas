@@ -128,7 +128,7 @@ static double* dvec_ones(CBLAS_INDEX size)
 //------------------------------------------------------
 //
 //------------------------------------------------------
-__attribute__((unused)) static void print_sarray(int n, float *x)
+CBLAS_UNUSED static void print_sarray(int n, float *x)
 {
 	putchar('{');
 	
@@ -143,7 +143,7 @@ __attribute__((unused)) static void print_sarray(int n, float *x)
 //------------------------------------------------------
 //
 //------------------------------------------------------
-__attribute__((unused)) static void print_darray(int n, double* x)
+CBLAS_UNUSED static void print_darray(int n, double* x)
 {
 	putchar('{');
 

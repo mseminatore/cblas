@@ -32,11 +32,11 @@
 #define CHECK_GUARDS()  assert((unsigned)aguard == 0xbaadf00d && (unsigned)bguard == 0xbaadf00d && (unsigned)cguard == 0xbaadf00d)
 
 #ifdef USE_STATIC_BUFFERS
-    static int aguard __attribute__((unused)) = 0xbaadf00d;
+    static int aguard CBLAS_UNUSED = 0xbaadf00d;
     static float packedA[mc * kc];
-    static int bguard __attribute__((unused)) = 0xbaadf00d;
+    static int bguard CBLAS_UNUSED = 0xbaadf00d;
     static float packedB[kc * nb];
-    static int cguard __attribute__((unused)) = 0xbaadf00d;
+    static int cguard CBLAS_UNUSED = 0xbaadf00d;
 #endif
 
 //------------------------------------------------------
@@ -286,7 +286,7 @@ static void AddDot4x4(CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_
 // compute 4 dot products at a time
 // 4 rows of A by 1 column of B
 //------------------------------------------------------
-__attribute__((unused)) static void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
+CBLAS_UNUSED static void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
 {
     register float c_00, c_01, c_02, c_03, b_0p;
     float *a0, *a1, *a2, *a3;
@@ -437,20 +437,20 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
                 AddDot(k, &A(0, row+1), 1, &B(col + 2, 0), ldb, &C(col + 2, row+1));
                 AddDot(k, &A(0, row+2), 1, &B(col + 2, 0), ldb, &C(col + 2, row+2));
                 AddDot(k, &A(0, row+3), 1, &B(col + 2, 0), ldb, &C(col + 2, row+3));
-                __attribute__((fallthrough));
+                CBLAS_FALLTHROUGH;
             case 2:
                 AddDot(k, &A(0, row), 1, &B(col + 1, 0), ldb, &C(col + 1, row));
                 AddDot(k, &A(0, row+1), 1, &B(col + 1, 0), ldb, &C(col + 1, row+1));
                 AddDot(k, &A(0, row+2), 1, &B(col + 1, 0), ldb, &C(col + 1, row+2));
                 AddDot(k, &A(0, row+3), 1, &B(col + 1, 0), ldb, &C(col + 1, row+3));
-                __attribute__((fallthrough));
+                CBLAS_FALLTHROUGH;
             case 1:
                 //AddDot1x4(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
                 AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row));
                 AddDot(k, &A(0, row+1), 1, &B(col, 0), ldb, &C(col, row+1));
                 AddDot(k, &A(0, row+2), 1, &B(col, 0), ldb, &C(col, row+2));
                 AddDot(k, &A(0, row+3), 1, &B(col, 0), ldb, &C(col, row+3));
-                __attribute__((fallthrough));
+                CBLAS_FALLTHROUGH;
             case 0: ;   // nothing to do!
         }
     }
@@ -459,11 +459,11 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
     switch(m - row)
     {
         case 3:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 2), 1, &B(col, 0), ldb, &C(col, row + 2));
-            __attribute__((fallthrough));
+            CBLAS_FALLTHROUGH;
         case 2:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 1), 1, &B(col, 0), ldb, &C(col, row + 1));
-            __attribute__((fallthrough));
+            CBLAS_FALLTHROUGH;
         case 1:    for (col = 0; col < n; col++) AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row));
-            __attribute__((fallthrough));
+            CBLAS_FALLTHROUGH;
         case 0: ;   // nothing to do!
     }
 
@@ -528,19 +528,19 @@ static void InnerKernel_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* 
                 AddDot(k, &A(0, row+1), 1, &B(col + 2, 0), ldb, &C(col + 2, row+1));
                 AddDot(k, &A(0, row+2), 1, &B(col + 2, 0), ldb, &C(col + 2, row+2));
                 AddDot(k, &A(0, row+3), 1, &B(col + 2, 0), ldb, &C(col + 2, row+3));
-                __attribute__((fallthrough));
+                CBLAS_FALLTHROUGH;
             case 2:
                 AddDot(k, &A(0, row), 1, &B(col + 1, 0), ldb, &C(col + 1, row));
                 AddDot(k, &A(0, row+1), 1, &B(col + 1, 0), ldb, &C(col + 1, row+1));
                 AddDot(k, &A(0, row+2), 1, &B(col + 1, 0), ldb, &C(col + 1, row+2));
                 AddDot(k, &A(0, row+3), 1, &B(col + 1, 0), ldb, &C(col + 1, row+3));
-                __attribute__((fallthrough));
+                CBLAS_FALLTHROUGH;
             case 1:
                 AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row));
                 AddDot(k, &A(0, row+1), 1, &B(col, 0), ldb, &C(col, row+1));
                 AddDot(k, &A(0, row+2), 1, &B(col, 0), ldb, &C(col, row+2));
                 AddDot(k, &A(0, row+3), 1, &B(col, 0), ldb, &C(col, row+3));
-                __attribute__((fallthrough));
+                CBLAS_FALLTHROUGH;
             case 0: ;   // nothing to do!
         }
     }
@@ -549,10 +549,11 @@ static void InnerKernel_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* 
     switch(m - row)
     {
         case 3:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 2), 1, &B(col, 0), ldb, &C(col, row + 2));
-            __attribute__((fallthrough));
+            CBLAS_FALLTHROUGH;
         case 2:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 1), 1, &B(col, 0), ldb, &C(col, row + 1));
-            __attribute__((fallthrough));
+            CBLAS_FALLTHROUGH;
         case 1:    for (col = 0; col < n; col++) AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row));
+            CBLAS_FALLTHROUGH;
         case 0: ;   // nothing to do!
     }
 

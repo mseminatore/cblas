@@ -18,7 +18,7 @@
 //------------------------------------------------------
 // single-precision copy kernel incx == incy == 1
 //------------------------------------------------------
-__attribute__((unused)) static void cblas_scopy_k_noinc_sse(cblas_args_t* args)
+CBLAS_UNUSED static void cblas_scopy_k_noinc_sse(cblas_args_t* args)
 {
     float* x = args->x;
     float* y = args->y;
@@ -138,7 +138,7 @@ static void cblas_scopy_k(cblas_args_t *args)
 //------------------------------------------------------
 // single-precision copy kernel incx == incy == 1
 //------------------------------------------------------
-__attribute__((unused)) static void cblas_dcopy_k_noinc(cblas_args_t* args)
+CBLAS_UNUSED static void cblas_dcopy_k_noinc(cblas_args_t* args)
 {
     double *x = args->x;
     double *y = args->y;
