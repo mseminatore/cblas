@@ -32,11 +32,11 @@
 #define CHECK_GUARDS()  assert((unsigned)aguard == 0xbaadf00d && (unsigned)bguard == 0xbaadf00d && (unsigned)cguard == 0xbaadf00d)
 
 #ifdef USE_STATIC_BUFFERS
-    static int aguard = 0xbaadf00d;
+    static int aguard __attribute__((unused)) = 0xbaadf00d;
     static float packedA[mc * kc];
-    static int bguard = 0xbaadf00d;
+    static int bguard __attribute__((unused)) = 0xbaadf00d;
     static float packedB[kc * nb];
-    static int cguard = 0xbaadf00d;
+    static int cguard __attribute__((unused)) = 0xbaadf00d;
 #endif
 
 //------------------------------------------------------
@@ -707,6 +707,11 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 //------------------------------------------------------
 void cblas_sgemm_naive(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float alpha, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float beta, float* c, CBLAS_INDEX ldc)
 {
+    (void)layout;  // Used only in assert
+    (void)transa;  // Used only in assert
+    (void)transb;  // Used only in assert
+    (void)alpha;   // Used only in assert
+    (void)beta;    // Used only in assert
     assert(layout == CblasRowMajor || layout == CblasColMajor);
     assert(transa == CblasTrans || transa == CblasNoTrans);
     assert(transb == CblasTrans || transb == CblasNoTrans);
