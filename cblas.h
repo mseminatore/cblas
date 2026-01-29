@@ -99,6 +99,211 @@ typedef size_t CBLAS_INDEX;
 #   define CBLAS_FALSE 0
 #endif
 
+//------------------------------------------------------
+// Input validation macros - reduce code duplication
+//------------------------------------------------------
+
+// Vector operations with single vector (n, x, incx)
+#ifdef CBLAS_CHECK_INPUTS
+#ifdef CBLAS_XERBLA_INPUTS
+#define CBLAS_VALIDATE_VEC1(n, x, incx, ret) \
+    do { \
+        int info = 0; \
+        if ((n) <= 0) \
+            info = 1; \
+        else if (!(x)) \
+            info = 2; \
+        else if ((incx) <= 0) \
+            info = 3; \
+        if (info) { \
+            XERBLA(info); \
+            return ret; \
+        } \
+    } while(0)
+#else
+#define CBLAS_VALIDATE_VEC1(n, x, incx, ret) \
+    do { \
+        if ((n) <= 0 || !(x) || (incx) <= 0) { \
+            assert((n) > 0 && (x) && (incx) > 0); \
+            return ret; \
+        } \
+    } while(0)
+#endif
+#else
+#define CBLAS_VALIDATE_VEC1(n, x, incx, ret)
+#endif
+
+// Vector operations with two vectors (n, x, incx, y, incy)
+#ifdef CBLAS_CHECK_INPUTS
+#ifdef CBLAS_XERBLA_INPUTS
+#define CBLAS_VALIDATE_VEC2(n, x, incx, y, incy, ret) \
+    do { \
+        int info = 0; \
+        if ((n) <= 0) \
+            info = 1; \
+        else if (!(x)) \
+            info = 2; \
+        else if (!(y)) \
+            info = 4; \
+        if (info) { \
+            XERBLA(info); \
+            return ret; \
+        } \
+    } while(0)
+#else
+#define CBLAS_VALIDATE_VEC2(n, x, incx, y, incy, ret) \
+    do { \
+        if ((n) <= 0 || !(x) || !(y)) { \
+            assert((n) > 0 && (x) && (y)); \
+            return ret; \
+        } \
+    } while(0)
+#endif
+#else
+#define CBLAS_VALIDATE_VEC2(n, x, incx, y, incy, ret)
+#endif
+
+// Vector scaling with alpha parameter (n, alpha, x, incx)
+#ifdef CBLAS_CHECK_INPUTS
+#ifdef CBLAS_XERBLA_INPUTS
+#define CBLAS_VALIDATE_SCAL(n, alpha, x, incx, ret) \
+    do { \
+        int info = 0; \
+        if ((n) <= 0) \
+            info = 1; \
+        else if (!(x)) \
+            info = 3; \
+        else if ((incx) <= 0) \
+            info = 4; \
+        if (info) { \
+            XERBLA(info); \
+            return ret; \
+        } \
+    } while(0)
+#else
+#define CBLAS_VALIDATE_SCAL(n, alpha, x, incx, ret) \
+    do { \
+        if ((n) <= 0 || !(x) || (incx) <= 0) { \
+            assert((n) > 0 && (x) && (incx) > 0); \
+            return ret; \
+        } \
+    } while(0)
+#endif
+#else
+#define CBLAS_VALIDATE_SCAL(n, alpha, x, incx, ret)
+#endif
+
+// AXPY operations (n, alpha, x, incx, y, incy)
+#ifdef CBLAS_CHECK_INPUTS
+#ifdef CBLAS_XERBLA_INPUTS
+#define CBLAS_VALIDATE_AXPY(n, alpha, x, incx, y, incy, ret) \
+    do { \
+        int info = 0; \
+        if ((n) <= 0) \
+            info = 1; \
+        else if ((alpha) == 0.0) \
+            info = 2; \
+        else if (!(x)) \
+            info = 3; \
+        else if (!(y)) \
+            info = 5; \
+        if (info) { \
+            XERBLA(info); \
+            return ret; \
+        } \
+    } while(0)
+#else
+#define CBLAS_VALIDATE_AXPY(n, alpha, x, incx, y, incy, ret) \
+    do { \
+        if ((n) <= 0 || (alpha) == 0.0 || !(x) || !(y)) { \
+            assert((n) > 0 && (alpha) != 0.0 && (x) && (y)); \
+            return ret; \
+        } \
+    } while(0)
+#endif
+#else
+#define CBLAS_VALIDATE_AXPY(n, alpha, x, incx, y, incy, ret)
+#endif
+
+// AXPBY operations (n, alpha, x, incx, beta, y, incy)
+#ifdef CBLAS_CHECK_INPUTS
+#ifdef CBLAS_XERBLA_INPUTS
+#define CBLAS_VALIDATE_AXPBY(n, alpha, x, incx, beta, y, incy, ret) \
+    do { \
+        int info = 0; \
+        if ((n) <= 0) \
+            info = 1; \
+        else if ((alpha) == 0.0) \
+            info = 2; \
+        else if (!(x)) \
+            info = 3; \
+        else if ((beta) == 0.0) \
+            info = 5; \
+        else if (!(y)) \
+            info = 6; \
+        if (info) { \
+            XERBLA(info); \
+            return ret; \
+        } \
+    } while(0)
+#else
+#define CBLAS_VALIDATE_AXPBY(n, alpha, x, incx, beta, y, incy, ret) \
+    do { \
+        if ((n) <= 0 || (alpha) == 0.0 || !(x) || (beta) == 0.0 || !(y)) { \
+            assert((n) > 0 && (alpha) != 0.0 && (x) && (beta) != 0.0 && (y)); \
+            return ret; \
+        } \
+    } while(0)
+#endif
+#else
+#define CBLAS_VALIDATE_AXPBY(n, alpha, x, incx, beta, y, incy, ret)
+#endif
+
+// GER matrix-vector operations
+#ifdef CBLAS_CHECK_INPUTS
+#ifdef CBLAS_XERBLA_INPUTS
+#define CBLAS_VALIDATE_GER(layout, m, n, x, incx, y, incy, a, lda, ret) \
+    do { \
+        int info = 0; \
+        if ((layout) != CblasRowMajor && (layout) != CblasColMajor) \
+            info = 1; \
+        else if ((m) < 0) \
+            info = 2; \
+        else if ((n) < 0) \
+            info = 3; \
+        else if (!(x)) \
+            info = 5; \
+        else if ((incx) == 0) \
+            info = 6; \
+        else if (!(y)) \
+            info = 7; \
+        else if ((incy) == 0) \
+            info = 8; \
+        else if (!(a)) \
+            info = 9; \
+        else if ((lda) < MAX(1, (m))) \
+            info = 10; \
+        if (info) { \
+            XERBLA(info); \
+            return ret; \
+        } \
+    } while(0)
+#else
+#define CBLAS_VALIDATE_GER(layout, m, n, x, incx, y, incy, a, lda, ret) \
+    do { \
+        if ((m) < 0 || (n) < 0 || !(x) || (incx) == 0 || (incy) == 0 || !(a) || (lda) < MAX(1, (m))) { \
+            assert((m) > 0 && (n) > 0 && (incx) != 0 && (incy) != 0); \
+            assert((x) && (y) && (a)); \
+            assert((layout) == CblasRowMajor || (layout) == CblasColMajor); \
+            assert((lda) >= MAX(1, (m))); \
+            return ret; \
+        } \
+    } while(0)
+#endif
+#else
+#define CBLAS_VALIDATE_GER(layout, m, n, x, incx, y, incy, a, lda, ret)
+#endif
+
 #ifndef MAX
 #   define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif

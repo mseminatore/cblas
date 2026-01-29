@@ -10,31 +10,7 @@
 //------------------------------------------------------
 void cblas_saxpy(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy)
 {
-#ifdef CBLAS_CHECK_INPUTS
-
-#ifdef CBLAS_XERBLA_INPUTS
-    int info = 0;
-    if (n <= 0)
-        info = 1;
-    else if (alpha == 0.0f)
-        info = 2;
-    else if (!x)
-        info = 3;
-    else if (!y)
-        info = 5;
-
-    if (info) {
-        XERBLA(info);
-        return;
-    }
-#else
-    if (n <= 0 || !x || !y || alpha == 0.0f)
-    {
-        assert(n > 0 && x && y && alpha != 0.0f);
-        return;
-    }
-#endif
-#endif
+    CBLAS_VALIDATE_AXPY(n, alpha, x, incx, y, incy, );
 
     if (alpha == 1.0f)
     {
@@ -61,31 +37,7 @@ void cblas_saxpy(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *
 //------------------------------------------------------
 void cblas_daxpy(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy)
 {
-#ifdef CBLAS_CHECK_INPUTS
-
-#ifdef CBLAS_XERBLA_INPUTS
-    int info = 0;
-    if (n <= 0)
-        info = 1;
-    else if (alpha == 0.0)
-        info = 2;
-    else if (!x)
-        info = 3;
-    else if (!y)
-        info = 5;
-
-    if (info) {
-        XERBLA(info);
-        return;
-    }
-#else
-    if (n <= 0 || !x || !y || alpha == 0.0)
-    {
-        assert(n > 0 && x && y && alpha != 0.0);
-        return;
-    }
-#endif
-#endif
+    CBLAS_VALIDATE_AXPY(n, alpha, x, incx, y, incy, );
 
     if (alpha == 1.0)
     {
