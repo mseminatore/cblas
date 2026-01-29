@@ -10,7 +10,7 @@
 extern volatile int cblas_max_threads;
 
 static work_queue_t *work_queue = NULL;
-static pthread_t cblas_thread_ids[MAX_THREADS];
+static pthread_t cblas_thread_ids[MAX_THREADS] = {0};
 
 static void *cblas_worker_thread(void* pvoid);
 
@@ -74,8 +74,6 @@ void cblas_set_num_threads(int threads)
 
         pthread_mutex_unlock(&server_lock);
     }
-
-    cblas_max_threads = threads;
 }
 
 //------------------------------------------------------
