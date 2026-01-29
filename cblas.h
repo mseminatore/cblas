@@ -92,8 +92,50 @@ typedef size_t CBLAS_INDEX;
 
 #ifdef MT_DEBUG
 #   define MT_TRACE(...) fprintf(stderr, __VA_ARGS__)
+#   define MT_TRACE_THREAD(tid, ...) fprintf(stderr, "[Thread %d] ", tid); fprintf(stderr, __VA_ARGS__)
+#   define MT_TRACE_TIMING(tid, op, duration_us) fprintf(stderr, "[Thread %d] %s took %.2f us\n", tid, op, duration_us)
+#   define MT_TRACE_QUEUE_DEPTH(depth) fprintf(stderr, "[Queue] Depth: %d\n", depth)
+#   define MT_TRACE_LOAD_BALANCE(thread_count, times) do { \
+        if ((thread_count) > 0) { \
+            double min_time = times[0], max_time = times[0], sum = times[0]; \
+            for (int _mt_idx = 1; _mt_idx < (thread_count); _mt_idx++) { \
+                if (times[_mt_idx] < min_time) min_time = times[_mt_idx]; \
+                if (times[_mt_idx] > max_time) max_time = times[_mt_idx]; \
+                sum += times[_mt_idx]; \
+            } \
+            double avg_time = sum / (thread_count); \
+            if (avg_time > 0.0) { \
+                double variance = ((max_time - min_time) / avg_time) * 100.0; \
+                if (variance > 20.0) { \
+                    fprintf(stderr, "[Load Balance] WARNING: %.1f%% variance (min=%.2fus, max=%.2fus, avg=%.2fus)\n", \
+                            variance, min_time, max_time, avg_time); \
+                } else { \
+                    fprintf(stderr, "[Load Balance] OK: %.1f%% variance (min=%.2fus, max=%.2fus, avg=%.2fus)\n", \
+                            variance, min_time, max_time, avg_time); \
+                } \
+            } \
+        } \
+    } while(0)
+
+// Helper function to get current time in microseconds for MT debug timing
+static inline double mt_get_time_us(void) {
+#ifdef _WIN32
+    LARGE_INTEGER freq, counter;
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&counter);
+    return (double)counter.QuadPart * 1000000.0 / (double)freq.QuadPart;
+#else
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (double)ts.tv_sec * 1000000.0 + (double)ts.tv_nsec / 1000.0;
+#endif
+}
 #else
 #   define MT_TRACE(...)
+#   define MT_TRACE_THREAD(tid, ...)
+#   define MT_TRACE_TIMING(tid, op, duration_us)
+#   define MT_TRACE_QUEUE_DEPTH(depth)
+#   define MT_TRACE_LOAD_BALANCE(thread_count, times)
 // #   define MT_TRACE __noop
 #endif
 
@@ -422,6 +464,12 @@ typedef struct work_queue_t
     int thread_num, tid;
 
     kernel_function kernel;
+
+#ifdef MT_DEBUG
+    // Timing information for debug/profiling
+    double start_time_us;       // when task started (microseconds)
+    double end_time_us;         // when task completed (microseconds)
+#endif
 } work_queue_t;
 
 //------------------------------------------------------
