@@ -12,6 +12,10 @@ void cblas_sscal(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx)
 {
     CBLAS_VALIDATE_SCAL(n, alpha, x, incx, );
 
+    CBLAS_STATS_START();
+
+    int mt_used = 0;
+
     if (alpha == 1.0f)
     {
         // nothing to do!!
@@ -34,6 +38,8 @@ void cblas_sscal(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx)
             x += incx;
         }
     }
+
+    CBLAS_STATS_END("sscal", n, mt_used);
 }
 
 //------------------------------------------------------
@@ -65,6 +71,10 @@ void cblas_dscal(CBLAS_INDEX n, double alpha, double* x, CBLAS_INDEX incx)
 #endif
 #endif
 
+    CBLAS_STATS_START();
+
+    int mt_used = 0;
+
     if (alpha == 1.0)
     {
         // nothing to do!!
@@ -87,4 +97,6 @@ void cblas_dscal(CBLAS_INDEX n, double alpha, double* x, CBLAS_INDEX incx)
             x += incx;
         }
     }
+
+    CBLAS_STATS_END("dscal", n, mt_used);
 }

@@ -187,14 +187,20 @@ float cblas_snrm2(CBLAS_INDEX n, float *x, CBLAS_INDEX incx)
 
     CBLAS_VALIDATE_VEC1(n, x, incx, sum);
 
+    CBLAS_STATS_START();
+
+    int mt_used = 0;
+
     if (incx == 1)
     {
 #if defined(USE_SSE) && defined(USE_SIMD)
 #if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
         cblas_snrm2_k_noinc_sse(x, n, &sum);
+        CBLAS_STATS_END("snrm2", n, mt_used);
         return sum;
 #elif defined(__aarch64__) && defined(__ARM_NEON)
         cblas_snrm2_k_noinc_neon(x, n, &sum);
+        CBLAS_STATS_END("snrm2", n, mt_used);
         return sum;
 #endif
 #endif
@@ -227,6 +233,8 @@ float cblas_snrm2(CBLAS_INDEX n, float *x, CBLAS_INDEX incx)
         }
     }
 
+    CBLAS_STATS_END("snrm2", n, mt_used);
+
     return sqrtf(sum);
 }
 
@@ -239,14 +247,20 @@ double cblas_dnrm2(CBLAS_INDEX n, double *x, CBLAS_INDEX incx)
 
     CBLAS_VALIDATE_VEC1(n, x, incx, sum);
 
+    CBLAS_STATS_START();
+
+    int mt_used = 0;
+
     if (incx == 1)
     {
 #if defined(USE_SSE) && defined(USE_SIMD)
 #if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
         cblas_dnrm2_k_noinc_sse(x, n, &sum);
+        CBLAS_STATS_END("dnrm2", n, mt_used);
         return sum;
 #elif defined(__aarch64__) && defined(__ARM_NEON)
         cblas_dnrm2_k_noinc_neon(x, n, &sum);
+        CBLAS_STATS_END("dnrm2", n, mt_used);
         return sum;
 #endif
 #endif
@@ -278,6 +292,8 @@ double cblas_dnrm2(CBLAS_INDEX n, double *x, CBLAS_INDEX incx)
             x += incx;
         }
     }
+
+    CBLAS_STATS_END("dnrm2", n, mt_used);
 
     return sqrt(sum);
 }

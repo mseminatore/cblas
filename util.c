@@ -4,6 +4,7 @@
 //------------------------------------------------------
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "cblas.h"
 
 //------------------------------------------------------
@@ -12,6 +13,167 @@
 volatile int cblas_max_threads  = MAX_THREADS;  // max system supported threads
 static int cblas_server_alive   = CBLAS_FALSE;  // has thread server been initialized
 kernels_t blas_kernels;
+
+//------------------------------------------------------
+// Performance counters - track stats per operation
+//------------------------------------------------------
+#define STATS_TABLE_SIZE 32
+
+typedef struct {
+    char name[32];
+    cblas_stats_t stats;
+} stats_entry_t;
+
+static stats_entry_t stats_table[STATS_TABLE_SIZE];
+static int stats_initialized = 0;
+
+#ifdef MT_ENABLED
+#include <pthread.h>
+static pthread_mutex_t stats_mutex = PTHREAD_MUTEX_INITIALIZER;
+#define STATS_LOCK() pthread_mutex_lock(&stats_mutex)
+#define STATS_UNLOCK() pthread_mutex_unlock(&stats_mutex)
+#else
+#define STATS_LOCK()
+#define STATS_UNLOCK()
+#endif
+
+//------------------------------------------------------
+// Initialize stats table
+//------------------------------------------------------
+static void init_stats_table(void)
+{
+    if (stats_initialized)
+        return;
+    
+    STATS_LOCK();
+    if (!stats_initialized) {
+        memset(stats_table, 0, sizeof(stats_table));
+        stats_initialized = 1;
+    }
+    STATS_UNLOCK();
+}
+
+//------------------------------------------------------
+// Find or create stats entry for operation
+//------------------------------------------------------
+static cblas_stats_t* get_stats_entry(const char* operation)
+{
+    if (!stats_initialized)
+        init_stats_table();
+    
+    STATS_LOCK();
+    
+    // Look for existing entry
+    for (int i = 0; i < STATS_TABLE_SIZE; i++) {
+        if (stats_table[i].name[0] == 0) {
+            // Empty slot - create new entry
+            strncpy(stats_table[i].name, operation, sizeof(stats_table[i].name) - 1);
+            stats_table[i].name[sizeof(stats_table[i].name) - 1] = 0;
+            STATS_UNLOCK();
+            return &stats_table[i].stats;
+        }
+        if (strcmp(stats_table[i].name, operation) == 0) {
+            // Found existing entry
+            STATS_UNLOCK();
+            return &stats_table[i].stats;
+        }
+    }
+    
+    STATS_UNLOCK();
+    return NULL; // Table full
+}
+
+//------------------------------------------------------
+// Record a BLAS operation
+//------------------------------------------------------
+void cblas_record_operation(const char* operation, uint64_t elements, int mt_used, double time_sec)
+{
+    cblas_stats_t* stats = get_stats_entry(operation);
+    if (!stats)
+        return;
+    
+    STATS_LOCK();
+    stats->total_calls++;
+    stats->total_elements += elements;
+    if (mt_used)
+        stats->mt_activations++;
+    stats->total_time_sec += time_sec;
+    STATS_UNLOCK();
+}
+
+//------------------------------------------------------
+// Get stats for a specific operation
+//------------------------------------------------------
+const cblas_stats_t* cblas_get_stats(const char* operation)
+{
+    if (!stats_initialized)
+        init_stats_table();
+    
+    STATS_LOCK();
+    for (int i = 0; i < STATS_TABLE_SIZE; i++) {
+        if (strcmp(stats_table[i].name, operation) == 0) {
+            STATS_UNLOCK();
+            return &stats_table[i].stats;
+        }
+    }
+    STATS_UNLOCK();
+    
+    return NULL;
+}
+
+//------------------------------------------------------
+// Reset all performance counters
+//------------------------------------------------------
+void cblas_reset_stats(void)
+{
+    if (!stats_initialized)
+        init_stats_table();
+    
+    STATS_LOCK();
+    for (int i = 0; i < STATS_TABLE_SIZE; i++) {
+        if (stats_table[i].name[0] != 0) {
+            memset(&stats_table[i].stats, 0, sizeof(cblas_stats_t));
+        }
+    }
+    STATS_UNLOCK();
+}
+
+//------------------------------------------------------
+// Print performance statistics
+//------------------------------------------------------
+void cblas_print_stats(void)
+{
+    if (!stats_initialized)
+        init_stats_table();
+    
+    printf("\n=== CBLAS Performance Statistics ===\n");
+    printf("%-12s %10s %15s %10s %12s %12s\n", 
+           "Operation", "Calls", "Elements", "MT Uses", "Time (s)", "Avg (us)");
+    printf("------------------------------------------------------------------------\n");
+    
+    STATS_LOCK();
+    int found_any = 0;
+    for (int i = 0; i < STATS_TABLE_SIZE; i++) {
+        if (stats_table[i].name[0] != 0 && stats_table[i].stats.total_calls > 0) {
+            found_any = 1;
+            cblas_stats_t* s = &stats_table[i].stats;
+            double avg_us = (s->total_calls > 0) ? (s->total_time_sec * 1e6 / s->total_calls) : 0.0;
+            printf("%-12s %10llu %15llu %10llu %12.6f %12.3f\n",
+                   stats_table[i].name,
+                   (unsigned long long)s->total_calls,
+                   (unsigned long long)s->total_elements,
+                   (unsigned long long)s->mt_activations,
+                   s->total_time_sec,
+                   avg_us);
+        }
+    }
+    STATS_UNLOCK();
+    
+    if (!found_any) {
+        printf("(no operations recorded)\n");
+    }
+    printf("\n");
+}
 
 //------------------------------------------------------
 // return the current server status

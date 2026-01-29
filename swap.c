@@ -51,9 +51,13 @@ void cblas_sswap(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
 {
     CBLAS_VALIDATE_VEC2(n, x, incx, y, incy, );
 
+    CBLAS_STATS_START();
+
 #ifdef MT_ENABLED
+    int mt_used = (n > CBLAS_MT_COPY) ? 1 : 0;
     cblas_level1_exec(sizeof(float), cblas_sswap_k, n, x, incx, y, incy);
 #else
+    int mt_used = 0;
     float temp;
     for (CBLAS_INDEX i = 0; i < n; i++)
     {
@@ -65,6 +69,8 @@ void cblas_sswap(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
         y += incy;
     }
 #endif
+
+    CBLAS_STATS_END("sswap", n, mt_used);
 }
 
 //------------------------------------------------------
@@ -74,9 +80,13 @@ void cblas_dswap(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IN
 {
     CBLAS_VALIDATE_VEC2(n, x, incx, y, incy, );
 
+    CBLAS_STATS_START();
+
 #ifdef MT_ENABLED
+    int mt_used = (n > CBLAS_MT_COPY) ? 1 : 0;
     cblas_level1_exec(sizeof(double), cblas_dswap_k, n, x, incx, y, incy);
 #else
+    int mt_used = 0;
     double temp;
     for (CBLAS_INDEX i = 0; i < n; i++)
     {
@@ -88,4 +98,6 @@ void cblas_dswap(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IN
         y += incy;
     }    
 #endif
+
+    CBLAS_STATS_END("dswap", n, mt_used);
 }

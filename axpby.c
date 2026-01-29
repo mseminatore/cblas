@@ -12,6 +12,10 @@ void cblas_saxpby(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float 
 {
     CBLAS_VALIDATE_AXPBY(n, alpha, x, incx, beta, y, incy, );
 
+    CBLAS_STATS_START();
+
+    int mt_used = 0;
+
     if (alpha == 1.0 && beta == 1.0)
     {
         for (CBLAS_INDEX i = 0; i < n; i++)
@@ -48,6 +52,8 @@ void cblas_saxpby(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float 
             y += incy;
         }
     }
+
+    CBLAS_STATS_END("saxpby", n, mt_used);
 }
 
 //------------------------------------------------------
@@ -57,10 +63,16 @@ void cblas_daxpby(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, doub
 {
     CBLAS_VALIDATE_AXPBY(n, alpha, x, incx, beta, y, incy, );
 
+    CBLAS_STATS_START();
+
+    int mt_used = 0;
+
     for (CBLAS_INDEX i = 0; i < n; i++)
     {
         *y = alpha * *x + beta * *y;
         x += incx;
         y += incy;
     }
+
+    CBLAS_STATS_END("daxpby", n, mt_used);
 }

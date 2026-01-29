@@ -636,9 +636,12 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 #endif
 #endif
 
+    CBLAS_STATS_START();
+
     CBLAS_INDEX pb, ib;
 
 #if defined(MT_ENABLED)
+    int mt_used = (m * n * k > CBLAS_MT_GEMM) ? 1 : 0;
     CBLAS_INDEX horiz_tiles = k / kc + 1;
     CBLAS_INDEX vert_tiles = m / mc + 1;
     CBLAS_INDEX total_tiles = horiz_tiles * vert_tiles;
@@ -692,6 +695,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     cblas_execute(tile_count, queue);
 
 #else
+    int mt_used = 0;
     // Compute an mc x n block of C by a call to the InnerKernel
     for (CBLAS_INDEX p = 0; p < k; p += kc) 
     {
@@ -703,6 +707,8 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         }
     }
 #endif
+
+    CBLAS_STATS_END("sgemm", m * n * k, mt_used);
 }
 
 //------------------------------------------------------
@@ -792,9 +798,15 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 #endif
 #endif
 
+    CBLAS_STATS_START();
+
+    int mt_used = 0;
+
     for (CBLAS_INDEX row = 0; row < m; row++)
         for (CBLAS_INDEX col = 0; col < n; col++)
             for (CBLAS_INDEX p = 0; p < k; p++)
                 C(col, row) += A(p, row) * B(col, p);
+
+    CBLAS_STATS_END("dgemm", m * n * k, mt_used);
 }
 

@@ -185,13 +185,17 @@ void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
 {
     CBLAS_VALIDATE_VEC2(n, x, incx, y, incy, );
 
+    CBLAS_STATS_START();
+
 #ifdef MT_ENABLED
     kernel_function kernel = cblas_scopy_k;
     if (incx == 1 && incy == 1)
         kernel = cblas_scopy_k_noinc;
 
+    int mt_used = (n > CBLAS_MT_COPY) ? 1 : 0;
     cblas_level1_exec(sizeof(float), kernel, n, x, incx, y, incy);
 #else
+    int mt_used = 0;
     if (incx == 1 && incy == 1)
     {
         // TODO - unroll this loop
@@ -210,6 +214,8 @@ void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
         }
     }
 #endif
+
+    CBLAS_STATS_END("scopy", n, mt_used);
 }
 
 //------------------------------------------------------
@@ -242,9 +248,13 @@ void cblas_dcopy(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IN
 #endif
 #endif
 
+    CBLAS_STATS_START();
+
 #ifdef MT_ENABLED
+    int mt_used = (n > CBLAS_MT_COPY) ? 1 : 0;
     cblas_level1_exec(sizeof(double), cblas_dcopy_k, n, x, incx, y, incy);
 #else
+    int mt_used = 0;
     if (incx == 1 && incy == 1)
     {
         // TODO - unroll this loop
@@ -263,4 +273,6 @@ void cblas_dcopy(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IN
         }
     }
 #endif
+
+    CBLAS_STATS_END("dcopy", n, mt_used);
 }

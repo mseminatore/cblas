@@ -9,6 +9,7 @@
 #define __CBLAS_H
 
 #include <stddef.h>
+#include <stdint.h>
 #include <math.h>
 #include <assert.h>
 #include <string.h>
@@ -63,6 +64,9 @@
 
 // uncomment to enable multi-threading debug messages
 //#define MT_DEBUG
+
+// uncomment to enable performance counter tracking
+#define CBLAS_ENABLE_STATS
 
 // multi-threading threshold limits
 #define CBLAS_MT_DOT    10000
@@ -137,6 +141,20 @@ static inline double mt_get_time_us(void) {
 #   define MT_TRACE_QUEUE_DEPTH(depth)
 #   define MT_TRACE_LOAD_BALANCE(thread_count, times)
 // #   define MT_TRACE __noop
+#endif
+
+// Performance counter macros
+#ifdef CBLAS_ENABLE_STATS
+#   define CBLAS_STATS_RECORD(op, n, mt) cblas_record_operation(op, n, mt, 0.0)
+#   define CBLAS_STATS_START() struct cblas_timer _stats_t1, _stats_t2; cbu_timer_get_time(&_stats_t1)
+#   define CBLAS_STATS_END(op, n, mt) do { \
+        cbu_timer_get_time(&_stats_t2); \
+        cblas_record_operation(op, n, mt, cbu_timer_get_delta(&_stats_t1, &_stats_t2)); \
+    } while(0)
+#else
+#   define CBLAS_STATS_RECORD(op, n, mt)
+#   define CBLAS_STATS_START()
+#   define CBLAS_STATS_END(op, n, mt)
 #endif
 
 #define CBLAS_LEVEL_1_THREADING
@@ -1049,6 +1067,51 @@ int cblas_is_server_alive(void);
  * @note For internal use only.
  */
 void cblas_set_server_alive(int yesno);
+
+/**
+ * @brief Record a BLAS operation for performance tracking (internal)
+ * @param operation Name of BLAS operation (e.g., "sdot", "sgemm")
+ * @param elements Number of elements processed
+ * @param mt_used Non-zero if multi-threading was used
+ * @param time_sec Execution time in seconds
+ * @note For internal use only. Used by BLAS functions to track statistics.
+ */
+void cblas_record_operation(const char* operation, uint64_t elements, int mt_used, double time_sec);
+
+//------------------------------------------------------
+// Performance counters
+//------------------------------------------------------
+
+/**
+ * @brief Performance statistics for a BLAS operation
+ * @note Tracks call count, total elements processed, MT activations, and total time.
+ */
+typedef struct {
+    uint64_t total_calls;       /**< Total number of calls to this operation */
+    uint64_t total_elements;    /**< Total number of elements processed */
+    uint64_t mt_activations;    /**< Number of times multi-threading was activated */
+    double total_time_sec;      /**< Total execution time in seconds */
+} cblas_stats_t;
+
+/**
+ * @brief Get performance statistics for a specific operation
+ * @param operation Name of BLAS operation (e.g., "sdot", "sgemm")
+ * @return Pointer to statistics structure, or NULL if operation not found
+ * @note Thread-safe. Returns pointer to internal static data.
+ */
+const cblas_stats_t* cblas_get_stats(const char* operation);
+
+/**
+ * @brief Reset all performance counters to zero
+ * @note Thread-safe. Clears all accumulated statistics.
+ */
+void cblas_reset_stats(void);
+
+/**
+ * @brief Print performance statistics to stdout
+ * @note Displays stats for all operations with non-zero call counts.
+ */
+void cblas_print_stats(void);
 
 //------------------------------------------------------
 // testing functions/structs

@@ -212,14 +212,20 @@ float cblas_sasum(CBLAS_INDEX n, float *x, CBLAS_INDEX incx)
 
     CBLAS_VALIDATE_VEC1(n, x, incx, sum);
 
+    CBLAS_STATS_START();
+
+    int mt_used = 0;
+
     if (incx == 1)
     {
 #if defined(USE_SSE) && defined(USE_SIMD)
 #if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
         cblas_sasum_k_noinc_sse(x, n, &sum);
+        CBLAS_STATS_END("sasum", n, mt_used);
         return sum;
 #elif defined(__aarch64__) && defined(__ARM_NEON)
         cblas_sasum_k_noinc_neon(x, n, &sum);
+        CBLAS_STATS_END("sasum", n, mt_used);
         return sum;
 #endif
 #endif
@@ -252,6 +258,8 @@ float cblas_sasum(CBLAS_INDEX n, float *x, CBLAS_INDEX incx)
         }
     }
 
+    CBLAS_STATS_END("sasum", n, mt_used);
+
     return sum;
 }
 
@@ -264,14 +272,20 @@ double cblas_dasum(CBLAS_INDEX n, double *x, CBLAS_INDEX incx)
 
     CBLAS_VALIDATE_VEC1(n, x, incx, sum);
 
+    CBLAS_STATS_START();
+
+    int mt_used = 0;
+
     if (incx == 1)
     {
 #if defined(USE_SSE) && defined(USE_SIMD)
 #if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
         cblas_dasum_k_noinc_sse(x, n, &sum);
+        CBLAS_STATS_END("dasum", n, mt_used);
         return sum;
 #elif defined(__aarch64__) && defined(__ARM_NEON)
         cblas_dasum_k_noinc_neon(x, n, &sum);
+        CBLAS_STATS_END("dasum", n, mt_used);
         return sum;
 #endif
 #endif
@@ -303,6 +317,8 @@ double cblas_dasum(CBLAS_INDEX n, double *x, CBLAS_INDEX incx)
             x += incx;
         }
     }
+
+    CBLAS_STATS_END("dasum", n, mt_used);
 
     return sum;
 }

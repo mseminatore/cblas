@@ -71,6 +71,8 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
 
     CBLAS_VALIDATE_VEC2(n, x, incx, y, incy, sum);
 
+    CBLAS_STATS_START();
+
 #if defined(MT_ENABLED)
     float thread_partial_sums[MAX_THREADS];
 
@@ -80,6 +82,7 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
     if (incx == 1 && incy == 1)
         kernel = cblas_sdot_k_noinc;
 
+    int mt_used = (n > CBLAS_MT_DOT) ? 1 : 0;
     cblas_level1_exec_result(sizeof(float), kernel, n, x, incx, y, incy, thread_partial_sums);
 
     // accumulate results
@@ -90,6 +93,7 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
     }
 
 #else
+    int mt_used = 0;
     if (incx == 1 && incy == 1)
     {
         CBLAS_INDEX i = 0;
@@ -125,6 +129,8 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
     }
 #endif
 
+    CBLAS_STATS_END("sdot", n, mt_used);
+
     return sum;
 }
 
@@ -159,12 +165,16 @@ double cblas_ddot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_I
 #endif  // CBLAS_XERBLA_INPUTS
 #endif  // CBLAS_CHECK_INPUTS
 
+    CBLAS_STATS_START();
+
     for (CBLAS_INDEX i = 0; i < n; i++)
     {
         sum += *x * *y;
         x += incx;
         y += incy;
     }
+
+    CBLAS_STATS_END("ddot", n, 0);
 
     return sum;
 }

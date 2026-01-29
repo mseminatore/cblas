@@ -292,6 +292,10 @@ void cblas_srot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX
 {
     CBLAS_VALIDATE_VEC2(n, x, incx, y, incy, );
 
+    CBLAS_STATS_START();
+
+    int mt_used = 0;
+
     float temp;
     if (incx == 1 && incy == 1)
     {
@@ -346,6 +350,8 @@ void cblas_srot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX
             y += incy;
         }
     }
+
+    CBLAS_STATS_END("srot", n, mt_used);
 }
 
 //------------------------------------------------------
@@ -354,6 +360,10 @@ void cblas_srot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX
 void cblas_drot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy, double c, double s)
 {
     CBLAS_VALIDATE_VEC2(n, x, incx, y, incy, );
+
+    CBLAS_STATS_START();
+
+    int mt_used = 0;
 
     double temp;
 
@@ -410,4 +420,6 @@ void cblas_drot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IND
             y += incy;
         }
     }
+
+    CBLAS_STATS_END("drot", n, mt_used);
 }
