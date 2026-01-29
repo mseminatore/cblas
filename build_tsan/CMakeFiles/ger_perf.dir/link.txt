@@ -1,1 +1,0 @@
-/usr/bin/cc -fsanitize=thread -g -O1 -g -O2 -Wall -Wextra -Wpedantic -mavx2 -mfma -Wl,--dependency-file=CMakeFiles/ger_perf.dir/link.d CMakeFiles/ger_perf.dir/ger_perf.c.o -o ger_perf  libcblas.a -lm

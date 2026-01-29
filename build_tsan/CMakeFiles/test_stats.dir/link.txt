@@ -1,1 +1,0 @@
-/usr/bin/cc -fsanitize=thread -g -O1 -g -O2 -Wall -Wextra -Wpedantic -mavx2 -mfma -Wl,--dependency-file=CMakeFiles/test_stats.dir/link.d CMakeFiles/test_stats.dir/test_stats.c.o -o test_stats  libcblas.a -lm

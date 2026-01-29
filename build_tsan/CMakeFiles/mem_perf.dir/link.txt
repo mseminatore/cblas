@@ -1,1 +1,0 @@
-/usr/bin/cc -fsanitize=thread -g -O1 -g -O2 -Wall -Wextra -Wpedantic -mavx2 -mfma -Wl,--dependency-file=CMakeFiles/mem_perf.dir/link.d CMakeFiles/mem_perf.dir/mem_perf.c.o -o mem_perf  libcblas.a -lm
