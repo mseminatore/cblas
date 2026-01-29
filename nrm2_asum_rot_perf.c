@@ -8,6 +8,10 @@
 #include <math.h>
 #include "cblas.h"
 
+#ifndef M_PI
+    #define M_PI 3.14159265358979323846
+#endif
+
 #define MAX_SIZE 65536*64
 
 float x[MAX_SIZE], y[MAX_SIZE];
@@ -94,8 +98,8 @@ void test_rot(void)
 
     CBLAS_INDEX n;
 
-    float c = cosf(M_PI / 4.0f);
-    float s = sinf(M_PI / 4.0f);
+    float c = (float)cosf((float)M_PI / 4.0f);
+    float s = (float)sinf((float)M_PI / 4.0f);
 
     for (int i = 16; i <= MAX_SIZE; i <<= 1)
     {
