@@ -57,7 +57,7 @@ CBLAS_UNUSED static void cblas_scopy_k_noinc_sse(cblas_args_t* args)
 //------------------------------------------------------
 // single-precision copy kernel incx == incy == 1
 //------------------------------------------------------
-static void cblas_scopy_k_noinc_neon(cblas_args_t* args)
+CBLAS_UNUSED static void cblas_scopy_k_noinc_neon(cblas_args_t* args)
 {
     float* x = args->x;
     float* y = args->y;
