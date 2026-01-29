@@ -164,7 +164,7 @@ void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 
 	if ((trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor))
 	{
-		if (alpha == 1.0f && beta == 1.0f)
+		if (alpha == 1.0 && beta == 1.0)
 		{
 			// for each row of the matrix
 			for (CBLAS_INDEX row = 0; row < m; row++)

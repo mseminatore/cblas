@@ -19,7 +19,6 @@ void cblas_sscal(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx)
     if (alpha == 1.0f)
     {
         // nothing to do!!
-        CBLAS_STATS_END("sscal", n, mt_used);
         return;
     }
 
@@ -79,7 +78,6 @@ void cblas_dscal(CBLAS_INDEX n, double alpha, double* x, CBLAS_INDEX incx)
     if (alpha == 1.0)
     {
         // nothing to do!!
-        CBLAS_STATS_END("dscal", n, mt_used);
         return;
     }
 

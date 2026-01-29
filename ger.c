@@ -535,10 +535,7 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 
 	// fast reject case
 	if (m == 0 ||  n == 0 || alpha == 0.0f)
-    {
-        CBLAS_STATS_END("sger", m * n, mt_used);
 		return;
-    }
 
 	// TODO - handle incx == 1 special case
     if (layout == CblasRowMajor)
@@ -607,11 +604,8 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
     int mt_used = (m * n > CBLAS_MT_GER) ? 1 : 0;
 
 	// fast reject case
-	if (m == 0 ||  n == 0 || alpha == 0.0f)
-    {
-        CBLAS_STATS_END("dger", m * n, mt_used);
+	if (m == 0 ||  n == 0 || alpha == 0.0)
 		return;
-    }
 
     if (layout == CblasRowMajor)
     {
