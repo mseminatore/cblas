@@ -34,5 +34,8 @@
 
 /* Use static buffers instead of stack-based */
 #cmakedefine01 CBLAS_USE_STATIC_BUFFERS
+#if CBLAS_USE_STATIC_BUFFERS
+#   define USE_STATIC_BUFFERS
+#endif
 
 #endif /* __CBLAS_CONFIG_H */
