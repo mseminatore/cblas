@@ -402,9 +402,10 @@ CFLAGS += -Wall -Wextra -Wpedantic -Wconversion
 
 ## 📚 Documentation
 
-### Issue #14: Add API documentation to cblas.h
-**Priority:** Medium  
-**Labels:** documentation
+### ~~Issue #14: Add API documentation to cblas.h~~ ✅ MOSTLY RESOLVED
+**Priority:** ~~Medium~~ FIXED  
+**Labels:** documentation  
+**Status:** Mostly resolved on 2026-01-29
 
 **Description:**
 No function in cblas.h has parameter documentation. Add Doxygen-style comments.
@@ -423,11 +424,41 @@ No function in cblas.h has parameter documentation. Add Doxygen-style comments.
  */
 ```
 
+**Resolution:**
+Comprehensive Doxygen-style API documentation has been added to all public functions in cblas.h:
+
+1. **Level-1 Functions (20 functions):**
+   - All vector operations documented: dot, copy, swap, axpy, scal, rot, rotg, asum, nrm2, axpby, setv
+   - Both single and double precision variants
+   
+2. **Level-2 Functions (4 functions):**
+   - ger and gemv operations documented
+   - Both single and double precision variants
+   
+3. **Level-3 Functions (3 functions):**
+   - gemm and gemm_naive operations documented
+   - Single and double precision variants
+   
+4. **Utility Functions (13+ functions):**
+   - Thread management: cblas_init, cblas_shutdown, cblas_set_num_threads, cblas_get_num_threads
+   - Configuration: cblas_print_configuration, cblas_get_isa_features
+   - Testing utilities: timer functions, identity matrix helpers
+   - Internal functions: kernel dispatch, work queue execution
+
+**Documentation Quality:**
+- ✅ All parameters documented with types, constraints, and semantics
+- ✅ Return values documented where applicable
+- ✅ Thread-safety guarantees explicitly stated for all functions
+- ✅ MT activation thresholds documented (e.g., "Uses MT when n > CBLAS_MT_DOT")
+- ✅ Mathematical operations clearly described (e.g., "Y = alpha * X + beta * Y")
+- ✅ Memory semantics documented (e.g., "modified in place", "must be non-NULL")
+- ✅ Platform-specific behavior noted where applicable
+
 **Acceptance Criteria:**
-- [ ] Document all public functions in cblas.h
-- [ ] Add parameter descriptions and constraints
-- [ ] Document thread-safety guarantees
-- [ ] Generate HTML docs with Doxygen
+- [x] Document all public functions in cblas.h
+- [x] Add parameter descriptions and constraints
+- [x] Document thread-safety guarantees
+- [ ] Generate HTML docs with Doxygen (requires Doxyfile configuration - future enhancement)
 
 ---
 
@@ -615,7 +646,9 @@ MT_TRACE_QUEUE_DEPTH(depth);
 
 ## Summary
 
-**Critical (Do First):** Issues #1, #2, #3  
-**High Priority:** Issues #4, #7, #13  
-**Medium Priority:** Issues #5, #6, #8, #9, #10, #14, #15, #17  
-**Low Priority:** Issues #11, #12, #16, #18, #19, #20, #21
+**Resolved Issues:** #1 ✅, #2 ✅, #3 ✅, #4 ✅, #5 ✅, #6 ✅, #7 ✅, #11 ✅, #14 ✅ (mostly)  
+
+**Remaining Issues by Priority:**  
+**High Priority:** Issue #13  
+**Medium Priority:** Issues #8, #9, #10, #15, #17  
+**Low Priority:** Issues #12, #16, #18, #19, #20, #21
