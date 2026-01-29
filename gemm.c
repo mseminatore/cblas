@@ -29,7 +29,7 @@
 //#define X(i) x[(i) * incx]
 #define Y(i) y[(i) * incx]
 
-#define CHECK_GUARDS()  assert(aguard == 0xbaadf00d && bguard == 0xbaadf00d && cguard == 0xbaadf00d)
+#define CHECK_GUARDS()  assert((unsigned)aguard == 0xbaadf00d && (unsigned)bguard == 0xbaadf00d && (unsigned)cguard == 0xbaadf00d)
 
 #ifdef USE_STATIC_BUFFERS
     static int aguard = 0xbaadf00d;
@@ -62,6 +62,8 @@ static void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, CBLAS_IN
 //------------------------------------------------------
 static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
 {
+    (void)lda;
+    (void)ldb;
     __m128 c_row1, c_row2, c_row3, c_row4;
     __m128 b_row;
     __m128 a_p0, a_p1, a_p2, a_p3;
@@ -106,6 +108,8 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
 //------------------------------------------------------
 static void AddDot4x4_fma(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
 {
+    (void)lda;
+    (void)ldb;
     __m128 c_row1, c_row2, c_row3, c_row4;
     __m128 b_row;
     __m128 a_p0, a_p1, a_p2, a_p3;
@@ -282,7 +286,7 @@ static void AddDot4x4(CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_
 // compute 4 dot products at a time
 // 4 rows of A by 1 column of B
 //------------------------------------------------------
-static void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
+__attribute__((unused)) static void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
 {
     register float c_00, c_01, c_02, c_03, b_0p;
     float *a0, *a1, *a2, *a3;
@@ -433,17 +437,20 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
                 AddDot(k, &A(0, row+1), 1, &B(col + 2, 0), ldb, &C(col + 2, row+1));
                 AddDot(k, &A(0, row+2), 1, &B(col + 2, 0), ldb, &C(col + 2, row+2));
                 AddDot(k, &A(0, row+3), 1, &B(col + 2, 0), ldb, &C(col + 2, row+3));
+                __attribute__((fallthrough));
             case 2:
                 AddDot(k, &A(0, row), 1, &B(col + 1, 0), ldb, &C(col + 1, row));
                 AddDot(k, &A(0, row+1), 1, &B(col + 1, 0), ldb, &C(col + 1, row+1));
                 AddDot(k, &A(0, row+2), 1, &B(col + 1, 0), ldb, &C(col + 1, row+2));
                 AddDot(k, &A(0, row+3), 1, &B(col + 1, 0), ldb, &C(col + 1, row+3));
+                __attribute__((fallthrough));
             case 1:
                 //AddDot1x4(k, &A(0, row), lda, &B(col, 0), ldb, &C(col, row), ldc);
                 AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row));
                 AddDot(k, &A(0, row+1), 1, &B(col, 0), ldb, &C(col, row+1));
                 AddDot(k, &A(0, row+2), 1, &B(col, 0), ldb, &C(col, row+2));
                 AddDot(k, &A(0, row+3), 1, &B(col, 0), ldb, &C(col, row+3));
+                __attribute__((fallthrough));
             case 0: ;   // nothing to do!
         }
     }
@@ -452,8 +459,11 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
     switch(m - row)
     {
         case 3:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 2), 1, &B(col, 0), ldb, &C(col, row + 2));
+            __attribute__((fallthrough));
         case 2:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 1), 1, &B(col, 0), ldb, &C(col, row + 1));
+            __attribute__((fallthrough));
         case 1:    for (col = 0; col < n; col++) AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row));
+            __attribute__((fallthrough));
         case 0: ;   // nothing to do!
     }
 
@@ -518,16 +528,19 @@ static void InnerKernel_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* 
                 AddDot(k, &A(0, row+1), 1, &B(col + 2, 0), ldb, &C(col + 2, row+1));
                 AddDot(k, &A(0, row+2), 1, &B(col + 2, 0), ldb, &C(col + 2, row+2));
                 AddDot(k, &A(0, row+3), 1, &B(col + 2, 0), ldb, &C(col + 2, row+3));
+                __attribute__((fallthrough));
             case 2:
                 AddDot(k, &A(0, row), 1, &B(col + 1, 0), ldb, &C(col + 1, row));
                 AddDot(k, &A(0, row+1), 1, &B(col + 1, 0), ldb, &C(col + 1, row+1));
                 AddDot(k, &A(0, row+2), 1, &B(col + 1, 0), ldb, &C(col + 1, row+2));
                 AddDot(k, &A(0, row+3), 1, &B(col + 1, 0), ldb, &C(col + 1, row+3));
+                __attribute__((fallthrough));
             case 1:
                 AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row));
                 AddDot(k, &A(0, row+1), 1, &B(col, 0), ldb, &C(col, row+1));
                 AddDot(k, &A(0, row+2), 1, &B(col, 0), ldb, &C(col, row+2));
                 AddDot(k, &A(0, row+3), 1, &B(col, 0), ldb, &C(col, row+3));
+                __attribute__((fallthrough));
             case 0: ;   // nothing to do!
         }
     }
@@ -536,7 +549,9 @@ static void InnerKernel_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* 
     switch(m - row)
     {
         case 3:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 2), 1, &B(col, 0), ldb, &C(col, row + 2));
+            __attribute__((fallthrough));
         case 2:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 1), 1, &B(col, 0), ldb, &C(col, row + 1));
+            __attribute__((fallthrough));
         case 1:    for (col = 0; col < n; col++) AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row));
         case 0: ;   // nothing to do!
     }
@@ -559,6 +574,8 @@ void sgemm_k_fma(cblas_args_t* args)
 //------------------------------------------------------
 void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float alpha, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float beta, float* c, CBLAS_INDEX ldc)
 {
+    (void)alpha;
+    (void)beta;
 #ifdef CBLAS_CHECK_INPUTS
     CBLAS_INDEX nota = (transa == CblasNoTrans);
     CBLAS_INDEX notb = (transb == CblasNoTrans);
@@ -585,13 +602,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 
 #ifdef CBLAS_XERBLA_INPUTS
     int info = 0;
-    if (m < 0)
-        info = 4;
-    else if (n < 0)
-        info = 5;
-    else if (k < 0)
-        info = 6;
-    else if (!a)
+    if (!a)
         info = 8;
     else if (lda < MAX(1, nrowa))
         info = 9;
@@ -628,7 +639,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     CBLAS_INDEX horiz_tiles = k / kc + 1;
     CBLAS_INDEX vert_tiles = m / mc + 1;
     CBLAS_INDEX total_tiles = horiz_tiles * vert_tiles;
-    int tile_count = 0;
+    CBLAS_INDEX tile_count = 0;
 
     //printf("tile count = %u\n", total_tiles);
     #ifdef _WIN32
@@ -640,10 +651,10 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     #endif
 
     // Compute an mc x n block of C by a call to the InnerKernel
-    for (int p = 0; p < k; p += kc) 
+    for (CBLAS_INDEX p = 0; p < k; p += kc) 
     {
         pb = MIN(k - p, kc);
-        for (int row = 0; row < m; row += mc) 
+        for (CBLAS_INDEX row = 0; row < m; row += mc) 
         {
             ib = MIN(m - row, mc);
 
@@ -679,10 +690,10 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 
 #else
     // Compute an mc x n block of C by a call to the InnerKernel
-    for (int p = 0; p < k; p += kc) 
+    for (CBLAS_INDEX p = 0; p < k; p += kc) 
     {
         pb = MIN(k - p, kc);
-        for (int row = 0; row < m; row += mc) 
+        for (CBLAS_INDEX row = 0; row < m; row += mc) 
         {
             ib = MIN(m - row, mc);
             InnerKernel(ib, n, pb, &A(p, row), lda, &B(0, p), ldb, &C(0, row), ldc);
@@ -703,9 +714,9 @@ void cblas_sgemm_naive(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSP
     assert(a && b && c);
     assert(alpha != 0.0f && beta != 0.0f);
 
-    for (int row = 0; row < m; row++)
-        for (int col = 0; col < n; col++)
-            for (int p = 0; p < k; p++)
+    for (CBLAS_INDEX row = 0; row < m; row++)
+        for (CBLAS_INDEX col = 0; col < n; col++)
+            for (CBLAS_INDEX p = 0; p < k; p++)
                 C(col, row) += A(p, row) * B(col, p);
 }
 
@@ -714,6 +725,8 @@ void cblas_sgemm_naive(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSP
 //------------------------------------------------------
 void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, double alpha, double *a, CBLAS_INDEX lda, double *b, CBLAS_INDEX ldb, double beta, double *c, CBLAS_INDEX ldc)
 {
+    (void)alpha;
+    (void)beta;
 #ifdef CBLAS_CHECK_INPUTS
     CBLAS_INDEX nota = (transa == CblasNoTrans);
     CBLAS_INDEX notb = (transb == CblasNoTrans);
@@ -740,13 +753,7 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 
 #ifdef CBLAS_XERBLA_INPUTS
     int info = 0;
-    if (m < 0)
-        info = 4;
-    else if (n < 0)
-        info = 5;
-    else if (k < 0)
-        info = 6;
-    else if (!a)
+    if (!a)
         info = 8;
     else if (lda < MAX(1, nrowa))
         info = 9;
@@ -764,7 +771,7 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         return;
     }
 #else
-    if (m < 0 || n < 0 || k < 0 || !a || !b || !c || lda < MAX(1, nrowa) || ldb < MAX(1, nrowb) || ldc < MAX(1, m))
+    if (!a || !b || !c || lda < MAX(1, nrowa) || ldb < MAX(1, nrowb) || ldc < MAX(1, m))
     {
         assert(layout == CblasRowMajor || layout == CblasColMajor);
         assert(transa == CblasTrans || transa == CblasNoTrans);
@@ -777,9 +784,9 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 #endif
 #endif
 
-    for (int row = 0; row < m; row++)
-        for (int col = 0; col < n; col++)
-            for (int p = 0; p < k; p++)
+    for (CBLAS_INDEX row = 0; row < m; row++)
+        for (CBLAS_INDEX col = 0; col < n; col++)
+            for (CBLAS_INDEX p = 0; p < k; p++)
                 C(col, row) += A(p, row) * B(col, p);
 }
 

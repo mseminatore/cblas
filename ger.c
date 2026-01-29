@@ -119,7 +119,7 @@ static void AddProd8x4_AVX(float* x, float* y, float* a, CBLAS_INDEX lda)
 //------------------------------------------------------
 // compute 8 cols x 4 rows product (FMA version)
 //------------------------------------------------------
-static void AddProd8x4_AVX_fma(float* x, float* y, float* a, CBLAS_INDEX lda)
+__attribute__((unused)) static void AddProd8x4_AVX_fma(float* x, float* y, float* a, CBLAS_INDEX lda)
 {
 	__m256 x0, x1, x2, x3, y0, a0, a1, a2, a3;
 
@@ -264,7 +264,7 @@ static void AddProd4x4_SIMD_fma(float* x, float* y, float* a, CBLAS_INDEX lda)
 //------------------------------------------------------
 // compute 4 cols x 4 rows product
 //------------------------------------------------------
-static void AddProd4x4(float* x, float* y, float* a, CBLAS_INDEX lda)
+__attribute__((unused)) static void AddProd4x4(float* x, float* y, float* a, CBLAS_INDEX lda)
 {
 	// first row
 	*a = *x * *y;
@@ -303,7 +303,7 @@ static void AddProd4x4(float* x, float* y, float* a, CBLAS_INDEX lda)
 //------------------------------------------------------
 //
 //------------------------------------------------------
-static void sger_row_noalpha8x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_INDEX incx, float* y, CBLAS_INDEX incy, float* a, CBLAS_INDEX lda)
+__attribute__((unused)) static void sger_row_noalpha8x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_INDEX incx, float* y, CBLAS_INDEX incy, float* a, CBLAS_INDEX lda)
 {
 	float* xr, * yc, * ap;
 	CBLAS_INDEX col, row;
@@ -327,12 +327,19 @@ static void sger_row_noalpha8x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_IN
 			switch (n - col)
 			{
 			case 7: AddProd(*xr, Y(col + 6), &A(col + 6, row + i));
+				__attribute__((fallthrough));
 			case 6: AddProd(*xr, Y(col + 5), &A(col + 5, row + i));
+				__attribute__((fallthrough));
 			case 5: AddProd(*xr, Y(col + 4), &A(col + 4, row + i));
+				__attribute__((fallthrough));
 			case 4: AddProd(*xr, Y(col + 3), &A(col + 3, row + i));
+				__attribute__((fallthrough));
 			case 3: AddProd(*xr, Y(col + 2), &A(col + 2, row + i));
+				__attribute__((fallthrough));
 			case 2: AddProd(*xr, Y(col + 1), &A(col + 1, row + i));
+				__attribute__((fallthrough));
 			case 1: AddProd(*xr, Y(col), &A(col, row + i));
+				__attribute__((fallthrough));
 			case 0:;	// do nothing!
 			}
 
@@ -344,8 +351,11 @@ static void sger_row_noalpha8x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_IN
 	switch (m - row)
 	{
 	case 3: for (col = 0; col < n; col++) AddProd(X(row + 2), Y(col), &A(col, row + 2));
+		__attribute__((fallthrough));
 	case 2: for (col = 0; col < n; col++) AddProd(X(row + 1), Y(col), &A(col, row + 1));
+		__attribute__((fallthrough));
 	case 1: for (col = 0; col < n; col++) AddProd(X(row), Y(col), &A(col, row));
+		__attribute__((fallthrough));
 	case 0:;	// do nothing!
 	}
 }
@@ -377,8 +387,11 @@ static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_IN
 			switch (n - col)
 			{
 			case 3: AddProd(*xr, Y(col + 2), &A(col + 2, row + i));
+				__attribute__((fallthrough));
 			case 2: AddProd(*xr, Y(col + 1), &A(col + 1, row + i));
+				__attribute__((fallthrough));
 			case 1: AddProd(*xr, Y(col), &A(col, row + i));
+				__attribute__((fallthrough));
 			case 0:;	// do nothing!
 			}
 
@@ -390,8 +403,11 @@ static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_IN
 	switch (m - row)
 	{
 	case 3: for (col = 0; col < n; col++) AddProd(X(row + 2), Y(col), &A(col, row + 2));
+		__attribute__((fallthrough));
 	case 2: for (col = 0; col < n; col++) AddProd(X(row + 1), Y(col), &A(col, row + 1));
+		__attribute__((fallthrough));
 	case 1: for (col = 0; col < n; col++) AddProd(X(row), Y(col), &A(col, row));
+		__attribute__((fallthrough));
 	case 0:;	// do nothing!
 	}
 }
@@ -425,8 +441,11 @@ static void sger_row_noalpha4x4_fma(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLA
 			switch (n - col)
 			{
 			case 3: AddProd(*xr, Y(col + 2), &A(col + 2, row + i));
+				__attribute__((fallthrough));
 			case 2: AddProd(*xr, Y(col + 1), &A(col + 1, row + i));
+				__attribute__((fallthrough));
 			case 1: AddProd(*xr, Y(col), &A(col, row + i));
+				__attribute__((fallthrough));
 			case 0:;	// do nothing!
 			}
 
@@ -438,8 +457,11 @@ static void sger_row_noalpha4x4_fma(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLA
 	switch (m - row)
 	{
 	case 3: for (col = 0; col < n; col++) AddProd(X(row + 2), Y(col), &A(col, row + 2));
+		__attribute__((fallthrough));
 	case 2: for (col = 0; col < n; col++) AddProd(X(row + 1), Y(col), &A(col, row + 1));
+		__attribute__((fallthrough));
 	case 1: for (col = 0; col < n; col++) AddProd(X(row), Y(col), &A(col, row));
+		__attribute__((fallthrough));
 	case 0:;	// do nothing!
 	}
 }
@@ -449,7 +471,7 @@ static void sger_row_noalpha4x4_fma(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLA
 //------------------------------------------------------
 //
 //------------------------------------------------------
-static void sger_row_noalpha(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda)
+__attribute__((unused)) static void sger_row_noalpha(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda)
 {
 	register float xr;
 	float *yc, *ap;
@@ -482,8 +504,11 @@ static void sger_row_noalpha(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS_INDEX
 //------------------------------------------------------
 // 
 //------------------------------------------------------
-static void sger_row_noalpha_plain(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda)
+__attribute__((unused)) static void sger_row_noalpha_plain(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda)
 {
+	(void)incx;
+	(void)incy;
+	(void)lda;
 	for (CBLAS_INDEX row = 0; row < m; row++)
 	{
 		for (CBLAS_INDEX col = 0; col < n; col++)
@@ -504,10 +529,6 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 	int info = 0;
 	if (layout != CblasRowMajor && layout != CblasColMajor)
 		info = 1;
-	else if (m < 0)
-		info = 2;
-	else if (n < 0)
-		info = 3;
 	else if (!x)
 		info = 5;
 	else if (incx == 0)
@@ -561,9 +582,9 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 		}
 		else
 		{
-			for (int row = 0; row < m; row++)
+			for (CBLAS_INDEX row = 0; row < m; row++)
 			{
-				for (int col = 0; col < n; col++)
+				for (CBLAS_INDEX col = 0; col < n; col++)
 				{
 					a[row * n + col] += alpha * x[row] * y[col];
 				}
@@ -573,9 +594,9 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
     {
 		if (alpha == 1.0f)
 		{
-			for (int col = 0; col < n; col++)
+			for (CBLAS_INDEX col = 0; col < n; col++)
 			{
-				for (int row = 0; row < m; row++)
+				for (CBLAS_INDEX row = 0; row < m; row++)
 				{
 					a[col * m + row] += x[row] * y[col];
 				}
@@ -583,9 +604,9 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 		}
 		else
 		{
-			for (int col = 0; col < n; col++)
+			for (CBLAS_INDEX col = 0; col < n; col++)
 			{
-				for (int row = 0; row < m; row++)
+				for (CBLAS_INDEX row = 0; row < m; row++)
 				{
 					a[col * m + row] += alpha * x[row] * y[col];
 				}
@@ -605,10 +626,6 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
 	int info = 0;
 	if (layout != CblasRowMajor && layout != CblasColMajor)
 		info = 1;
-	else if (m < 0)
-		info = 2;
-	else if (n < 0)
-		info = 3;
 	else if (!x)
 		info = 5;
 	else if (incx == 0)
@@ -645,9 +662,9 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
     {
 		if (alpha == 1.0)
 		{
-			for (int row = 0; row < m; row++)
+			for (CBLAS_INDEX row = 0; row < m; row++)
 			{
-				for (int col = 0; col < n; col++)
+				for (CBLAS_INDEX col = 0; col < n; col++)
 				{
 					a[row * n + col] += x[row] * y[col];
 				}
@@ -655,9 +672,9 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
 		}
 		else
 		{
-			for (int row = 0; row < m; row++)
+			for (CBLAS_INDEX row = 0; row < m; row++)
 			{
-				for (int col = 0; col < n; col++)
+				for (CBLAS_INDEX col = 0; col < n; col++)
 				{
 					a[row * n + col] += alpha * x[row] * y[col];
 				}
@@ -667,9 +684,9 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
     {
 		if (alpha == 1.0)
 		{
-			for (int col = 0; col < n; col++)
+			for (CBLAS_INDEX col = 0; col < n; col++)
 			{
-				for (int row = 0; row < m; row++)
+				for (CBLAS_INDEX row = 0; row < m; row++)
 				{
 					a[col * m + row] += x[row] * y[col];
 				}
@@ -677,9 +694,9 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
 		}
 		else
 		{
-			for (int col = 0; col < n; col++)
+			for (CBLAS_INDEX col = 0; col < n; col++)
 			{
-				for (int row = 0; row < m; row++)
+				for (CBLAS_INDEX row = 0; row < m; row++)
 				{
 					a[col * m + row] += alpha * x[row] * y[col];
 				}

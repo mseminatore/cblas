@@ -70,7 +70,7 @@ static float* svec_fill(CBLAS_INDEX size, float val)
 	if (!result)
 		return result;
 
-	for (int i = 0; i < size; i++)
+	for (CBLAS_INDEX i = 0; i < size; i++)
 		result[i] = val;
 
 	return result;
@@ -86,7 +86,7 @@ static double* dvec_fill(CBLAS_INDEX size, double val)
 	if (!result)
 		return result;
 
-	for (int i = 0; i < size; i++)
+	for (CBLAS_INDEX i = 0; i < size; i++)
 		result[i] = val;
 
 	return result;
@@ -128,7 +128,7 @@ static double* dvec_ones(CBLAS_INDEX size)
 //------------------------------------------------------
 //
 //------------------------------------------------------
-static void print_sarray(int n, float *x)
+__attribute__((unused)) static void print_sarray(int n, float *x)
 {
 	putchar('{');
 	
@@ -143,7 +143,7 @@ static void print_sarray(int n, float *x)
 //------------------------------------------------------
 //
 //------------------------------------------------------
-static void print_darray(int n, double* x)
+__attribute__((unused)) static void print_darray(int n, double* x)
 {
 	putchar('{');
 
@@ -547,7 +547,7 @@ static void test_gemv()
 
 		float smtx[9] = {1,0,0,0,1,0,0,0,1};
 		float sx[3] = {2,2,2};
-		float sy[3] = {0,0,0};
+		// float sy[3] = {0,0,0};
 		float sz[3] = {4, 4, 4};
 
 		TEST(cbu_sge_is_identity(smtx, 3, 3));
@@ -574,7 +574,7 @@ static void test_gemv()
 
 		double dmtx[9] = {1,0,0,0,1,0,0,0,1};
 		double dx[3] = {2,2,2};
-		double dy[3] = {0,0,0};
+		// double dy[3] = {0,0,0};
 		double dz[3] = {4,4,4};
 
 		TEST(cbu_dge_is_identity(dmtx, 3, 3));
@@ -767,6 +767,8 @@ static void test_level3()
 //------------------------------------------------------
 int test_main(int argc, char *argv[])
 {
+	(void)argc;
+	(void)argv;
 	sbig_ones	= svec_ones(BIG_ARRAY);
 	sbig_zeroes	= svec_zeroes(BIG_ARRAY);
 

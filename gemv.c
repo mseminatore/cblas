@@ -17,11 +17,7 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 
 #ifdef CBLAS_XERBLA_INPUTS
 	int info = 0;
-	if (m < 0)
-		info = 3;
-	else if (n < 0)
-		info = 4;
-	else if (!a)
+	if (!a)
 		info = 6;
 	else if (lda < MAX(1, m))
 		info = 7;
@@ -39,7 +35,7 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 		return;
 	}
 #else
-	if (m < 0 || n < 0 || !a || lda < MAX(1, m) || !x || incx == 0 || !y || incy == 0)
+	if (!a || lda < MAX(1, m) || !x || incx == 0 || !y || incy == 0)
 	{
 		assert(m >= 0 && n >= 0 && a && lda >= MAX(1, m) && x && y && incx != 0 && incy != 0);
 		return;
@@ -55,11 +51,11 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 		if (alpha == 1.0f && beta == 1.0f)
 		{
 			// for each row of the matrix
-			for (int row = 0; row < m; row++)
+			for (CBLAS_INDEX row = 0; row < m; row++)
 			{
 				sum = 0.0f;
 
-				for (int col = 0; col < n; col++)
+				for (CBLAS_INDEX col = 0; col < n; col++)
 				{
 					sum += a[row * n + col] * x[col];
 				}
@@ -70,11 +66,11 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 		else
 		{
 			// for each row of the matrix
-			for (int row = 0; row < m; row++)
+			for (CBLAS_INDEX row = 0; row < m; row++)
 			{
 				sum = 0.0f;
 
-				for (int col = 0; col < n; col++)
+				for (CBLAS_INDEX col = 0; col < n; col++)
 				{
 					sum += alpha * a[row * n + col] * x[col];
 				}
@@ -87,11 +83,11 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 	{
 		if (alpha == 1.0f && beta == 1.0f)
 		{
-			for (int col = 0; col < n; col++)
+			for (CBLAS_INDEX col = 0; col < n; col++)
 			{
 				sum = 0.0f;
 
-				for (int row = 0; row < m; row++)
+				for (CBLAS_INDEX row = 0; row < m; row++)
 				{
 					sum += a[row * n + col] * x[row];
 				}
@@ -101,11 +97,11 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 		}
 		else
 		{
-			for (int col = 0; col < n; col++)
+			for (CBLAS_INDEX col = 0; col < n; col++)
 			{
 				sum = 0.0f;
 
-				for (int row = 0; row < m; row++)
+				for (CBLAS_INDEX row = 0; row < m; row++)
 				{
 					sum += alpha * a[row * n + col] * x[row];
 				}
@@ -127,11 +123,7 @@ void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 
 #ifdef CBLAS_XERBLA_INPUTS
 	int info = 0;
-	if (m < 0)
-		info = 3;
-	else if (n < 0)
-		info = 4;
-	else if (!a)
+	if (!a)
 		info = 6;
 	else if (lda < MAX(1, m))
 		info = 7;
@@ -149,7 +141,7 @@ void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 		return;
 	}
 #else
-	if (m < 0 || n < 0 || !a || lda < MAX(1, m) || !x || incx == 0 || !y || incy == 0)
+	if (!a || lda < MAX(1, m) || !x || incx == 0 || !y || incy == 0)
 	{
 		assert(m >= 0 && n >= 0 && a && lda >= MAX(1, m) && x && y && incx != 0 && incy != 0);
 		return;
@@ -165,11 +157,11 @@ void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 		if (alpha == 1.0f && beta == 1.0f)
 		{
 			// for each row of the matrix
-			for (int row = 0; row < m; row++)
+			for (CBLAS_INDEX row = 0; row < m; row++)
 			{
 				sum = 0.0;
 
-				for (int col = 0; col < n; col++)
+				for (CBLAS_INDEX col = 0; col < n; col++)
 				{
 					sum += a[row * n + col] * x[col];
 				}
@@ -180,11 +172,11 @@ void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 		else
 		{
 			// for each row of the matrix
-			for (int row = 0; row < m; row++)
+			for (CBLAS_INDEX row = 0; row < m; row++)
 			{
 				sum = 0.0;
 
-				for (int col = 0; col < n; col++)
+				for (CBLAS_INDEX col = 0; col < n; col++)
 				{
 					sum += alpha * a[row * n + col] * x[col];
 				}
@@ -197,11 +189,11 @@ void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 	{
 		if (alpha == 1.0 && beta == 1.0)
 		{
-			for (int col = 0; col < n; col++)
+			for (CBLAS_INDEX col = 0; col < n; col++)
 			{
 				sum = 0.0;
 
-				for (int row = 0; row < m; row++)
+				for (CBLAS_INDEX row = 0; row < m; row++)
 				{
 					sum += a[row * n + col] * x[row];
 				}
@@ -211,11 +203,11 @@ void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 		}
 		else
 		{
-			for (int col = 0; col < n; col++)
+			for (CBLAS_INDEX col = 0; col < n; col++)
 			{
 				sum = 0.0;
 
-				for (int row = 0; row < m; row++)
+				for (CBLAS_INDEX row = 0; row < m; row++)
 				{
 					sum += alpha * a[row * n + col] * x[row];
 				}
