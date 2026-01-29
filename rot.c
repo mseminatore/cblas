@@ -326,7 +326,8 @@ void cblas_srot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX
         return;
 #endif
 #endif
-        // Fallback scalar implementation with unrolling
+        // Fallback: Optimized scalar implementation with 4-way unrolling
+        // (Only executed when SIMD not available or not enabled)
         CBLAS_INDEX i = 0;
 
         for (; i + 4 <= n; i += 4)
@@ -411,7 +412,8 @@ void cblas_drot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IND
         return;
 #endif
 #endif
-        // Fallback scalar implementation with unrolling
+        // Fallback: Optimized scalar implementation with 4-way unrolling
+        // (Only executed when SIMD not available or not enabled)
         CBLAS_INDEX i = 0;
 
         for (; i + 4 <= n; i += 4)
