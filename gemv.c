@@ -46,6 +46,10 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 	if (m == 0 || n == 0 || (alpha == 0.0f && beta == 1.0f))
 		return;
 
+    CBLAS_STATS_START();
+
+    int mt_used = (m * n > CBLAS_MT_GEMV) ? 1 : 0;
+
 	if ((trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor))
 	{
 		if (alpha == 1.0f && beta == 1.0f)
@@ -110,6 +114,8 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 			}
 		}
 	}
+
+    CBLAS_STATS_END("sgemv", m * n, mt_used);
 }
 
 //------------------------------------------------------
@@ -151,6 +157,10 @@ void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 	// early returns
 	if (m == 0 || n == 0 || (alpha == 0.0 && beta == 1.0))
 		return;
+
+    CBLAS_STATS_START();
+
+    int mt_used = (m * n > CBLAS_MT_GEMV) ? 1 : 0;
 
 	if ((trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor))
 	{
@@ -216,4 +226,6 @@ void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 			}
 		}
 	}
+
+    CBLAS_STATS_END("dgemv", m * n, mt_used);
 }

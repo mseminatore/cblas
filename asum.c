@@ -212,6 +212,10 @@ float cblas_sasum(CBLAS_INDEX n, float *x, CBLAS_INDEX incx)
 
     CBLAS_VALIDATE_VEC1(n, x, incx, sum);
 
+    CBLAS_STATS_START();
+
+    int mt_used = 0;
+
     if (incx == 1)
     {
 #if defined(USE_SSE) && defined(USE_SIMD)
@@ -252,6 +256,8 @@ float cblas_sasum(CBLAS_INDEX n, float *x, CBLAS_INDEX incx)
         }
     }
 
+    CBLAS_STATS_END("sasum", n, mt_used);
+
     return sum;
 }
 
@@ -263,6 +269,10 @@ double cblas_dasum(CBLAS_INDEX n, double *x, CBLAS_INDEX incx)
     double sum = 0.0;
 
     CBLAS_VALIDATE_VEC1(n, x, incx, sum);
+
+    CBLAS_STATS_START();
+
+    int mt_used = 0;
 
     if (incx == 1)
     {
@@ -303,6 +313,8 @@ double cblas_dasum(CBLAS_INDEX n, double *x, CBLAS_INDEX incx)
             x += incx;
         }
     }
+
+    CBLAS_STATS_END("dasum", n, mt_used);
 
     return sum;
 }

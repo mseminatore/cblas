@@ -529,9 +529,16 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 {
     CBLAS_VALIDATE_GER(layout, m, n, x, incx, y, incy, a, lda, );
 
+    CBLAS_STATS_START();
+
+    int mt_used = (m * n > CBLAS_MT_GER) ? 1 : 0;
+
 	// fast reject case
 	if (m == 0 ||  n == 0 || alpha == 0.0f)
+    {
+        CBLAS_STATS_END("sger", m * n, mt_used);
 		return;
+    }
 
 	// TODO - handle incx == 1 special case
     if (layout == CblasRowMajor)
@@ -584,6 +591,8 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 			}
 		}
 	}
+
+    CBLAS_STATS_END("sger", m * n, mt_used);
 }
 
 //------------------------------------------------------
@@ -592,9 +601,17 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy, double *a, CBLAS_INDEX lda)
 {
     CBLAS_VALIDATE_GER(layout, m, n, x, incx, y, incy, a, lda, );
+
+    CBLAS_STATS_START();
+
+    int mt_used = (m * n > CBLAS_MT_GER) ? 1 : 0;
+
 	// fast reject case
 	if (m == 0 ||  n == 0 || alpha == 0.0f)
+    {
+        CBLAS_STATS_END("dger", m * n, mt_used);
 		return;
+    }
 
     if (layout == CblasRowMajor)
     {
@@ -642,4 +659,5 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
 		}
 	}
 
+    CBLAS_STATS_END("dger", m * n, mt_used);
 }

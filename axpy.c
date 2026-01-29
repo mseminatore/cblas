@@ -12,6 +12,10 @@ void cblas_saxpy(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *
 {
     CBLAS_VALIDATE_AXPY(n, alpha, x, incx, y, incy, );
 
+    CBLAS_STATS_START();
+
+    int mt_used = 0;
+
     if (alpha == 1.0f)
     {
         for (CBLAS_INDEX i = 0; i < n; i++)
@@ -30,6 +34,8 @@ void cblas_saxpy(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *
             y += incy;
         }
     }
+
+    CBLAS_STATS_END("saxpy", n, mt_used);
 }
 
 //------------------------------------------------------
@@ -38,6 +44,10 @@ void cblas_saxpy(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *
 void cblas_daxpy(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy)
 {
     CBLAS_VALIDATE_AXPY(n, alpha, x, incx, y, incy, );
+
+    CBLAS_STATS_START();
+
+    int mt_used = 0;
 
     if (alpha == 1.0)
     {
@@ -57,4 +67,6 @@ void cblas_daxpy(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, doubl
             y += incy;
         }
     }
+
+    CBLAS_STATS_END("daxpy", n, mt_used);
 }

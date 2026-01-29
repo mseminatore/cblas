@@ -187,6 +187,10 @@ float cblas_snrm2(CBLAS_INDEX n, float *x, CBLAS_INDEX incx)
 
     CBLAS_VALIDATE_VEC1(n, x, incx, sum);
 
+    CBLAS_STATS_START();
+
+    int mt_used = 0;
+
     if (incx == 1)
     {
 #if defined(USE_SSE) && defined(USE_SIMD)
@@ -227,6 +231,8 @@ float cblas_snrm2(CBLAS_INDEX n, float *x, CBLAS_INDEX incx)
         }
     }
 
+    CBLAS_STATS_END("snrm2", n, mt_used);
+
     return sqrtf(sum);
 }
 
@@ -238,6 +244,10 @@ double cblas_dnrm2(CBLAS_INDEX n, double *x, CBLAS_INDEX incx)
     double sum = 0.0;
 
     CBLAS_VALIDATE_VEC1(n, x, incx, sum);
+
+    CBLAS_STATS_START();
+
+    int mt_used = 0;
 
     if (incx == 1)
     {
@@ -278,6 +288,8 @@ double cblas_dnrm2(CBLAS_INDEX n, double *x, CBLAS_INDEX incx)
             x += incx;
         }
     }
+
+    CBLAS_STATS_END("dnrm2", n, mt_used);
 
     return sqrt(sum);
 }
