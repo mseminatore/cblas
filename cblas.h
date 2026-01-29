@@ -986,7 +986,7 @@ void cblas_print_configuration(void);
  * @return L2 cache size in bytes
  * @note Thread-safe. Used for cache blocking tuning.
  */
-int cpu_get_l2_cache_size(voic);
+int cpu_get_l2_cache_size(void);
 
 //------------------------------------------------------
 // internal functions
