@@ -1,0 +1,1 @@
+/home/runner/work/cblas/.codeql-scratch/dbs/cpp/working/autobuild/bin/cc  -g -O2 -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/gemm_perf.dir/link.d CMakeFiles/gemm_perf.dir/gemm_perf.c.o -o gemm_perf  libcblas.a -lm

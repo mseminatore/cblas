@@ -1,0 +1,1 @@
+/home/runner/work/cblas/.codeql-scratch/dbs/cpp/working/autobuild/bin/cc  -g -O2 -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/ger_perf.dir/link.d CMakeFiles/ger_perf.dir/ger_perf.c.o -o ger_perf  libcblas.a -lm

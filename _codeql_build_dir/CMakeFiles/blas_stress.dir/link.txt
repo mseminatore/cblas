@@ -1,0 +1,1 @@
+/home/runner/work/cblas/.codeql-scratch/dbs/cpp/working/autobuild/bin/cc  -g -O2 -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/blas_stress.dir/link.d CMakeFiles/blas_stress.dir/test_main.c.o CMakeFiles/blas_stress.dir/test_stress.c.o -o blas_stress  libcblas.a -lm
