@@ -111,6 +111,9 @@ target_link_libraries(test_stats cblas ${MATH_LIB})
 add_executable(test_threshold test_threshold.c)
 target_link_libraries(test_threshold cblas ${MATH_LIB})
 
+add_executable(test_mt_debug test_mt_debug.c)
+target_link_libraries(test_mt_debug cblas ${MATH_LIB})
+
 # install targets
 install(TARGETS cblas DESTINATION lib)
 install(FILES cblas.h DESTINATION include)
