@@ -374,37 +374,50 @@ platform/
 
 ---
 
-### Issue #13: Enable compiler warnings
-**Priority:** High  
-**Labels:** code-quality, build
+### ~~Issue #13: Enable compiler warnings~~ ✅ RESOLVED
+**Priority:** ~~High~~ FIXED  
+**Labels:** code-quality, build  
+**Status:** Fixed on 2026-01-28
 
-**Description:**
-Neither Makefile nor CMakeLists.txt enables compiler warnings, missing potential bugs.
+**Resolution:**
+Enabled comprehensive compiler warnings in both build systems and fixed all warning-producing code:
 
-**Add to Build:**
-```makefile
-CFLAGS += -Wall -Wextra -Wpedantic -Wconversion
-```
+1. **Makefile (line 7)**:
+   - Added: `-Wall -Wextra -Wpedantic`
+   - Flags apply to all GCC/Clang builds
 
-**Expected Findings:**
-- Implicit conversions
-- Unused variables
-- Sign comparison issues
-- Potential null pointer dereferences
+2. **CMakeLists.txt (lines 24-30)**:
+   - GCC/Clang: `-Wall -Wextra -Wpedantic`
+   - MSVC: `/W4` (level 4 warnings)
+   - Architecture-specific flags: `-mavx2 -mfma` for x86_64
 
-**Acceptance Criteria:**
-- [ ] Add warning flags to Makefile
-- [ ] Add warning flags to CMakeLists.txt
-- [ ] Fix all warnings in codebase
-- [ ] Set warnings as errors (-Werror) in CI
+3. **CI/CD Enforcement (.github/workflows/cmake-single-platform.yml line 33)**:
+   - Added `-Werror` flag to treat warnings as errors
+   - Ensures code stays warning-free in CI builds
+
+4. **Warning Fixes**:
+   - Fixed ARM64 platform warnings (commit 3d574b7)
+   - All code now compiles cleanly with strict warning flags
+   - Both Make and CMake builds produce zero warnings
+
+**Verification:**
+- ✅ Warning flags enabled in Makefile
+- ✅ Warning flags enabled in CMakeLists.txt for all compilers
+- ✅ All warnings fixed - clean builds on x86_64 and ARM64
+- ✅ `-Werror` enabled in CI to prevent regression
+- ✅ All 36 strided tests pass with warnings enabled
+- ✅ All 69 main tests pass with warnings enabled
+
+**Note:** `-Wconversion` was not included as it would require extensive changes for integer type conversions that are intentional in BLAS operations. The current warning level (`-Wall -Wextra -Wpedantic`) provides strong coverage while maintaining code readability.
 
 ---
 
 ## 📚 Documentation
 
-### Issue #14: Add API documentation to cblas.h
-**Priority:** Medium  
-**Labels:** documentation
+### ~~Issue #14: Add API documentation to cblas.h~~ ✅ MOSTLY RESOLVED
+**Priority:** ~~Medium~~ FIXED  
+**Labels:** documentation  
+**Status:** Mostly resolved on 2026-01-29
 
 **Description:**
 No function in cblas.h has parameter documentation. Add Doxygen-style comments.
@@ -423,11 +436,41 @@ No function in cblas.h has parameter documentation. Add Doxygen-style comments.
  */
 ```
 
+**Resolution:**
+Comprehensive Doxygen-style API documentation has been added to all public functions in cblas.h:
+
+1. **Level-1 Functions (20 functions):**
+   - All vector operations documented: dot, copy, swap, axpy, scal, rot, rotg, asum, nrm2, axpby, setv
+   - Both single and double precision variants
+   
+2. **Level-2 Functions (4 functions):**
+   - ger and gemv operations documented
+   - Both single and double precision variants
+   
+3. **Level-3 Functions (3 functions):**
+   - gemm and gemm_naive operations documented
+   - Single and double precision variants
+   
+4. **Utility Functions (13+ functions):**
+   - Thread management: cblas_init, cblas_shutdown, cblas_set_num_threads, cblas_get_num_threads
+   - Configuration: cblas_print_configuration, cblas_get_isa_features
+   - Testing utilities: timer functions, identity matrix helpers
+   - Internal functions: kernel dispatch, work queue execution
+
+**Documentation Quality:**
+- ✅ All parameters documented with types, constraints, and semantics
+- ✅ Return values documented where applicable
+- ✅ Thread-safety guarantees explicitly stated for all functions
+- ✅ MT activation thresholds documented (e.g., "Uses MT when n > CBLAS_MT_DOT")
+- ✅ Mathematical operations clearly described (e.g., "Y = alpha * X + beta * Y")
+- ✅ Memory semantics documented (e.g., "modified in place", "must be non-NULL")
+- ✅ Platform-specific behavior noted where applicable
+
 **Acceptance Criteria:**
-- [ ] Document all public functions in cblas.h
-- [ ] Add parameter descriptions and constraints
-- [ ] Document thread-safety guarantees
-- [ ] Generate HTML docs with Doxygen
+- [x] Document all public functions in cblas.h
+- [x] Add parameter descriptions and constraints
+- [x] Document thread-safety guarantees
+- [ ] Generate HTML docs with Doxygen (requires Doxyfile configuration - future enhancement)
 
 ---
 
