@@ -55,7 +55,24 @@ void cblas_sswap(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
 
 #ifdef MT_ENABLED
     int mt_used = (n > CBLAS_MT_COPY) ? 1 : 0;
-    cblas_level1_exec(sizeof(float), cblas_sswap_k, n, x, incx, y, incy);
+    
+    if (mt_used)
+    {
+        cblas_level1_exec(sizeof(float), cblas_sswap_k, n, x, incx, y, incy);
+    }
+    else
+    {
+        float temp;
+        for (CBLAS_INDEX i = 0; i < n; i++)
+        {
+            temp = *y;
+            *y = *x;
+            *x = temp;
+
+            x += incx;
+            y += incy;
+        }
+    }
 #else
     int mt_used = 0;
     float temp;
@@ -84,7 +101,24 @@ void cblas_dswap(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IN
 
 #ifdef MT_ENABLED
     int mt_used = (n > CBLAS_MT_COPY) ? 1 : 0;
-    cblas_level1_exec(sizeof(double), cblas_dswap_k, n, x, incx, y, incy);
+    
+    if (mt_used)
+    {
+        cblas_level1_exec(sizeof(double), cblas_dswap_k, n, x, incx, y, incy);
+    }
+    else
+    {
+        double temp;
+        for (CBLAS_INDEX i = 0; i < n; i++)
+        {
+            temp = *y;
+            *y = *x;
+            *x = temp;
+
+            x += incx;
+            y += incy;
+        }    
+    }
 #else
     int mt_used = 0;
     double temp;
