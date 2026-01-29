@@ -83,6 +83,10 @@ static void AddProd4x1(float x, float *y, float *a)
 CBLAS_UNUSED static void AddProd8x4_AVX(float* x, float* y, float* a, CBLAS_INDEX lda)
 {
 #if defined(__aarch64__)
+	(void)x;
+	(void)y;
+	(void)a;
+	(void)lda;
 #else
 	__m256 x0, x1, x2, x3, y0, a0, a1, a2, a3;
 
