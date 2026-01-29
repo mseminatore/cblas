@@ -24,7 +24,7 @@ else
 	endif
 endif
 
-all: $(LIBNAME) blas_stress blas_test test_strided test_stats gemm_perf ger_perf dot_perf nrm2_asum_rot_perf
+all: $(LIBNAME) blas_stress blas_test test_strided test_stats test_threshold gemm_perf ger_perf dot_perf nrm2_asum_rot_perf
 	
 $(LIBNAME): $(OBJS)
 	ar rcs $(LIBNAME) $(OBJS)
@@ -42,6 +42,9 @@ test_stats: $(LIBNAME) test_stats.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 test_overhead: $(LIBNAME) test_overhead.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
+test_threshold: $(LIBNAME) test_threshold.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 gemm_perf: $(LIBNAME) gemm_perf.o
@@ -68,5 +71,5 @@ test: all
 	./blas_test
 
 clean:
-	rm $(TARGET) $(OBJS) $(LIBNAME) test_main.o test.o test_stress.o blas_stress blas_test.o blas_test gemm_perf.o gemm_perf ger_perf.o ger_perf dot_perf.o dot_perf nrm2_asum_rot_perf.o nrm2_asum_rot_perf
+	rm $(TARGET) $(OBJS) $(LIBNAME) test_main.o test.o test_stress.o blas_stress blas_test.o blas_test test_threshold.o test_threshold gemm_perf.o gemm_perf ger_perf.o ger_perf dot_perf.o dot_perf nrm2_asum_rot_perf.o nrm2_asum_rot_perf
 

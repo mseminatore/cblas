@@ -188,12 +188,36 @@ void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
     CBLAS_STATS_START();
 
 #ifdef MT_ENABLED
-    kernel_function kernel = cblas_scopy_k;
-    if (incx == 1 && incy == 1)
-        kernel = cblas_scopy_k_noinc;
-
     int mt_used = (n > CBLAS_MT_COPY) ? 1 : 0;
-    cblas_level1_exec(sizeof(float), kernel, n, x, incx, y, incy);
+    
+    if (mt_used)
+    {
+        kernel_function kernel = cblas_scopy_k;
+        if (incx == 1 && incy == 1)
+            kernel = cblas_scopy_k_noinc;
+
+        cblas_level1_exec(sizeof(float), kernel, n, x, incx, y, incy);
+    }
+    else
+    {
+        if (incx == 1 && incy == 1)
+        {
+            // TODO - unroll this loop
+            for (CBLAS_INDEX i = 0; i < n; i++)
+            {
+                *y++ = *x++;
+            }
+        }
+        else
+        {
+            for (CBLAS_INDEX i = 0; i < n; i++)
+            {
+                *y = *x;
+                x += incx;
+                y += incy;
+            }
+        }
+    }
 #else
     int mt_used = 0;
     if (incx == 1 && incy == 1)
@@ -252,7 +276,31 @@ void cblas_dcopy(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IN
 
 #ifdef MT_ENABLED
     int mt_used = (n > CBLAS_MT_COPY) ? 1 : 0;
-    cblas_level1_exec(sizeof(double), cblas_dcopy_k, n, x, incx, y, incy);
+    
+    if (mt_used)
+    {
+        cblas_level1_exec(sizeof(double), cblas_dcopy_k, n, x, incx, y, incy);
+    }
+    else
+    {
+        if (incx == 1 && incy == 1)
+        {
+            // TODO - unroll this loop
+            for (CBLAS_INDEX i = 0; i < n; i++)
+            {
+                *y++ = *x++;
+            }
+        }
+        else
+        {
+            for (CBLAS_INDEX i = 0; i < n; i++)
+            {
+                *y = *x;
+                x += incx;
+                y += incy;
+            }
+        }
+    }
 #else
     int mt_used = 0;
     if (incx == 1 && incy == 1)

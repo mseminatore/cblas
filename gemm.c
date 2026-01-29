@@ -642,57 +642,74 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 
 #if defined(MT_ENABLED)
     int mt_used = (m * n * k > CBLAS_MT_GEMM) ? 1 : 0;
-    CBLAS_INDEX horiz_tiles = k / kc + 1;
-    CBLAS_INDEX vert_tiles = m / mc + 1;
-    CBLAS_INDEX total_tiles = horiz_tiles * vert_tiles;
-    CBLAS_INDEX tile_count = 0;
-
-    //printf("tile count = %u\n", total_tiles);
-    #ifdef _WIN32
-        work_queue_t *queue = _malloca(total_tiles * sizeof(work_queue_t));
-        cblas_args_t *args = _malloca(total_tiles * sizeof(cblas_args_t));
-    #else
-        work_queue_t *queue = alloca(total_tiles * sizeof(work_queue_t));
-        cblas_args_t *args = alloca(total_tiles * sizeof(cblas_args_t));
-    #endif
-
-    // Compute an mc x n block of C by a call to the InnerKernel
-    for (CBLAS_INDEX p = 0; p < k; p += kc) 
+    
+    if (mt_used)
     {
-        pb = MIN(k - p, kc);
-        for (CBLAS_INDEX row = 0; row < m; row += mc) 
+        CBLAS_INDEX horiz_tiles = k / kc + 1;
+        CBLAS_INDEX vert_tiles = m / mc + 1;
+        CBLAS_INDEX total_tiles = horiz_tiles * vert_tiles;
+        CBLAS_INDEX tile_count = 0;
+
+        //printf("tile count = %u\n", total_tiles);
+        #ifdef _WIN32
+            work_queue_t *queue = _malloca(total_tiles * sizeof(work_queue_t));
+            cblas_args_t *args = _malloca(total_tiles * sizeof(cblas_args_t));
+        #else
+            work_queue_t *queue = alloca(total_tiles * sizeof(work_queue_t));
+            cblas_args_t *args = alloca(total_tiles * sizeof(cblas_args_t));
+        #endif
+
+        // Compute an mc x n block of C by a call to the InnerKernel
+        for (CBLAS_INDEX p = 0; p < k; p += kc) 
         {
-            ib = MIN(m - row, mc);
+            pb = MIN(k - p, kc);
+            for (CBLAS_INDEX row = 0; row < m; row += mc) 
+            {
+                ib = MIN(m - row, mc);
 
-            args[tile_count].incx = 1;
-            args[tile_count].incy = 1;
-            args[tile_count].n = n;
-            args[tile_count].lda = lda;
-            args[tile_count].ldb = ldb;
-            args[tile_count].ldc = ldc;
-            args[tile_count].a = &A(p, row);
-            args[tile_count].b = &B(0, p);
-            args[tile_count].c = &C(0, row);
-            args[tile_count].ib = ib;
-            args[tile_count].pb = pb;
-        
-            queue[tile_count].finished   = 0;
-            queue[tile_count].args       = &args[tile_count];
-            queue[tile_count].kernel     = blas_kernels.sgemm_k;
-            queue[tile_count].next       = &queue[tile_count + 1];
+                args[tile_count].incx = 1;
+                args[tile_count].incy = 1;
+                args[tile_count].n = n;
+                args[tile_count].lda = lda;
+                args[tile_count].ldb = ldb;
+                args[tile_count].ldc = ldc;
+                args[tile_count].a = &A(p, row);
+                args[tile_count].b = &B(0, p);
+                args[tile_count].c = &C(0, row);
+                args[tile_count].ib = ib;
+                args[tile_count].pb = pb;
+            
+                queue[tile_count].finished   = 0;
+                queue[tile_count].args       = &args[tile_count];
+                queue[tile_count].kernel     = blas_kernels.sgemm_k;
+                queue[tile_count].next       = &queue[tile_count + 1];
 
-            tile_count++;
-            // InnerKernel(ib, n, pb, &A(p, row), lda, &B(0, p), ldb, &C(0, row), ldc);
+                tile_count++;
+                // InnerKernel(ib, n, pb, &A(p, row), lda, &B(0, p), ldb, &C(0, row), ldc);
+            }
+        }
+
+        assert(tile_count <= total_tiles);
+
+        // mark end of task queue
+        queue[tile_count - 1].next = NULL;
+
+        // synchronously execute task queue
+        cblas_execute(tile_count, queue);
+    }
+    else
+    {
+        // Below threshold, use single-threaded implementation
+        for (CBLAS_INDEX p = 0; p < k; p += kc) 
+        {
+            pb = MIN(k - p, kc);
+            for (CBLAS_INDEX row = 0; row < m; row += mc) 
+            {
+                ib = MIN(m - row, mc);
+                InnerKernel(ib, n, pb, &A(p, row), lda, &B(0, p), ldb, &C(0, row), ldc);
+            }
         }
     }
-
-    assert(tile_count <= total_tiles);
-
-    // mark end of task queue
-    queue[tile_count - 1].next = NULL;
-
-    // synchronously execute task queue
-    cblas_execute(tile_count, queue);
 
 #else
     int mt_used = 0;
