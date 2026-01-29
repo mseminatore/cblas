@@ -437,6 +437,332 @@ static void test_drot_stride2(void)
 //------------------------------------------------------
 // Main test runner (called from test_main.c)
 //------------------------------------------------------
+//------------------------------------------------------
+// Test cblas_sswap with stride=3
+//------------------------------------------------------
+static void test_sswap_stride3(void)
+{
+    SUITE("cblas_sswap (stride=3)...\n");
+    
+    float sa3[60] = {0};
+    float sb3[60] = {0};
+    float sa3_copy[60] = {0};
+    float sb3_copy[60] = {0};
+    
+    init_strided_float(sa3, LOGICAL_SIZE, 3, 1.0f);
+    init_strided_float(sb3, LOGICAL_SIZE, 3, 10.0f);
+    memcpy(sa3_copy, sa3, sizeof(sa3));
+    memcpy(sb3_copy, sb3, sizeof(sb3));
+    
+    cblas_sswap(LOGICAL_SIZE, sa3, 3, sb3, 3);
+    
+    TEST(equal_strided_float(sa3, sb3_copy, LOGICAL_SIZE, 3) &&
+         equal_strided_float(sb3, sa3_copy, LOGICAL_SIZE, 3));
+}
+
+//------------------------------------------------------
+// Test cblas_dswap with stride=3
+//------------------------------------------------------
+static void test_dswap_stride3(void)
+{
+    SUITE("cblas_dswap (stride=3)...\n");
+    
+    double da3[60] = {0};
+    double db3[60] = {0};
+    double da3_copy[60] = {0};
+    double db3_copy[60] = {0};
+    
+    init_strided_double(da3, LOGICAL_SIZE, 3, 1.0);
+    init_strided_double(db3, LOGICAL_SIZE, 3, 10.0);
+    memcpy(da3_copy, da3, sizeof(da3));
+    memcpy(db3_copy, db3, sizeof(db3));
+    
+    cblas_dswap(LOGICAL_SIZE, da3, 3, db3, 3);
+    
+    TEST(equal_strided_double(da3, db3_copy, LOGICAL_SIZE, 3) &&
+         equal_strided_double(db3, da3_copy, LOGICAL_SIZE, 3));
+}
+
+//------------------------------------------------------
+// Test cblas_sdot with stride=3
+//------------------------------------------------------
+static void test_sdot_stride3(void)
+{
+    SUITE("cblas_sdot (stride=3)...\n");
+    
+    float sa3[60] = {0};
+    float sb3[60] = {0};
+    
+    init_strided_float(sa3, LOGICAL_SIZE, 3, 0.0f);
+    init_strided_float(sb3, LOGICAL_SIZE, 3, 0.0f);
+    
+    float result = cblas_sdot(LOGICAL_SIZE, sa3, 3, sb3, 3);
+    float expected = 0.0f + 1.0f + 4.0f + 9.0f + 16.0f + 25.0f + 36.0f + 49.0f + 64.0f + 81.0f; // 285
+    
+    TEST(fabsf(result - expected) < 1e-5f);
+}
+
+//------------------------------------------------------
+// Test cblas_ddot with stride=3
+//------------------------------------------------------
+static void test_ddot_stride3(void)
+{
+    SUITE("cblas_ddot (stride=3)...\n");
+    
+    double da3[60] = {0};
+    double db3[60] = {0};
+    
+    init_strided_double(da3, LOGICAL_SIZE, 3, 0.0);
+    init_strided_double(db3, LOGICAL_SIZE, 3, 0.0);
+    
+    double result = cblas_ddot(LOGICAL_SIZE, da3, 3, db3, 3);
+    double expected = 0.0 + 1.0 + 4.0 + 9.0 + 16.0 + 25.0 + 36.0 + 49.0 + 64.0 + 81.0; // 285
+    
+    TEST(fabs(result - expected) < 1e-10);
+}
+
+//------------------------------------------------------
+// Test cblas_saxpy with stride=3
+//------------------------------------------------------
+static void test_saxpy_stride3(void)
+{
+    SUITE("cblas_saxpy (stride=3)...\n");
+    
+    float sa3[60] = {0};
+    float sb3[60] = {0};
+    float expected[60] = {0};
+    
+    init_strided_float(sa3, LOGICAL_SIZE, 3, 1.0f);
+    init_strided_float(sb3, LOGICAL_SIZE, 3, 10.0f);
+    init_strided_float(expected, LOGICAL_SIZE, 3, 10.0f);
+    
+    // expected = 2.0 * sa3 + sb3
+    for (CBLAS_INDEX i = 0; i < LOGICAL_SIZE; i++)
+        expected[i * 3] += 2.0f * (1.0f + i);
+    
+    cblas_saxpy(LOGICAL_SIZE, 2.0f, sa3, 3, sb3, 3);
+    
+    TEST(equal_strided_float(sb3, expected, LOGICAL_SIZE, 3));
+}
+
+//------------------------------------------------------
+// Test cblas_daxpy with stride=3
+//------------------------------------------------------
+static void test_daxpy_stride3(void)
+{
+    SUITE("cblas_daxpy (stride=3)...\n");
+    
+    double da3[60] = {0};
+    double db3[60] = {0};
+    double expected[60] = {0};
+    
+    init_strided_double(da3, LOGICAL_SIZE, 3, 1.0);
+    init_strided_double(db3, LOGICAL_SIZE, 3, 10.0);
+    init_strided_double(expected, LOGICAL_SIZE, 3, 10.0);
+    
+    for (CBLAS_INDEX i = 0; i < LOGICAL_SIZE; i++)
+        expected[i * 3] += 2.0 * (1.0 + i);
+    
+    cblas_daxpy(LOGICAL_SIZE, 2.0, da3, 3, db3, 3);
+    
+    TEST(equal_strided_double(db3, expected, LOGICAL_SIZE, 3));
+}
+
+//------------------------------------------------------
+// Test cblas_sscal with stride=3
+//------------------------------------------------------
+static void test_sscal_stride3(void)
+{
+    SUITE("cblas_sscal (stride=3)...\n");
+    
+    float sa3[60] = {0};
+    float expected[60] = {0};
+    
+    init_strided_float(sa3, LOGICAL_SIZE, 3, 1.0f);
+    init_strided_float(expected, LOGICAL_SIZE, 3, 1.0f);
+    
+    for (CBLAS_INDEX i = 0; i < LOGICAL_SIZE; i++)
+        expected[i * 3] *= 2.5f;
+    
+    cblas_sscal(LOGICAL_SIZE, 2.5f, sa3, 3);
+    
+    TEST(equal_strided_float(sa3, expected, LOGICAL_SIZE, 3));
+}
+
+//------------------------------------------------------
+// Test cblas_dscal with stride=3
+//------------------------------------------------------
+static void test_dscal_stride3(void)
+{
+    SUITE("cblas_dscal (stride=3)...\n");
+    
+    double da3[60] = {0};
+    double expected[60] = {0};
+    
+    init_strided_double(da3, LOGICAL_SIZE, 3, 1.0);
+    init_strided_double(expected, LOGICAL_SIZE, 3, 1.0);
+    
+    for (CBLAS_INDEX i = 0; i < LOGICAL_SIZE; i++)
+        expected[i * 3] *= 2.5;
+    
+    cblas_dscal(LOGICAL_SIZE, 2.5, da3, 3);
+    
+    TEST(equal_strided_double(da3, expected, LOGICAL_SIZE, 3));
+}
+
+//------------------------------------------------------
+// Test cblas_saxpby with stride=3
+//------------------------------------------------------
+static void test_saxpby_stride3(void)
+{
+    SUITE("cblas_saxpby (stride=3)...\n");
+    
+    float sa3[60] = {0};
+    float sb3[60] = {0};
+    float expected[60] = {0};
+    
+    init_strided_float(sa3, LOGICAL_SIZE, 3, 1.0f);
+    init_strided_float(sb3, LOGICAL_SIZE, 3, 10.0f);
+    
+    // expected = 2.0 * sa3 + 3.0 * sb3
+    for (CBLAS_INDEX i = 0; i < LOGICAL_SIZE; i++)
+        expected[i * 3] = 2.0f * (1.0f + i) + 3.0f * (10.0f + i);
+    
+    cblas_saxpby(LOGICAL_SIZE, 2.0f, sa3, 3, 3.0f, sb3, 3);
+    
+    TEST(equal_strided_float(sb3, expected, LOGICAL_SIZE, 3));
+}
+
+//------------------------------------------------------
+// Test cblas_daxpby with stride=3
+//------------------------------------------------------
+static void test_daxpby_stride3(void)
+{
+    SUITE("cblas_daxpby (stride=3)...\n");
+    
+    double da3[60] = {0};
+    double db3[60] = {0};
+    double expected[60] = {0};
+    
+    init_strided_double(da3, LOGICAL_SIZE, 3, 1.0);
+    init_strided_double(db3, LOGICAL_SIZE, 3, 10.0);
+    
+    for (CBLAS_INDEX i = 0; i < LOGICAL_SIZE; i++)
+        expected[i * 3] = 2.0 * (1.0 + i) + 3.0 * (10.0 + i);
+    
+    cblas_daxpby(LOGICAL_SIZE, 2.0, da3, 3, 3.0, db3, 3);
+    
+    TEST(equal_strided_double(db3, expected, LOGICAL_SIZE, 3));
+}
+
+//------------------------------------------------------
+// Test cblas_sasum with stride=3
+//------------------------------------------------------
+static void test_sasum_stride3(void)
+{
+    SUITE("cblas_sasum (stride=3)...\n");
+    
+    float sa3[60] = {0};
+    init_strided_float(sa3, LOGICAL_SIZE, 3, 0.0f);
+    
+    float result = cblas_sasum(LOGICAL_SIZE, sa3, 3);
+    float expected = 0.0f + 1.0f + 2.0f + 3.0f + 4.0f + 5.0f + 6.0f + 7.0f + 8.0f + 9.0f; // 45
+    
+    TEST(fabsf(result - expected) < 1e-5f);
+}
+
+//------------------------------------------------------
+// Test cblas_dasum with stride=3
+//------------------------------------------------------
+static void test_dasum_stride3(void)
+{
+    SUITE("cblas_dasum (stride=3)...\n");
+    
+    double da3[60] = {0};
+    init_strided_double(da3, LOGICAL_SIZE, 3, 0.0);
+    
+    double result = cblas_dasum(LOGICAL_SIZE, da3, 3);
+    double expected = 0.0 + 1.0 + 2.0 + 3.0 + 4.0 + 5.0 + 6.0 + 7.0 + 8.0 + 9.0; // 45
+    
+    TEST(fabs(result - expected) < 1e-10);
+}
+
+//------------------------------------------------------
+// Test cblas_snrm2 with stride=3
+//------------------------------------------------------
+static void test_snrm2_stride3(void)
+{
+    SUITE("cblas_snrm2 (stride=3)...\n");
+    
+    float sa3[60] = {0};
+    init_strided_float(sa3, LOGICAL_SIZE, 3, 0.0f);
+    
+    float result = cblas_snrm2(LOGICAL_SIZE, sa3, 3);
+    float expected = sqrtf(0.0f + 1.0f + 4.0f + 9.0f + 16.0f + 25.0f + 36.0f + 49.0f + 64.0f + 81.0f); // sqrt(285)
+    
+    TEST(fabsf(result - expected) < 1e-5f);
+}
+
+//------------------------------------------------------
+// Test cblas_dnrm2 with stride=3
+//------------------------------------------------------
+static void test_dnrm2_stride3(void)
+{
+    SUITE("cblas_dnrm2 (stride=3)...\n");
+    
+    double da3[60] = {0};
+    init_strided_double(da3, LOGICAL_SIZE, 3, 0.0);
+    
+    double result = cblas_dnrm2(LOGICAL_SIZE, da3, 3);
+    double expected = sqrt(0.0 + 1.0 + 4.0 + 9.0 + 16.0 + 25.0 + 36.0 + 49.0 + 64.0 + 81.0); // sqrt(285)
+    
+    TEST(fabs(result - expected) < 1e-10);
+}
+
+//------------------------------------------------------
+// Test cblas_srot with stride=3
+//------------------------------------------------------
+static void test_srot_stride3(void)
+{
+    SUITE("cblas_srot (stride=3)...\n");
+    
+    float sa3[60] = {0};
+    float sb3[60] = {0};
+    
+    init_strided_float(sa3, LOGICAL_SIZE, 3, 1.0f);
+    init_strided_float(sb3, LOGICAL_SIZE, 3, 2.0f);
+    
+    float c = 0.6f;
+    float s = 0.8f;
+    
+    cblas_srot(LOGICAL_SIZE, sa3, 3, sb3, 3, c, s);
+    
+    // First element should be: c*1.0 + s*2.0 = 0.6 + 1.6 = 2.2
+    TEST(fabsf(sa3[0] - 2.2f) < 1e-5f);
+}
+
+//------------------------------------------------------
+// Test cblas_drot with stride=3
+//------------------------------------------------------
+static void test_drot_stride3(void)
+{
+    SUITE("cblas_drot (stride=3)...\n");
+    
+    double da3[60] = {0};
+    double db3[60] = {0};
+    
+    init_strided_double(da3, LOGICAL_SIZE, 3, 1.0);
+    init_strided_double(db3, LOGICAL_SIZE, 3, 2.0);
+    
+    double c = 0.6;
+    double s = 0.8;
+    
+    cblas_drot(LOGICAL_SIZE, da3, 3, db3, 3, c, s);
+    
+    // First element should be: c*1.0 + s*2.0 = 0.6 + 1.6 = 2.2
+    TEST(fabs(da3[0] - 2.2) < 1e-10);
+}
+
 int test_main(int argc, char* argv[])
 {
     // Initialize CBLAS library
@@ -469,6 +795,22 @@ int test_main(int argc, char* argv[])
     // Test with stride=3
     test_scopy_stride3();
     test_dcopy_stride3();
+    test_sswap_stride3();
+    test_dswap_stride3();
+    test_sdot_stride3();
+    test_ddot_stride3();
+    test_saxpy_stride3();
+    test_daxpy_stride3();
+    test_sscal_stride3();
+    test_dscal_stride3();
+    test_saxpby_stride3();
+    test_daxpby_stride3();
+    test_sasum_stride3();
+    test_dasum_stride3();
+    test_snrm2_stride3();
+    test_dnrm2_stride3();
+    test_srot_stride3();
+    test_drot_stride3();
     
     // Shutdown CBLAS library
     cblas_shutdown();
