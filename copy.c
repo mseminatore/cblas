@@ -18,7 +18,7 @@
 //------------------------------------------------------
 // single-precision copy kernel incx == incy == 1
 //------------------------------------------------------
-static void cblas_scopy_k_noinc_sse(cblas_args_t* args)
+CBLAS_UNUSED static void cblas_scopy_k_noinc_sse(cblas_args_t* args)
 {
     float* x = args->x;
     float* y = args->y;
@@ -57,7 +57,7 @@ static void cblas_scopy_k_noinc_sse(cblas_args_t* args)
 //------------------------------------------------------
 // single-precision copy kernel incx == incy == 1
 //------------------------------------------------------
-static void cblas_scopy_k_noinc_neon(cblas_args_t* args)
+CBLAS_UNUSED static void cblas_scopy_k_noinc_neon(cblas_args_t* args)
 {
     float* x = args->x;
     float* y = args->y;
@@ -138,7 +138,7 @@ static void cblas_scopy_k(cblas_args_t *args)
 //------------------------------------------------------
 // single-precision copy kernel incx == incy == 1
 //------------------------------------------------------
-static void cblas_dcopy_k_noinc(cblas_args_t* args)
+CBLAS_UNUSED static void cblas_dcopy_k_noinc(cblas_args_t* args)
 {
     double *x = args->x;
     double *y = args->y;
@@ -183,29 +183,7 @@ static void cblas_dcopy_k(cblas_args_t* args)
 //------------------------------------------------------
 void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy)
 {
-#ifdef CBLAS_CHECK_INPUTS
-
-#ifdef CBLAS_XERBLA_INPUTS
-    int info = 0;
-    if (n <= 0)
-        info = 1;
-    else if (!x)
-        info = 2;
-    else if (!y)
-        info = 4;
-
-    if (info) {
-        XERBLA(info);
-        return;
-    }
-#else
-    if (n <= 0 || !x || !y)
-    {
-        assert(n > 0 && x && y);
-        return;
-    }
-#endif
-#endif
+    CBLAS_VALIDATE_VEC2(n, x, incx, y, incy, );
 
 #ifdef MT_ENABLED
     kernel_function kernel = cblas_scopy_k;

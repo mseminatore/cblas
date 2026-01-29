@@ -19,13 +19,13 @@ static float sa[STRIDED_ARRAY_SIZE];
 static float sb[STRIDED_ARRAY_SIZE];
 static float sc[STRIDED_ARRAY_SIZE];
 static float sd[STRIDED_ARRAY_SIZE];
-static float sresult[STRIDED_ARRAY_SIZE];
+static float sresult[STRIDED_ARRAY_SIZE] CBLAS_UNUSED;
 
 static double da[STRIDED_ARRAY_SIZE];
 static double db[STRIDED_ARRAY_SIZE];
 static double dc[STRIDED_ARRAY_SIZE];
 static double dd[STRIDED_ARRAY_SIZE];
-static double dresult[STRIDED_ARRAY_SIZE];
+static double dresult[STRIDED_ARRAY_SIZE] CBLAS_UNUSED;
 
 // Initialize array with pattern: 0, skip, 1, skip, 2, skip, ...
 static void init_strided_float(float *arr, CBLAS_INDEX n, CBLAS_INDEX inc, float value)
@@ -765,6 +765,8 @@ static void test_drot_stride3(void)
 
 int test_main(int argc, char* argv[])
 {
+    (void)argc;
+    (void)argv;
     // Initialize CBLAS library
     cblas_init(CBLAS_DEFAULT_THREADS);
     

@@ -36,7 +36,7 @@ float a[MAX_SIZE * MAX_SIZE], b[MAX_SIZE * MAX_SIZE];
 //------------------------------------------------------
 //
 //------------------------------------------------------
-void test_ger()
+void test_ger(void)
 {
     struct cblas_timer t1, t2;
     float dt;
@@ -66,6 +66,8 @@ void test_ger()
 //------------------------------------------------------
 int main(int argc, char *argv[])
 {
+	(void)argc;
+	(void)argv;
 	cblas_init(CBLAS_DEFAULT_THREADS);
 	cblas_print_configuration();
 	

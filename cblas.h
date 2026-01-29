@@ -72,6 +72,20 @@
 #define CBLAS_MT_GEMV   10000
 
 //------------------------------------------------------
+// Compiler-independent macros for code quality
+//------------------------------------------------------
+#if defined(__GNUC__) || defined(__clang__)
+#   define CBLAS_UNUSED __attribute__((unused))
+#   define CBLAS_FALLTHROUGH __attribute__((fallthrough))
+#elif defined(_MSC_VER)
+#   define CBLAS_UNUSED __pragma(warning(suppress: 4100 4101))
+#   define CBLAS_FALLTHROUGH
+#else
+#   define CBLAS_UNUSED
+#   define CBLAS_FALLTHROUGH
+#endif
+
+//------------------------------------------------------
 // size type for indices
 //------------------------------------------------------
 typedef size_t CBLAS_INDEX;
@@ -97,6 +111,211 @@ typedef size_t CBLAS_INDEX;
 
 #ifndef CBLAS_FALSE
 #   define CBLAS_FALSE 0
+#endif
+
+//------------------------------------------------------
+// Input validation macros - reduce code duplication
+//------------------------------------------------------
+
+// Vector operations with single vector (n, x, incx)
+#ifdef CBLAS_CHECK_INPUTS
+#ifdef CBLAS_XERBLA_INPUTS
+#define CBLAS_VALIDATE_VEC1(n, x, incx, ret) \
+    do { \
+        int info = 0; \
+        if ((n) <= 0) \
+            info = 1; \
+        else if (!(x)) \
+            info = 2; \
+        else if ((incx) <= 0) \
+            info = 3; \
+        if (info) { \
+            XERBLA(info); \
+            return ret; \
+        } \
+    } while(0)
+#else
+#define CBLAS_VALIDATE_VEC1(n, x, incx, ret) \
+    do { \
+        if ((n) <= 0 || !(x) || (incx) <= 0) { \
+            assert((n) > 0 && (x) && (incx) > 0); \
+            return ret; \
+        } \
+    } while(0)
+#endif
+#else
+#define CBLAS_VALIDATE_VEC1(n, x, incx, ret)
+#endif
+
+// Vector operations with two vectors (n, x, incx, y, incy)
+#ifdef CBLAS_CHECK_INPUTS
+#ifdef CBLAS_XERBLA_INPUTS
+#define CBLAS_VALIDATE_VEC2(n, x, incx, y, incy, ret) \
+    do { \
+        int info = 0; \
+        if ((n) <= 0) \
+            info = 1; \
+        else if (!(x)) \
+            info = 2; \
+        else if (!(y)) \
+            info = 4; \
+        if (info) { \
+            XERBLA(info); \
+            return ret; \
+        } \
+    } while(0)
+#else
+#define CBLAS_VALIDATE_VEC2(n, x, incx, y, incy, ret) \
+    do { \
+        if ((n) <= 0 || !(x) || !(y)) { \
+            assert((n) > 0 && (x) && (y)); \
+            return ret; \
+        } \
+    } while(0)
+#endif
+#else
+#define CBLAS_VALIDATE_VEC2(n, x, incx, y, incy, ret)
+#endif
+
+// Vector scaling with alpha parameter (n, alpha, x, incx)
+#ifdef CBLAS_CHECK_INPUTS
+#ifdef CBLAS_XERBLA_INPUTS
+#define CBLAS_VALIDATE_SCAL(n, alpha, x, incx, ret) \
+    do { \
+        int info = 0; \
+        if ((n) <= 0) \
+            info = 1; \
+        else if (!(x)) \
+            info = 3; \
+        else if ((incx) <= 0) \
+            info = 4; \
+        if (info) { \
+            XERBLA(info); \
+            return ret; \
+        } \
+    } while(0)
+#else
+#define CBLAS_VALIDATE_SCAL(n, alpha, x, incx, ret) \
+    do { \
+        if ((n) <= 0 || !(x) || (incx) <= 0) { \
+            assert((n) > 0 && (x) && (incx) > 0); \
+            return ret; \
+        } \
+    } while(0)
+#endif
+#else
+#define CBLAS_VALIDATE_SCAL(n, alpha, x, incx, ret)
+#endif
+
+// AXPY operations (n, alpha, x, incx, y, incy)
+#ifdef CBLAS_CHECK_INPUTS
+#ifdef CBLAS_XERBLA_INPUTS
+#define CBLAS_VALIDATE_AXPY(n, alpha, x, incx, y, incy, ret) \
+    do { \
+        int info = 0; \
+        if ((n) <= 0) \
+            info = 1; \
+        else if ((alpha) == 0.0) \
+            info = 2; \
+        else if (!(x)) \
+            info = 3; \
+        else if (!(y)) \
+            info = 5; \
+        if (info) { \
+            XERBLA(info); \
+            return ret; \
+        } \
+    } while(0)
+#else
+#define CBLAS_VALIDATE_AXPY(n, alpha, x, incx, y, incy, ret) \
+    do { \
+        if ((n) <= 0 || (alpha) == 0.0 || !(x) || !(y)) { \
+            assert((n) > 0 && (alpha) != 0.0 && (x) && (y)); \
+            return ret; \
+        } \
+    } while(0)
+#endif
+#else
+#define CBLAS_VALIDATE_AXPY(n, alpha, x, incx, y, incy, ret)
+#endif
+
+// AXPBY operations (n, alpha, x, incx, beta, y, incy)
+#ifdef CBLAS_CHECK_INPUTS
+#ifdef CBLAS_XERBLA_INPUTS
+#define CBLAS_VALIDATE_AXPBY(n, alpha, x, incx, beta, y, incy, ret) \
+    do { \
+        int info = 0; \
+        if ((n) <= 0) \
+            info = 1; \
+        else if ((alpha) == 0.0) \
+            info = 2; \
+        else if (!(x)) \
+            info = 3; \
+        else if ((beta) == 0.0) \
+            info = 5; \
+        else if (!(y)) \
+            info = 6; \
+        if (info) { \
+            XERBLA(info); \
+            return ret; \
+        } \
+    } while(0)
+#else
+#define CBLAS_VALIDATE_AXPBY(n, alpha, x, incx, beta, y, incy, ret) \
+    do { \
+        if ((n) <= 0 || (alpha) == 0.0 || !(x) || (beta) == 0.0 || !(y)) { \
+            assert((n) > 0 && (alpha) != 0.0 && (x) && (beta) != 0.0 && (y)); \
+            return ret; \
+        } \
+    } while(0)
+#endif
+#else
+#define CBLAS_VALIDATE_AXPBY(n, alpha, x, incx, beta, y, incy, ret)
+#endif
+
+// GER matrix-vector operations
+#ifdef CBLAS_CHECK_INPUTS
+#ifdef CBLAS_XERBLA_INPUTS
+#define CBLAS_VALIDATE_GER(layout, m, n, x, incx, y, incy, a, lda, ret) \
+    do { \
+        int info = 0; \
+        if ((layout) != CblasRowMajor && (layout) != CblasColMajor) \
+            info = 1; \
+        else if ((m) < 0) \
+            info = 2; \
+        else if ((n) < 0) \
+            info = 3; \
+        else if (!(x)) \
+            info = 5; \
+        else if ((incx) == 0) \
+            info = 6; \
+        else if (!(y)) \
+            info = 7; \
+        else if ((incy) == 0) \
+            info = 8; \
+        else if (!(a)) \
+            info = 9; \
+        else if ((lda) < MAX(1, (m))) \
+            info = 10; \
+        if (info) { \
+            XERBLA(info); \
+            return ret; \
+        } \
+    } while(0)
+#else
+#define CBLAS_VALIDATE_GER(layout, m, n, x, incx, y, incy, a, lda, ret) \
+    do { \
+        if ((m) < 0 || (n) < 0 || !(x) || (incx) == 0 || (incy) == 0 || !(a) || (lda) < MAX(1, (m))) { \
+            assert((m) > 0 && (n) > 0 && (incx) != 0 && (incy) != 0); \
+            assert((x) && (y) && (a)); \
+            assert((layout) == CblasRowMajor || (layout) == CblasColMajor); \
+            assert((lda) >= MAX(1, (m))); \
+            return ret; \
+        } \
+    } while(0)
+#endif
+#else
+#define CBLAS_VALIDATE_GER(layout, m, n, x, incx, y, incy, a, lda, ret)
 #endif
 
 #ifndef MAX
@@ -612,7 +831,7 @@ void cblas_init(int threads);
  * @note Should be called when finished using BLAS functions to release resources.
  * @note Waits for all threads to complete and releases synchronization primitives.
  */
-void cblas_shutdown();
+void cblas_shutdown(void);
 
 /**
  * @brief Set the number of worker threads
@@ -634,7 +853,7 @@ int cblas_get_num_threads(void);
  * @return Status code (non-zero on success)
  * @note For internal use. Called by cblas_init().
  */
-int cblas_init_server();
+int cblas_init_server(void);
 
 /**
  * @brief Execute work queue synchronously
@@ -692,21 +911,21 @@ void cblas_level1_exec_result(CBLAS_INDEX byte_stride, kernel_function kernel, C
  * @return Configuration string describing compile-time options
  * @note Thread-safe.
  */
-const char *cblas_get_config();
+const char *cblas_get_config(void);
 
 /**
  * @brief Get CPU core name
  * @return String describing CPU model
  * @note Thread-safe.
  */
-const char *cblas_get_corename();
+const char *cblas_get_corename(void);
 
 /**
  * @brief Get number of CPU cores
  * @return Number of logical processors
  * @note Thread-safe.
  */
-int  cblas_get_num_procs();
+int  cblas_get_num_procs(void);
 
 /**
  * @brief BLAS standard error reporting function
@@ -726,48 +945,48 @@ void xerbla(const char *srcname, int info, size_t len);
  * @return Number of logical processors/cores
  * @note Thread-safe. Platform-specific implementation.
  */
-int cpu_get_core_count();
+int cpu_get_core_count(void);
 
 /**
  * @brief Get CPU core name/model
  * @return String describing CPU model (e.g., "Intel Core i7")
  * @note Thread-safe. Returns brand string from CPUID.
  */
-const char *cpu_get_core_name();
+const char *cpu_get_core_name(void);
 
 /**
  * @brief Get CPU cache line size
  * @return Cache line size in bytes (typically 64)
  * @note Thread-safe. Used for alignment optimization.
  */
-int cpu_get_cacheline_size();
+int cpu_get_cacheline_size(void);
 
 /**
  * @brief Get CPU feature flags
  * @return Bitmask of CPU features (CPU_SSE, CPU_AVX, CPU_AVX2, CPU_NEON, etc.)
  * @note Thread-safe. Used for runtime ISA detection and kernel dispatch.
  */
-unsigned int cpu_get_features();
+unsigned int cpu_get_features(void);
 
 /**
  * @brief Get human-readable ISA features string
  * @return Comma-separated list of supported ISA extensions
  * @note Thread-safe. Returns string like "SSE, AVX2, FMA3".
  */
-const char *cblas_get_isa_features();
+const char *cblas_get_isa_features(void);
 
 /**
  * @brief Print library configuration to stdout
  * @note Displays version, threads, CPU info, ISA features.
  */
-void cblas_print_configuration();
+void cblas_print_configuration(void);
 
 /**
  * @brief Get L2 cache size
  * @return L2 cache size in bytes
  * @note Thread-safe. Used for cache blocking tuning.
  */
-int cpu_get_l2_cache_size();
+int cpu_get_l2_cache_size(voic);
 
 //------------------------------------------------------
 // internal functions
@@ -778,7 +997,7 @@ int cpu_get_l2_cache_size();
  * @return Non-zero if server is running
  * @note For internal use only.
  */
-int cblas_is_server_alive();
+int cblas_is_server_alive(void);
 
 /**
  * @brief Set thread server alive status (internal)

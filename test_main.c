@@ -18,7 +18,7 @@ int test_modules 	= 0;
 //------------------------------------------------------
 // enable VT100 support in pre Win11 console window
 //------------------------------------------------------
-int setupConsole()
+int setupConsole(void)
 {
 #if defined(_WIN32) || defined(_WIN64)
 	// Set output mode to handle virtual terminal sequences

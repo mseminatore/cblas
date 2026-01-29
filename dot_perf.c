@@ -14,7 +14,7 @@ float x[MAX_SIZE], y[MAX_SIZE];
 //------------------------------------------------------
 //
 //------------------------------------------------------
-void test_dot()
+void test_dot(void)
 {
     struct cblas_timer t1, t2;
     float dt;
@@ -44,6 +44,8 @@ void test_dot()
 //------------------------------------------------------
 int main(int argc, char *argv[])
 {
+	(void)argc;
+	(void)argv;
 	cblas_init(CBLAS_DEFAULT_THREADS);
 	cblas_print_configuration();
 	

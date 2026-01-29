@@ -69,29 +69,7 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
 {
     float sum = 0.0f;
 
-#ifdef CBLAS_CHECK_INPUTS
-
-#ifdef CBLAS_XERBLA_INPUTS
-    int info = 0;
-    if (n <= 0)
-        info = 1;
-    else if (!x)
-        info = 2;
-    else if (!y)
-        info = 4;
-
-    if (info) {
-        XERBLA(info);
-        return sum;
-    }
-#else
-    if (n <= 0 || !x || !y)
-    {
-        assert(n > 0 && x && y);
-        return sum;
-    }
-#endif  // CBLAS_XERBLA_INPUTS
-#endif  // CBLAS_CHECK_INPUTS
+    CBLAS_VALIDATE_VEC2(n, x, incx, y, incy, sum);
 
 #if defined(MT_ENABLED)
     float thread_partial_sums[MAX_THREADS];
