@@ -336,20 +336,17 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
 
             for (; i + 4 <= n; i += 4)
             {
-                sum0 = *x * *y;
-                sum1 = *(x + 1) * *(y + 1);
-                sum2 = *(x + 2) * *(y + 2);
-                sum3 = *(x + 3) * *(y + 3);
-
-                x += 4;
-                y += 4;
-
-                sum += sum0 + sum1 + sum2 + sum3;
+                sum0 += x[i] * y[i];
+                sum1 += x[i+1] * y[i+1];
+                sum2 += x[i+2] * y[i+2];
+                sum3 += x[i+3] * y[i+3];
             }
+
+            sum = sum0 + sum1 + sum2 + sum3;
 
             for (; i < n; i++)
             {
-                sum += *x++ * *y++;
+                sum += x[i] * y[i];
             }
 #endif
 #else
@@ -359,20 +356,17 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
 
             for (; i + 4 <= n; i += 4)
             {
-                sum0 = *x * *y;
-                sum1 = *(x + 1) * *(y + 1);
-                sum2 = *(x + 2) * *(y + 2);
-                sum3 = *(x + 3) * *(y + 3);
-
-                x += 4;
-                y += 4;
-
-                sum += sum0 + sum1 + sum2 + sum3;
+                sum0 += x[i] * y[i];
+                sum1 += x[i+1] * y[i+1];
+                sum2 += x[i+2] * y[i+2];
+                sum3 += x[i+3] * y[i+3];
             }
+
+            sum = sum0 + sum1 + sum2 + sum3;
 
             for (; i < n; i++)
             {
-                sum += *x++ * *y++;
+                sum += x[i] * y[i];
             }
 #endif
         }
@@ -404,20 +398,17 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
 
         for (; i + 4 <= n; i += 4)
         {
-            sum0 = *x * *y;
-            sum1 = *(x + 1) * *(y + 1);
-            sum2 = *(x + 2) * *(y + 2);
-            sum3 = *(x + 3) * *(y + 3);
-
-            x += 4;
-            y += 4;
-
-            sum += sum0 + sum1 + sum2 + sum3;
+            sum0 += x[i] * y[i];
+            sum1 += x[i+1] * y[i+1];
+            sum2 += x[i+2] * y[i+2];
+            sum3 += x[i+3] * y[i+3];
         }
+
+        sum = sum0 + sum1 + sum2 + sum3;
 
         for (; i < n; i++)
         {
-            sum += *x++ * *y++;
+            sum += x[i] * y[i];
         }
 #endif
 #else
@@ -427,20 +418,17 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
 
         for (; i + 4 <= n; i += 4)
         {
-            sum0 = *x * *y;
-            sum1 = *(x + 1) * *(y + 1);
-            sum2 = *(x + 2) * *(y + 2);
-            sum3 = *(x + 3) * *(y + 3);
-
-            x += 4;
-            y += 4;
-
-            sum += sum0 + sum1 + sum2 + sum3;
+            sum0 += x[i] * y[i];
+            sum1 += x[i+1] * y[i+1];
+            sum2 += x[i+2] * y[i+2];
+            sum3 += x[i+3] * y[i+3];
         }
+
+        sum = sum0 + sum1 + sum2 + sum3;
 
         for (; i < n; i++)
         {
-            sum += *x++ * *y++;
+            sum += x[i] * y[i];
         }
 #endif
     }
