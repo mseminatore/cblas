@@ -63,6 +63,16 @@
 #define CBLAS_PREFETCH_THRESHOLD 100000  // Enable prefetching for vectors >100K elements
 #define CBLAS_PREFETCH_DISTANCE  64      // Prefetch 64 elements ahead
 
+// Cross-platform prefetch macros
+#if defined(__GNUC__) || defined(__clang__)
+#   define CBLAS_PREFETCH(addr, rw, locality) __builtin_prefetch((addr), (rw), (locality))
+#elif defined(_MSC_VER)
+#   include <intrin.h>
+#   define CBLAS_PREFETCH(addr, rw, locality) _mm_prefetch((const char*)(addr), _MM_HINT_T0)
+#else
+#   define CBLAS_PREFETCH(addr, rw, locality) ((void)0)  // No-op for other compilers
+#endif
+
 //------------------------------------------------------
 // Compiler-independent macros for code quality
 //------------------------------------------------------

@@ -192,8 +192,8 @@ void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
                 for (; i < n; i++)
                 {
                     if (i + CBLAS_PREFETCH_DISTANCE < n) {
-                        __builtin_prefetch(x + CBLAS_PREFETCH_DISTANCE, 0, 0);
-                        __builtin_prefetch(y + CBLAS_PREFETCH_DISTANCE, 1, 0);
+                        CBLAS_PREFETCH(x + CBLAS_PREFETCH_DISTANCE, 0, 0);
+                        CBLAS_PREFETCH(y + CBLAS_PREFETCH_DISTANCE, 1, 0);
                     }
                     *y++ = *x++;
                 }
@@ -229,8 +229,8 @@ void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
             for (; i < n; i++)
             {
                 if (i + CBLAS_PREFETCH_DISTANCE < n) {
-                    __builtin_prefetch(x + CBLAS_PREFETCH_DISTANCE, 0, 0);
-                    __builtin_prefetch(y + CBLAS_PREFETCH_DISTANCE, 1, 0);
+                    CBLAS_PREFETCH(x + CBLAS_PREFETCH_DISTANCE, 0, 0);
+                    CBLAS_PREFETCH(y + CBLAS_PREFETCH_DISTANCE, 1, 0);
                 }
                 *y++ = *x++;
             }
@@ -309,8 +309,8 @@ void cblas_dcopy(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IN
                 for (; i < n; i++)
                 {
                     if (i + CBLAS_PREFETCH_DISTANCE < n) {
-                        __builtin_prefetch(x + CBLAS_PREFETCH_DISTANCE, 0, 0);
-                        __builtin_prefetch(y + CBLAS_PREFETCH_DISTANCE, 1, 0);
+                        CBLAS_PREFETCH(x + CBLAS_PREFETCH_DISTANCE, 0, 0);
+                        CBLAS_PREFETCH(y + CBLAS_PREFETCH_DISTANCE, 1, 0);
                     }
                     *y++ = *x++;
                 }
@@ -346,8 +346,8 @@ void cblas_dcopy(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IN
             for (; i < n; i++)
             {
                 if (i + CBLAS_PREFETCH_DISTANCE < n) {
-                    __builtin_prefetch(x + CBLAS_PREFETCH_DISTANCE, 0, 0);
-                    __builtin_prefetch(y + CBLAS_PREFETCH_DISTANCE, 1, 0);
+                    CBLAS_PREFETCH(x + CBLAS_PREFETCH_DISTANCE, 0, 0);
+                    CBLAS_PREFETCH(y + CBLAS_PREFETCH_DISTANCE, 1, 0);
                 }
                 *y++ = *x++;
             }

@@ -270,8 +270,8 @@ static void cblas_sdot_k_noinc(cblas_args_t* args)
     {
         // Prefetch ahead for next iteration if vector is large
         if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-            __builtin_prefetch(x + CBLAS_PREFETCH_DISTANCE, 0, 0);
-            __builtin_prefetch(y + CBLAS_PREFETCH_DISTANCE, 0, 0);
+            CBLAS_PREFETCH(x + CBLAS_PREFETCH_DISTANCE, 0, 0);
+            CBLAS_PREFETCH(y + CBLAS_PREFETCH_DISTANCE, 0, 0);
         }
 
         sum0 += *x * *y;
@@ -346,8 +346,8 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
             {
                 // Prefetch ahead for next iteration if vector is large
                 if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-                    __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                    __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                    CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                    CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
                 }
 
                 sum0 += x[i] * y[i];
@@ -373,8 +373,8 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
             {
                 // Prefetch ahead for next iteration if vector is large
                 if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-                    __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                    __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                    CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                    CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
                 }
 
                 sum0 += x[i] * y[i];
@@ -421,8 +421,8 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
         for (; i + 4 <= n; i += 4)
         {
             if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-                __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
             }
 
             sum0 += x[i] * y[i];
@@ -447,8 +447,8 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
         for (; i + 4 <= n; i += 4)
         {
             if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-                __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
             }
 
             sum0 += x[i] * y[i];
@@ -529,8 +529,8 @@ double cblas_ddot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_I
         for (CBLAS_INDEX i = 0; i < n; i++)
         {
             if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-                __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
             }
             sum += x[i] * y[i];
         }
@@ -542,8 +542,8 @@ double cblas_ddot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_I
         for (CBLAS_INDEX i = 0; i < n; i++)
         {
             if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-                __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
             }
             sum += x[i] * y[i];
         }

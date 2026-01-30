@@ -59,8 +59,8 @@ static void cblas_saxpy_k_noinc_sse(float alpha, float *x, float *y, CBLAS_INDEX
     for (; i < n; i++)
     {
         if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-            __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-            __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
+            CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+            CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
         }
         y[i] = alpha * x[i] + y[i];
     }
@@ -110,8 +110,8 @@ static void cblas_daxpy_k_noinc_sse(double alpha, double *x, double *y, CBLAS_IN
     for (; i < n; i++)
     {
         if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-            __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-            __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
+            CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+            CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
         }
         y[i] = alpha * x[i] + y[i];
     }
@@ -169,8 +169,8 @@ static void cblas_saxpy_k_noinc_neon(float alpha, float *x, float *y, CBLAS_INDE
     for (; i < n; i++)
     {
         if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-            __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-            __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
+            CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+            CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
         }
         y[i] = alpha * x[i] + y[i];
     }
@@ -224,8 +224,8 @@ static void cblas_daxpy_k_noinc_neon(double alpha, double *x, double *y, CBLAS_I
     for (; i < n; i++)
     {
         if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-            __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-            __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
+            CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+            CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
         }
         y[i] = alpha * x[i] + y[i];
     }
@@ -265,8 +265,8 @@ void cblas_saxpy(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *
             for (CBLAS_INDEX i = 0; i < n; i++)
             {
                 if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-                    __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                    __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
+                    CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                    CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
                 }
                 y[i] = x[i] + y[i];
             }
@@ -278,8 +278,8 @@ void cblas_saxpy(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *
             for (CBLAS_INDEX i = 0; i < n; i++)
             {
                 if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-                    __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                    __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
+                    CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                    CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
                 }
                 y[i] = alpha * x[i] + y[i];
             }
@@ -343,8 +343,8 @@ void cblas_daxpy(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, doubl
             for (CBLAS_INDEX i = 0; i < n; i++)
             {
                 if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-                    __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                    __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
+                    CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                    CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
                 }
                 y[i] = x[i] + y[i];
             }
@@ -356,8 +356,8 @@ void cblas_daxpy(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, doubl
             for (CBLAS_INDEX i = 0; i < n; i++)
             {
                 if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-                    __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                    __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
+                    CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                    CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
                 }
                 y[i] = alpha * x[i] + y[i];
             }
