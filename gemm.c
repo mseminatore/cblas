@@ -21,6 +21,9 @@
 #define kc 128
 #define nb 1024
 
+// Prefetch distance tuning - prefetch this many iterations ahead
+#define PREFETCH_DISTANCE 8
+
 // macros to simpify matrix element access
 #define A(col, row) a[((row) * lda + (col))]
 #define B(col, row) b[((row) * ldb + (col))]
@@ -82,6 +85,12 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
         a_p2 = _mm_load_ps1(a + 2);
         a_p3 = _mm_load_ps1(a + 3);
 
+        // Prefetch data ahead (after current load, before pointer update)
+        if (p + PREFETCH_DISTANCE < k) {
+            __builtin_prefetch(a + (PREFETCH_DISTANCE * 4), 0, 3);
+            __builtin_prefetch(b + (PREFETCH_DISTANCE * 4), 0, 3);
+        }
+
         a += 4;
 
         // Use unaligned load for b since alignment is not guaranteed
@@ -128,6 +137,12 @@ static void AddDot4x4_fma(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CB
         a_p2 = _mm_load_ps1(a + 2);
         a_p3 = _mm_load_ps1(a + 3);
 
+        // Prefetch data ahead (after current load, before pointer update)
+        if (p + PREFETCH_DISTANCE < k) {
+            __builtin_prefetch(a + (PREFETCH_DISTANCE * 4), 0, 3);
+            __builtin_prefetch(b + (PREFETCH_DISTANCE * 4), 0, 3);
+        }
+
         a += 4;
 
         // Use unaligned load for b since alignment is not guaranteed
@@ -159,13 +174,6 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
     float32x4_t b_row;
     float32x4_t a_p0, a_p1, a_p2, a_p3;
     
-    // __builtin_prefetch(&C(0,0), 0);
-    // __builtin_prefetch(&C(0,1), 0);
-    // __builtin_prefetch(&C(0,2), 0);
-    // __builtin_prefetch(&C(0,3), 0);
-    // __builtin_prefetch(a, 0);
-    // __builtin_prefetch(b, 0);
-
     // 4 x 4 floats into SIMD regs
     c_row1 = vld1q_f32(&C(0,0));
     c_row2 = vld1q_f32(&C(0,1));
@@ -179,6 +187,12 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
         a_p1 = vld1q_dup_f32(a + 1);
         a_p2 = vld1q_dup_f32(a + 2);
         a_p3 = vld1q_dup_f32(a + 3);
+
+        // Prefetch data ahead (after current load, before pointer update)
+        if (p + PREFETCH_DISTANCE < k) {
+            __builtin_prefetch(a + (PREFETCH_DISTANCE * 4), 0, 3);
+            __builtin_prefetch(b + (PREFETCH_DISTANCE * 4), 0, 3);
+        }
 
         a += 4;
 
@@ -243,6 +257,15 @@ static void AddDot4x4(CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_
         a_p1 = *(a + 1);
         a_p2 = *(a + 2);
         a_p3 = *(a + 3);
+
+        // Prefetch data ahead (after current load, before pointer update)
+        if (p + PREFETCH_DISTANCE < k) {
+            __builtin_prefetch(a + (PREFETCH_DISTANCE * 4), 0, 3);
+            __builtin_prefetch(&B(0, p + PREFETCH_DISTANCE), 0, 3);
+            __builtin_prefetch(&B(1, p + PREFETCH_DISTANCE), 0, 3);
+            __builtin_prefetch(&B(2, p + PREFETCH_DISTANCE), 0, 3);
+            __builtin_prefetch(&B(3, p + PREFETCH_DISTANCE), 0, 3);
+        }
 
         a += 4;
 
