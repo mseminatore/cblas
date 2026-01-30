@@ -5,6 +5,12 @@
 
 #include "cblas.h"
 
+#ifdef _WIN32
+#	include <malloc.h>
+#else
+#	include <alloca.h>
+#endif
+
 #if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 #   include <immintrin.h>
 #endif
@@ -523,6 +529,74 @@ CBLAS_UNUSED static void sger_row_noalpha_plain(CBLAS_INDEX m, CBLAS_INDEX n, fl
 }
 
 //------------------------------------------------------
+// GER kernel for multi-threading - single precision
+//------------------------------------------------------
+void sger_k(cblas_args_t* args)
+{
+	float* x = (float*)args->x;
+	float* y = (float*)args->y;
+	float* a = (float*)args->a;
+	CBLAS_INDEX m = args->m;
+	CBLAS_INDEX n = args->n;
+	CBLAS_INDEX incx = args->incx;
+	CBLAS_INDEX incy = args->incy;
+	CBLAS_INDEX lda = args->lda;
+	float alpha = *(float*)args->alpha;
+
+	// Use optimized path when alpha == 1.0
+	if (alpha == 1.0f)
+	{
+#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+		// Use FMA version if CPU supports it
+		if (cpu_get_features() & CPU_x64_FMA3)
+		{
+			sger_row_noalpha4x4_fma(m, n, x, incx, y, incy, a, lda);
+		}
+		else
+#endif
+		{
+			sger_row_noalpha4x4(m, n, x, incx, y, incy, a, lda);
+		}
+	}
+	else
+	{
+		// Generic path for non-unit alpha
+		for (CBLAS_INDEX row = 0; row < m; row++)
+		{
+			for (CBLAS_INDEX col = 0; col < n; col++)
+			{
+				A(col, row) += alpha * X(row) * Y(col);
+			}
+		}
+	}
+}
+
+//------------------------------------------------------
+// GER kernel for multi-threading - double precision
+//------------------------------------------------------
+void dger_k(cblas_args_t* args)
+{
+	double* x = (double*)args->x;
+	double* y = (double*)args->y;
+	double* a = (double*)args->a;
+	CBLAS_INDEX m = args->m;
+	CBLAS_INDEX n = args->n;
+	CBLAS_INDEX incx = args->incx;
+	CBLAS_INDEX incy = args->incy;
+	CBLAS_INDEX lda = args->lda;
+	double alpha = *(double*)args->alpha;
+
+	// Use row-major layout (A(col, row) macro)
+	for (CBLAS_INDEX row = 0; row < m; row++)
+	{
+		for (CBLAS_INDEX col = 0; col < n; col++)
+		{
+			a[row * lda + col] += alpha * x[row * incx] * y[col * incy];
+		}
+	}
+}
+
+//------------------------------------------------------
 // single-precision rank-1 update
 //------------------------------------------------------
 void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, float* x, CBLAS_INDEX incx, float* y, CBLAS_INDEX incy, float* a, CBLAS_INDEX lda)
@@ -531,63 +605,115 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 
     CBLAS_STATS_START();
 
-    int mt_used = (m * n > CBLAS_MT_GER) ? 1 : 0;
-
 	// fast reject case
 	if (m == 0 ||  n == 0 || alpha == 0.0f)
 		return;
 
-	// TODO - handle incx == 1 special case
-    if (layout == CblasRowMajor)
+#if defined(MT_ENABLED)
+    int mt_used = (m * n > CBLAS_MT_GER) ? 1 : 0;
+    
+    if (mt_used && layout == CblasRowMajor && blas_kernels.sger_k != NULL)
     {
-		if (alpha == 1.0f)
-		{
-#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
-			// Use FMA version if CPU supports it
-			if (cpu_get_features() & CPU_x64_FMA3)
-			{
-				sger_row_noalpha4x4_fma(m, n, x, incx, y, incy, a, lda);
-			}
-			else
+        // Multi-threaded path: partition rows across threads
+        CBLAS_INDEX thread_count = CLAMP(cblas_get_num_threads(), 1, MAX_THREADS);
+        
+        #ifdef _WIN32
+            work_queue_t *queue = _malloca(thread_count * sizeof(work_queue_t));
+            cblas_args_t *args = _malloca(thread_count * sizeof(cblas_args_t));
+        #else
+            work_queue_t *queue = alloca(thread_count * sizeof(work_queue_t));
+            cblas_args_t *args = alloca(thread_count * sizeof(cblas_args_t));
+        #endif
+        
+        CBLAS_INDEX rows_remaining = m;
+        CBLAS_INDEX row_offset = 0;
+        
+        for (CBLAS_INDEX i = 0; i < thread_count; i++)
+        {
+            // Compute partition size: distribute rows evenly
+            CBLAS_INDEX rows_per_thread = (rows_remaining + thread_count - i - 1) / (thread_count - i);
+            
+            args[i].m = rows_per_thread;
+            args[i].n = n;
+            args[i].incx = incx;
+            args[i].incy = incy;
+            args[i].lda = lda;
+            args[i].x = &X(row_offset);
+            args[i].y = y;
+            args[i].a = &A(0, row_offset);
+            args[i].alpha = &alpha;
+            
+            queue[i].finished = 0;
+            queue[i].args = &args[i];
+            queue[i].kernel = blas_kernels.sger_k;
+            queue[i].next = &queue[i + 1];
+            
+            row_offset += rows_per_thread;
+            rows_remaining -= rows_per_thread;
+        }
+        
+        // mark end of task queue
+        queue[thread_count - 1].next = NULL;
+        
+        // synchronously execute task queue
+        cblas_execute(thread_count, queue);
+    }
+    else
+#else
+    int mt_used = 0;
 #endif
-			{
-				sger_row_noalpha4x4(m, n,  x, incx, y, incy, a, lda);
-			}
-			// sger_row_noalpha8x4(m, n,  x, incx, y, incy, a, lda);
-		}
-		else
-		{
-			for (CBLAS_INDEX row = 0; row < m; row++)
-			{
-				for (CBLAS_INDEX col = 0; col < n; col++)
-				{
-					a[row * n + col] += alpha * x[row] * y[col];
-				}
-			}
-		}
-    } else
     {
-		if (alpha == 1.0f)
-		{
-			for (CBLAS_INDEX col = 0; col < n; col++)
-			{
-				for (CBLAS_INDEX row = 0; row < m; row++)
-				{
-					a[col * m + row] += x[row] * y[col];
-				}
-			}
-		}
-		else
-		{
-			for (CBLAS_INDEX col = 0; col < n; col++)
-			{
-				for (CBLAS_INDEX row = 0; row < m; row++)
-				{
-					a[col * m + row] += alpha * x[row] * y[col];
-				}
-			}
-		}
-	}
+        // Single-threaded fallback path
+        if (layout == CblasRowMajor)
+        {
+            if (alpha == 1.0f)
+            {
+#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+                // Use FMA version if CPU supports it
+                if (cpu_get_features() & CPU_x64_FMA3)
+                {
+                    sger_row_noalpha4x4_fma(m, n, x, incx, y, incy, a, lda);
+                }
+                else
+#endif
+                {
+                    sger_row_noalpha4x4(m, n,  x, incx, y, incy, a, lda);
+                }
+            }
+            else
+            {
+                for (CBLAS_INDEX row = 0; row < m; row++)
+                {
+                    for (CBLAS_INDEX col = 0; col < n; col++)
+                    {
+                        a[row * n + col] += alpha * x[row] * y[col];
+                    }
+                }
+            }
+        } else
+        {
+            if (alpha == 1.0f)
+            {
+                for (CBLAS_INDEX col = 0; col < n; col++)
+                {
+                    for (CBLAS_INDEX row = 0; row < m; row++)
+                    {
+                        a[col * m + row] += x[row] * y[col];
+                    }
+                }
+            }
+            else
+            {
+                for (CBLAS_INDEX col = 0; col < n; col++)
+                {
+                    for (CBLAS_INDEX row = 0; row < m; row++)
+                    {
+                        a[col * m + row] += alpha * x[row] * y[col];
+                    }
+                }
+            }
+        }
+    }
 
     CBLAS_STATS_END("sger", m * n, mt_used);
 }
@@ -601,57 +727,111 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
 
     CBLAS_STATS_START();
 
-    int mt_used = (m * n > CBLAS_MT_GER) ? 1 : 0;
-
 	// fast reject case
 	if (m == 0 ||  n == 0 || alpha == 0.0)
 		return;
 
-    if (layout == CblasRowMajor)
+#if defined(MT_ENABLED)
+    int mt_used = (m * n > CBLAS_MT_GER) ? 1 : 0;
+    
+    if (mt_used && layout == CblasRowMajor && blas_kernels.dger_k != NULL)
     {
-		if (alpha == 1.0)
-		{
-			for (CBLAS_INDEX row = 0; row < m; row++)
-			{
-				for (CBLAS_INDEX col = 0; col < n; col++)
-				{
-					a[row * n + col] += x[row] * y[col];
-				}
-			}
-		}
-		else
-		{
-			for (CBLAS_INDEX row = 0; row < m; row++)
-			{
-				for (CBLAS_INDEX col = 0; col < n; col++)
-				{
-					a[row * n + col] += alpha * x[row] * y[col];
-				}
-			}
-		}
-    } else
+        // Multi-threaded path: partition rows across threads
+        CBLAS_INDEX thread_count = CLAMP(cblas_get_num_threads(), 1, MAX_THREADS);
+        
+        #ifdef _WIN32
+            work_queue_t *queue = _malloca(thread_count * sizeof(work_queue_t));
+            cblas_args_t *args = _malloca(thread_count * sizeof(cblas_args_t));
+        #else
+            work_queue_t *queue = alloca(thread_count * sizeof(work_queue_t));
+            cblas_args_t *args = alloca(thread_count * sizeof(cblas_args_t));
+        #endif
+        
+        CBLAS_INDEX rows_remaining = m;
+        CBLAS_INDEX row_offset = 0;
+        
+        for (CBLAS_INDEX i = 0; i < thread_count; i++)
+        {
+            // Compute partition size: distribute rows evenly
+            CBLAS_INDEX rows_per_thread = (rows_remaining + thread_count - i - 1) / (thread_count - i);
+            
+            args[i].m = rows_per_thread;
+            args[i].n = n;
+            args[i].incx = incx;
+            args[i].incy = incy;
+            args[i].lda = lda;
+            args[i].x = &x[row_offset * incx];
+            args[i].y = y;
+            args[i].a = &a[row_offset * lda];
+            args[i].alpha = &alpha;
+            
+            queue[i].finished = 0;
+            queue[i].args = &args[i];
+            queue[i].kernel = blas_kernels.dger_k;
+            queue[i].next = &queue[i + 1];
+            
+            row_offset += rows_per_thread;
+            rows_remaining -= rows_per_thread;
+        }
+        
+        // mark end of task queue
+        queue[thread_count - 1].next = NULL;
+        
+        // synchronously execute task queue
+        cblas_execute(thread_count, queue);
+    }
+    else
+#else
+    int mt_used = 0;
+#endif
     {
-		if (alpha == 1.0)
-		{
-			for (CBLAS_INDEX col = 0; col < n; col++)
-			{
-				for (CBLAS_INDEX row = 0; row < m; row++)
-				{
-					a[col * m + row] += x[row] * y[col];
-				}
-			}
-		}
-		else
-		{
-			for (CBLAS_INDEX col = 0; col < n; col++)
-			{
-				for (CBLAS_INDEX row = 0; row < m; row++)
-				{
-					a[col * m + row] += alpha * x[row] * y[col];
-				}
-			}
-		}
-	}
+        // Single-threaded fallback path
+        if (layout == CblasRowMajor)
+        {
+            if (alpha == 1.0)
+            {
+                for (CBLAS_INDEX row = 0; row < m; row++)
+                {
+                    for (CBLAS_INDEX col = 0; col < n; col++)
+                    {
+                        a[row * n + col] += x[row] * y[col];
+                    }
+                }
+            }
+            else
+            {
+                for (CBLAS_INDEX row = 0; row < m; row++)
+                {
+                    for (CBLAS_INDEX col = 0; col < n; col++)
+                    {
+                        a[row * n + col] += alpha * x[row] * y[col];
+                    }
+                }
+            }
+        } else
+        {
+            if (alpha == 1.0)
+            {
+                for (CBLAS_INDEX col = 0; col < n; col++)
+                {
+                    for (CBLAS_INDEX row = 0; row < m; row++)
+                    {
+                        a[col * m + row] += x[row] * y[col];
+                    }
+                }
+            }
+            else
+            {
+                for (CBLAS_INDEX col = 0; col < n; col++)
+                {
+                    for (CBLAS_INDEX row = 0; row < m; row++)
+                    {
+                        a[col * m + row] += alpha * x[row] * y[col];
+                    }
+                }
+            }
+        }
+    }
 
     CBLAS_STATS_END("dger", m * n, mt_used);
 }

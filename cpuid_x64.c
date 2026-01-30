@@ -210,6 +210,12 @@ static unsigned int __cpu_get_features(void)
 		}
 	}
 
+	// Initialize Level-2 kernel function pointers
+	blas_kernels.sger_k = sger_k;
+	blas_kernels.dger_k = dger_k;
+	blas_kernels.sgemv_k = sgemv_k;
+	blas_kernels.dgemv_k = dgemv_k;
+
 	return cpu_features;
 }
 
