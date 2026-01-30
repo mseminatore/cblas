@@ -393,6 +393,8 @@ void cblas_level1_exec(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_IN
         queue[i].next       = &queue[i + 1];
 #ifdef MT_DEBUG
         queue[i].operation  = op_name ? op_name : "UNKNOWN";
+#else
+        (void)op_name;  // Suppress unused parameter warning
 #endif
     }
 
@@ -439,6 +441,8 @@ void cblas_level1_exec_result(CBLAS_INDEX byte_stride, kernel_function kernel, C
         queue[i].next = &queue[i + 1];
 #ifdef MT_DEBUG
         queue[i].operation = op_name ? op_name : "UNKNOWN";
+#else
+        (void)op_name;  // Suppress unused parameter warning
 #endif
     }
 
