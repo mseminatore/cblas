@@ -1,0 +1,1912 @@
+{"type":"trace","message":"set threads = 4
+"}
+{"type":"thread","tid":0,"message":"created.
+"}
+{"type":"thread","tid":0,"message":"waits.
+"}
+{"type":"thread","tid":1,"message":"created.
+"}
+{"type":"thread","tid":1,"message":"waits.
+"}
+{"type":"thread","tid":2,"message":"created.
+"}
+{"type":"thread","tid":2,"message":"waits.
+"}
+{"type":"thread","tid":3,"message":"created.
+"}
+{"type":"thread","tid":3,"message":"waits.
+"}
+{"type":"thread","tid":4,"message":"created.
+"}
+{"type":"thread","tid":4,"message":"waits.
+"}
+{"type":"thread","tid":5,"message":"created.
+"}
+{"type":"thread","tid":5,"message":"waits.
+"}
+{"type":"thread","tid":6,"message":"created.
+"}
+{"type":"thread","tid":6,"message":"waits.
+"}
+{"type":"thread","tid":7,"message":"created.
+"}
+{"type":"thread","tid":7,"message":"waits.
+"}
+{"type":"thread","tid":8,"message":"created.
+"}
+{"type":"thread","tid":8,"message":"waits.
+"}
+{"type":"thread","tid":9,"message":"created.
+"}
+{"type":"thread","tid":9,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"created.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":11,"message":"created.
+"}
+{"type":"thread","tid":11,"message":"waits.
+"}
+{"type":"thread","tid":12,"message":"created.
+"}
+{"type":"thread","tid":12,"message":"waits.
+"}
+{"type":"thread","tid":13,"message":"created.
+"}
+{"type":"thread","tid":13,"message":"waits.
+"}
+{"type":"thread","tid":14,"message":"created.
+"}
+{"type":"thread","tid":14,"message":"waits.
+"}
+{"type":"thread","tid":15,"message":"created.
+"}
+{"type":"thread","tid":15,"message":"waits.
+"}
+{"type":"thread","tid":16,"message":"created.
+"}
+{"type":"thread","tid":16,"message":"waits.
+"}
+{"type":"thread","tid":17,"message":"created.
+"}
+{"type":"thread","tid":17,"message":"waits.
+"}
+{"type":"thread","tid":18,"message":"created.
+"}
+{"type":"thread","tid":18,"message":"waits.
+"}
+{"type":"thread","tid":19,"message":"created.
+"}
+{"type":"thread","tid":19,"message":"waits.
+"}
+{"type":"thread","tid":20,"message":"created.
+"}
+{"type":"thread","tid":20,"message":"waits.
+"}
+{"type":"thread","tid":21,"message":"created.
+"}
+{"type":"thread","tid":21,"message":"waits.
+"}
+{"type":"thread","tid":22,"message":"created.
+"}
+{"type":"thread","tid":22,"message":"waits.
+"}
+{"type":"thread","tid":23,"message":"created.
+"}
+{"type":"thread","tid":23,"message":"waits.
+"}
+{"type":"thread","tid":24,"message":"created.
+"}
+{"type":"thread","tid":24,"message":"waits.
+"}
+{"type":"thread","tid":25,"message":"created.
+"}
+{"type":"thread","tid":25,"message":"waits.
+"}
+{"type":"thread","tid":26,"message":"created.
+"}
+{"type":"thread","tid":26,"message":"waits.
+"}
+{"type":"thread","tid":27,"message":"created.
+"}
+{"type":"thread","tid":27,"message":"waits.
+"}
+{"type":"thread","tid":28,"message":"created.
+"}
+{"type":"thread","tid":28,"message":"waits.
+"}
+{"type":"thread","tid":29,"message":"created.
+"}
+{"type":"thread","tid":29,"message":"waits.
+"}
+{"type":"thread","tid":30,"message":"created.
+"}
+{"type":"thread","tid":30,"message":"waits.
+"}
+{"type":"thread","tid":31,"message":"created.
+"}
+{"type":"thread","tid":31,"message":"waits.
+"}
+{"type":"thread","tid":32,"message":"created.
+"}
+{"type":"thread","tid":32,"message":"waits.
+"}
+{"type":"thread","tid":33,"message":"created.
+"}
+{"type":"thread","tid":33,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"created.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":35,"message":"created.
+"}
+{"type":"thread","tid":35,"message":"waits.
+"}
+{"type":"thread","tid":36,"message":"created.
+"}
+{"type":"thread","tid":36,"message":"waits.
+"}
+{"type":"thread","tid":37,"message":"created.
+"}
+{"type":"thread","tid":37,"message":"waits.
+"}
+{"type":"thread","tid":38,"message":"created.
+"}
+{"type":"thread","tid":38,"message":"waits.
+"}
+{"type":"thread","tid":39,"message":"created.
+"}
+{"type":"thread","tid":39,"message":"waits.
+"}
+{"type":"thread","tid":40,"message":"created.
+"}
+{"type":"thread","tid":40,"message":"waits.
+"}
+{"type":"thread","tid":41,"message":"created.
+"}
+{"type":"thread","tid":41,"message":"waits.
+"}
+{"type":"thread","tid":42,"message":"created.
+"}
+{"type":"thread","tid":42,"message":"waits.
+"}
+{"type":"thread","tid":43,"message":"created.
+"}
+{"type":"thread","tid":43,"message":"waits.
+"}
+{"type":"thread","tid":44,"message":"created.
+"}
+{"type":"thread","tid":44,"message":"waits.
+"}
+{"type":"thread","tid":45,"message":"created.
+"}
+{"type":"thread","tid":45,"message":"waits.
+"}
+{"type":"thread","tid":46,"message":"created.
+"}
+{"type":"thread","tid":46,"message":"waits.
+"}
+{"type":"thread","tid":47,"message":"created.
+"}
+{"type":"thread","tid":47,"message":"waits.
+"}
+{"type":"thread","tid":48,"message":"created.
+"}
+{"type":"thread","tid":48,"message":"waits.
+"}
+{"type":"thread","tid":49,"message":"created.
+"}
+{"type":"thread","tid":49,"message":"waits.
+"}
+{"type":"thread","tid":50,"message":"created.
+"}
+{"type":"thread","tid":50,"message":"waits.
+"}
+{"type":"thread","tid":51,"message":"created.
+"}
+{"type":"thread","tid":51,"message":"waits.
+"}
+{"type":"thread","tid":52,"message":"created.
+"}
+{"type":"thread","tid":52,"message":"waits.
+"}
+{"type":"thread","tid":53,"message":"created.
+"}
+{"type":"thread","tid":53,"message":"waits.
+"}
+{"type":"thread","tid":54,"message":"created.
+"}
+{"type":"thread","tid":54,"message":"waits.
+"}
+{"type":"thread","tid":55,"message":"created.
+"}
+{"type":"thread","tid":55,"message":"waits.
+"}
+{"type":"thread","tid":57,"message":"created.
+"}
+{"type":"thread","tid":57,"message":"waits.
+"}
+{"type":"thread","tid":56,"message":"created.
+"}
+{"type":"thread","tid":56,"message":"waits.
+"}
+{"type":"thread","tid":58,"message":"created.
+"}
+{"type":"thread","tid":58,"message":"waits.
+"}
+{"type":"thread","tid":59,"message":"created.
+"}
+{"type":"thread","tid":59,"message":"waits.
+"}
+{"type":"thread","tid":60,"message":"created.
+"}
+{"type":"thread","tid":60,"message":"waits.
+"}
+{"type":"thread","tid":61,"message":"created.
+"}
+{"type":"thread","tid":61,"message":"waits.
+"}
+{"type":"thread","tid":62,"message":"created.
+"}
+{"type":"thread","tid":62,"message":"waits.
+"}
+{"type":"trace","message":"adding 63 items to the queue.
+"}
+{"type":"queue","depth":63}
+{"type":"trace","message":"waking worker threads.
+"}
+{"type":"thread","tid":0,"message":"is awake.
+"}
+{"type":"thread","tid":0,"message":"executing a task.
+"}
+{"type":"timing","tid":0,"operation":"SDOT","duration_us":3.68}
+{"type":"thread","tid":0,"message":"task completed.
+"}
+{"type":"thread","tid":0,"message":"waits.
+"}
+{"type":"thread","tid":0,"message":"is awake.
+"}
+{"type":"thread","tid":0,"message":"executing a task.
+"}
+{"type":"timing","tid":0,"operation":"SDOT","duration_us":3.49}
+{"type":"thread","tid":0,"message":"task completed.
+"}
+{"type":"thread","tid":0,"message":"waits.
+"}
+{"type":"thread","tid":0,"message":"is awake.
+"}
+{"type":"thread","tid":0,"message":"executing a task.
+"}
+{"type":"timing","tid":0,"operation":"SDOT","duration_us":3.40}
+{"type":"thread","tid":0,"message":"task completed.
+"}
+{"type":"thread","tid":0,"message":"waits.
+"}
+{"type":"thread","tid":0,"message":"is awake.
+"}
+{"type":"thread","tid":0,"message":"executing a task.
+"}
+{"type":"timing","tid":0,"operation":"SDOT","duration_us":3.62}
+{"type":"thread","tid":0,"message":"task completed.
+"}
+{"type":"thread","tid":0,"message":"waits.
+"}
+{"type":"thread","tid":0,"message":"is awake.
+"}
+{"type":"thread","tid":0,"message":"executing a task.
+"}
+{"type":"timing","tid":0,"operation":"SDOT","duration_us":3.47}
+{"type":"thread","tid":0,"message":"task completed.
+"}
+{"type":"thread","tid":0,"message":"waits.
+"}
+{"type":"thread","tid":0,"message":"is awake.
+"}
+{"type":"thread","tid":0,"message":"executing a task.
+"}
+{"type":"timing","tid":0,"operation":"SDOT","duration_us":3.35}
+{"type":"thread","tid":0,"message":"task completed.
+"}
+{"type":"thread","tid":0,"message":"waits.
+"}
+{"type":"thread","tid":0,"message":"is awake.
+"}
+{"type":"thread","tid":0,"message":"executing a task.
+"}
+{"type":"trace","message":"waiting on queue to complete 63 items.
+"}
+{"type":"thread","tid":2,"message":"is awake.
+"}
+{"type":"thread","tid":33,"message":"is awake.
+"}
+{"type":"thread","tid":4,"message":"is awake.
+"}
+{"type":"thread","tid":4,"message":"executing a task.
+"}
+{"type":"timing","tid":4,"operation":"SDOT","duration_us":3.48}
+{"type":"thread","tid":4,"message":"task completed.
+"}
+{"type":"thread","tid":4,"message":"waits.
+"}
+{"type":"thread","tid":36,"message":"is awake.
+"}
+{"type":"thread","tid":53,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+{"type":"thread","tid":53,"message":"executing a task.
+"}
+{"type":"timing","tid":53,"operation":"SDOT","duration_us":3.70}
+{"type":"thread","tid":53,"message":"task completed.
+"}
+{"type":"thread","tid":53,"message":"waits.
+"}
+{"type":"timing","tid":0,"operation":"SDOT","duration_us":3.92}
+{"type":"thread","tid":0,"message":"task completed.
+"}
+{"type":"thread","tid":0,"message":"waits.
+"}
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.43}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.62}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.65}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.48}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.41}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.35}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.51}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.48}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.39}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.35}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.39}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.44}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.39}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.44}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.35}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.35}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.34}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.36}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.33}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.37}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.52}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.61}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.52}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.34}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.34}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.41}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.37}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.34}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.34}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.58}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.35}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.33}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.34}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.54}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.36}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.34}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"waits.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"{"type":"thread","tid":15,"message":"{"type":"thread","tid":2,"message":"executing a task.
+"}
+{"type":"timing","tid":2,"operation":"SDOT","duration_us":3.50}
+{"type":"thread","tid":2,"message":"task completed.
+"}
+{"type":"thread","tid":2,"message":"waits.
+"}
+{"type":"thread","tid":36,"message":"executing a task.
+"}
+{"type":"timing","tid":36,"operation":"SDOT","duration_us":3.62}
+{"type":"thread","tid":36,"message":"task completed.
+"}
+{"type":"thread","tid":36,"message":"waits.
+"}
+{"type":"thread","tid":33,"message":"executing a task.
+"}
+{"type":"timing","tid":33,"operation":"SDOT","duration_us":3.47}
+{"type":"thread","tid":33,"message":"task completed.
+"}
+{"type":"thread","tid":33,"message":"waits.
+"}
+is awake.
+"}
+{"type":"thread","tid":15,"message":"executing a task.
+"}
+{"type":"timing","tid":15,"operation":"SDOT","duration_us":3.39}
+{"type":"thread","tid":15,"message":"task completed.
+"}
+{"type":"thread","tid":15,"message":"waits.
+"}
+{"type":"thread","tid":15,"message":"is awake.
+"}
+{"type":"thread","tid":15,"message":"executing a task.
+"}
+{"type":"timing","tid":15,"operation":"SDOT","duration_us":3.35}
+{"type":"thread","tid":15,"message":"task completed.
+"}
+{"type":"thread","tid":15,"message":"waits.
+"}
+{"type":"thread","tid":15,"message":"is awake.
+"}
+{"type":"thread","tid":15,"message":"executing a task.
+"}
+{"type":"timing","tid":15,"operation":"SDOT","duration_us":3.37}
+{"type":"thread","tid":15,"message":"task completed.
+"}
+{"type":"thread","tid":15,"message":"waits.
+"}
+{"type":"thread","tid":15,"message":"is awake.
+"}
+{"type":"thread","tid":15,"message":"executing a task.
+"}
+{"type":"timing","tid":15,"operation":"SDOT","duration_us":3.42}
+{"type":"thread","tid":15,"message":"task completed.
+"}
+{"type":"thread","tid":15,"message":"waits.
+"}
+{"type":"thread","tid":15,"message":"is awake.
+"}
+{"type":"thread","tid":15,"message":"executing a task.
+"}
+{"type":"timing","tid":15,"operation":"SDOT","duration_us":3.64}
+{"type":"thread","tid":15,"message":"task completed.
+"}
+{"type":"thread","tid":15,"message":"waits.
+"}
+{"type":"thread","tid":15,"message":"is awake.
+"}
+{"type":"thread","tid":15,"message":"executing a task.
+"}
+{"type":"timing","tid":15,"operation":"SDOT","duration_us":3.38}
+{"type":"thread","tid":15,"message":"task completed.
+"}
+{"type":"thread","tid":15,"message":"waits.
+"}
+{"type":"thread","tid":15,"message":"is awake.
+"}
+{"type":"thread","tid":15,"message":"executing a task.
+"}
+{"type":"timing","tid":15,"operation":"SDOT","duration_us":3.37}
+{"type":"thread","tid":15,"message":"task completed.
+"}
+{"type":"thread","tid":15,"message":"waits.
+"}
+{"type":"thread","tid":15,"message":"is awake.
+"}
+{"type":"thread","tid":15,"message":"executing a task.
+"}
+{"type":"timing","tid":15,"operation":"SDOT","duration_us":3.37}
+{"type":"thread","tid":15,"message":"task completed.
+"}
+{"type":"thread","tid":15,"message":"waits.
+"}
+{"type":"thread","tid":15,"message":"is awake.
+"}
+{"type":"thread","tid":15,"message":"executing a task.
+"}
+{"type":"timing","tid":15,"operation":"SDOT","duration_us":3.34}
+{"type":"thread","tid":15,"message":"task completed.
+"}
+{"type":"thread","tid":15,"message":"waits.
+"}
+{"type":"thread","tid":15,"message":"is awake.
+"}
+{"type":"thread","tid":15,"message":"executing a task.
+"}
+{"type":"timing","tid":15,"operation":"SDOT","duration_us":3.35}
+{"type":"thread","tid":15,"message":"task completed.
+"}
+{"type":"thread","tid":15,"message":"waits.
+"}
+{"type":"thread","tid":15,"message":"is awake.
+"}
+{"type":"thread","tid":15,"message":"executing a task.
+"}
+{"type":"timing","tid":15,"operation":"SDOT","duration_us":3.36}
+{"type":"thread","tid":15,"message":"task completed.
+"}
+{"type":"thread","tid":15,"message":"waits.
+"}
+{"type":"thread","tid":15,"message":"is awake.
+"}
+{"type":"thread","tid":15,"message":"executing a task.
+"}
+{"type":"timing","tid":15,"operation":"SDOT","duration_us":3.35}
+{"type":"thread","tid":15,"message":"task completed.
+"}
+{"type":"thread","tid":15,"message":"waits.
+"}
+{"type":"thread","tid":15,"message":"is awake.
+"}
+{"type":"thread","tid":15,"message":"executing a task.
+"}
+{"type":"timing","tid":15,"operation":"SDOT","duration_us":3.37}
+{"type":"thread","tid":15,"message":"task completed.
+"}
+{"type":"thread","tid":15,"message":"waits.
+"}
+{"type":"thread","tid":15,"message":"is awake.
+"}
+{"type":"thread","tid":15,"message":"executing a task.
+"}
+{"type":"timing","tid":15,"operation":"SDOT","duration_us":3.36}
+{"type":"thread","tid":15,"message":"task completed.
+"}
+{"type":"thread","tid":15,"message":"waits.
+"}
+executing a task.
+"}
+{"type":"timing","tid":34,"operation":"SDOT","duration_us":3.39}
+{"type":"thread","tid":34,"message":"task completed.
+"}
+{"type":"thread","tid":34,"message":"{"type":"trace","message":"queued tasks finished.
+"}
+{"type":"load_balance","thread_count":63,"variance_pct":17.2,"min_us":3.33,"max_us":3.92,"avg_us":3.43,"warning":false}
+{"type":"trace","message":"adding 63 items to the queue.
+"}
+{"type":"queue","depth":63}
+{"type":"trace","message":"waking worker threads.
+"}
+{"type":"thread","tid":50,"message":"is awake.
+"}
+{"type":"thread","tid":50,"message":"executing a task.
+"}
+{"type":"timing","tid":50,"operation":"SCOPY","duration_us":20.88}
+{"type":"thread","tid":50,"message":"task completed.
+"}
+{"type":"thread","tid":50,"message":"waits.
+"}
+{"type":"thread","tid":50,"message":"waits.
+"}
+is awake.
+"}
+{"type":"thread","tid":4,"message":"is awake.
+"}
+{"type":"thread","tid":50,"message":"executing a task.
+"}
+{"type":"thread","tid":4,"message":"executing a task.
+"}
+{"type":"timing","tid":50,"operation":"SCOPY","duration_us":14.96}
+{"type":"thread","tid":50,"message":"task completed.
+"}
+{"type":"thread","tid":50,"message":"waits.
+"}
+{"type":"thread","tid":52,"message":"is awake.
+"}
+{"type":"thread","tid":39,"message":"is awake.
+"}
+{"type":"thread","tid":32,"message":"is awake.
+"}
+{"type":"thread","tid":41,"message":"is awake.
+"}
+{"type":"thread","tid":32,"message":"{"type":"thread","tid":42,"message":"is awake.
+"}
+{"type":"thread","tid":41,"message":"{"type":"thread","tid":56,"message":"is awake.
+{"type":"thread","tid":42,"message":"executing a task.
+"}
+{"type":"timing","tid":4,"operation":"SCOPY","duration_us":19.93}
+{"type":"thread","tid":4,"message":"task completed.
+"}
+{"type":"thread","tid":4,"message":"waits.
+"}
+{"type":"timing","tid":42,"operation":"SCOPY","duration_us":25.30}
+{"type":"thread","tid":42,"message":"task completed.
+"}
+{"type":"thread","tid":42,"message":"waits.
+"}
+"}
+{"type":"thread","tid":56,"message":"executing a task.
+"}
+{"type":"thread","tid":52,"message":"executing a task.
+"}
+{"type":"timing","tid":56,"operation":"SCOPY","duration_us":19.00}
+{"type":"thread","tid":56,"message":"task completed.
+{"type":"trace","message":"waiting on queue to complete 63 items.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":15.95}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":18.55}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":21.92}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":15.60}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.78}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.88}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":20.57}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.33}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":16.10}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.70}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":22.06}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":15.83}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.74}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":18.34}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":20.11}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.60}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.80}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":15.86}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":21.95}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":15.81}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.68}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":16.83}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":19.91}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.63}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.17}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":15.77}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":22.13}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":15.80}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.47}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.79}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":20.10}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.71}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.37}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":15.84}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":22.17}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":19.20}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.34}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.68}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":20.08}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.44}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.54}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":15.86}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":21.96}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":15.73}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.43}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.17}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":20.18}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":18.01}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.46}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":15.99}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":21.82}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":17.80}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":15.81}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"executing a task.
+"}
+{"type":"timing","tid":52,"operation":"SCOPY","duration_us":18.87}
+{"type":"thread","tid":52,"message":"task completed.
+"}
+{"type":"thread","tid":52,"message":"waits.
+"}
+executing a task.
+"}
+{"type":"timing","tid":32,"operation":"SCOPY","duration_us":21.46}
+{"type":"thread","tid":32,"message":"task completed.
+"}
+{"type":"thread","tid":32,"message":"waits.
+"}
+executing a task.
+"}
+{"type":"timing","tid":41,"operation":"SCOPY","duration_us":21.66}
+{"type":"thread","tid":41,"message":"task completed.
+"}
+{"type":"thread","tid":41,"message":"waits.
+"}
+{"type":"thread","tid":39,"message":"executing a task.
+"}
+{"type":"timing","tid":39,"operation":"SCOPY","duration_us":15.34}
+{"type":"thread","tid":39,"message":"task completed.
+"}
+{"type":"thread","tid":39,"message":"waits.
+"}
+"}
+{"type":"thread","tid":56,"message":"waits.
+"}
+{"type":"timing","tid":10,"operation":"SCOPY","duration_us":195.95}
+{"type":"thread","tid":10,"message":"task completed.
+"}
+{"type":"thread","tid":10,"message":"waits.
+"}
+{"type":"trace","message":"queued tasks finished.
+"}
+{"type":"load_balance","thread_count":63,"variance_pct":856.2,"min_us":14.96,"max_us":195.95,"avg_us":21.14,"warning":true}
+{"type":"thread","tid":37,"message":"is awake.
+"}
+{"type":"thread","tid":37,"message":"exiting.
+"}
+{"type":"thread","tid":31,"message":"is awake.
+"}
+{"type":"thread","tid":31,"message":"exiting.
+"}
+{"type":"thread","tid":33,"message":"is awake.
+"}
+{"type":"thread","tid":33,"message":"exiting.
+"}
+{"type":"thread","tid":56,"message":"is awake.
+"}
+{"type":"thread","tid":56,"message":"exiting.
+"}
+{"type":"thread","tid":5,"message":"is awake.
+"}
+{"type":"thread","tid":5,"message":"exiting.
+"}
+{"type":"thread","tid":39,"message":"is awake.
+"}
+{"type":"thread","tid":39,"message":"exiting.
+"}
+{"type":"thread","tid":34,"message":"is awake.
+"}
+{"type":"thread","tid":34,"message":"exiting.
+"}
+{"type":"thread","tid":41,"message":"is awake.
+"}
+{"type":"thread","tid":41,"message":"exiting.
+"}
+{"type":"thread","tid":43,"message":"is awake.
+"}
+{"type":"thread","tid":43,"message":"exiting.
+"}
+{"type":"thread","tid":35,"message":"is awake.
+"}
+{"type":"thread","tid":35,"message":"exiting.
+"}
+{"type":"thread","tid":45,"message":"is awake.
+"}
+{"type":"thread","tid":45,"message":"exiting.
+"}
+{"type":"thread","tid":2,"message":"is awake.
+"}
+{"type":"thread","tid":2,"message":"exiting.
+"}
+{"type":"thread","tid":36,"message":"is awake.
+"}
+{"type":"thread","tid":36,"message":"exiting.
+"}
+{"type":"thread","tid":10,"message":"is awake.
+"}
+{"type":"thread","tid":10,"message":"exiting.
+"}
+{"type":"thread","tid":30,"message":"is awake.
+"}
+{"type":"thread","tid":30,"message":"exiting.
+"}
+{"type":"thread","tid":32,"message":"is awake.
+"}
+{"type":"thread","tid":32,"message":"exiting.
+"}
+{"type":"thread","tid":7,"message":"is awake.
+"}
+{"type":"thread","tid":7,"message":"exiting.
+"}
+{"type":"thread","tid":52,"message":"is awake.
+"}
+{"type":"thread","tid":52,"message":"exiting.
+"}
+{"type":"thread","tid":58,"message":"is awake.
+"}
+{"type":"thread","tid":58,"message":"exiting.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [0] to quit.
+"}
+{"type":"thread","tid":4,"message":"is awake.
+"}
+{"type":"thread","tid":4,"message":"exiting.
+"}
+{"type":"thread","tid":54,"message":"is awake.
+"}
+{"type":"thread","tid":54,"message":"exiting.
+"}
+{"type":"thread","tid":23,"message":"is awake.
+"}
+{"type":"thread","tid":23,"message":"exiting.
+"}
+{"type":"thread","tid":15,"message":"is awake.
+"}
+{"type":"thread","tid":15,"message":"exiting.
+"}
+{"type":"thread","tid":22,"message":"is awake.
+"}
+{"type":"thread","tid":22,"message":"exiting.
+"}
+{"type":"thread","tid":57,"message":"is awake.
+"}
+{"type":"thread","tid":57,"message":"exiting.
+"}
+{"type":"thread","tid":21,"message":"is awake.
+"}
+{"type":"thread","tid":21,"message":"exiting.
+"}
+{"type":"thread","tid":44,"message":"is awake.
+"}
+{"type":"thread","tid":44,"message":"exiting.
+"}
+{"type":"thread","tid":20,"message":"is awake.
+"}
+{"type":"thread","tid":20,"message":"exiting.
+"}
+{"type":"thread","tid":26,"message":"is awake.
+"}
+{"type":"thread","tid":26,"message":"exiting.
+"}
+{"type":"thread","tid":19,"message":"is awake.
+"}
+{"type":"thread","tid":19,"message":"exiting.
+"}
+{"type":"thread","tid":9,"message":"is awake.
+"}
+{"type":"thread","tid":9,"message":"exiting.
+"}
+{"type":"thread","tid":18,"message":"is awake.
+"}
+{"type":"thread","tid":18,"message":"exiting.
+"}
+{"type":"thread","tid":25,"message":"is awake.
+"}
+{"type":"thread","tid":25,"message":"exiting.
+"}
+{"type":"thread","tid":16,"message":"is awake.
+"}
+{"type":"thread","tid":16,"message":"exiting.
+"}
+{"type":"thread","tid":24,"message":"is awake.
+"}
+{"type":"thread","tid":24,"message":"exiting.
+"}
+{"type":"thread","tid":0,"message":"is awake.
+"}
+{"type":"thread","tid":0,"message":"exiting.
+"}
+{"type":"thread","tid":50,"message":"is awake.
+"}
+{"type":"thread","tid":50,"message":"exiting.
+"}
+{"type":"thread","tid":17,"message":"is awake.
+"}
+{"type":"thread","tid":17,"message":"exiting.
+"}
+{"type":"thread","tid":47,"message":"is awake.
+"}
+{"type":"thread","tid":47,"message":"exiting.
+"}
+{"type":"thread","tid":38,"message":"is awake.
+"}
+{"type":"thread","tid":38,"message":"exiting.
+"}
+{"type":"thread","tid":49,"message":"is awake.
+"}
+{"type":"thread","tid":49,"message":"exiting.
+"}
+{"type":"thread","tid":14,"message":"is awake.
+"}
+{"type":"thread","tid":14,"message":"exiting.
+"}
+{"type":"thread","tid":48,"message":"is awake.
+"}
+{"type":"thread","tid":48,"message":"exiting.
+"}
+{"type":"thread","tid":62,"message":"is awake.
+"}
+{"type":"thread","tid":62,"message":"exiting.
+"}
+{"type":"thread","tid":8,"message":"is awake.
+"}
+{"type":"thread","tid":8,"message":"exiting.
+"}
+{"type":"thread","tid":55,"message":"is awake.
+"}
+{"type":"thread","tid":55,"message":"exiting.
+"}
+{"type":"thread","tid":51,"message":"is awake.
+"}
+{"type":"thread","tid":51,"message":"exiting.
+"}
+{"type":"thread","tid":46,"message":"is awake.
+"}
+{"type":"thread","tid":46,"message":"exiting.
+"}
+{"type":"thread","tid":42,"message":"is awake.
+"}
+{"type":"thread","tid":42,"message":"exiting.
+"}
+{"type":"thread","tid":1,"message":"is awake.
+"}
+{"type":"thread","tid":1,"message":"exiting.
+"}
+{"type":"thread","tid":28,"message":"is awake.
+"}
+{"type":"thread","tid":28,"message":"exiting.
+"}
+{"type":"thread","tid":40,"message":"is awake.
+"}
+{"type":"thread","tid":40,"message":"exiting.
+"}
+{"type":"thread","tid":6,"message":"is awake.
+"}
+{"type":"thread","tid":6,"message":"exiting.
+"}
+{"type":"trace","message":"shutdown: thread [0] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [1] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [1] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [2] to quit.
+"}
+{"type":"thread","tid":29,"message":"is awake.
+"}
+{"type":"thread","tid":29,"message":"exiting.
+"}
+{"type":"trace","message":"shutdown: thread [2] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [3] to quit.
+"}
+{"type":"thread","tid":11,"message":"is awake.
+"}
+{"type":"thread","tid":11,"message":"exiting.
+"}
+{"type":"thread","tid":53,"message":"is awake.
+"}
+{"type":"thread","tid":53,"message":"exiting.
+"}
+{"type":"thread","tid":61,"message":"is awake.
+"}
+{"type":"thread","tid":61,"message":"exiting.
+"}
+{"type":"thread","tid":13,"message":"is awake.
+"}
+{"type":"thread","tid":13,"message":"exiting.
+"}
+{"type":"thread","tid":59,"message":"is awake.
+"}
+{"type":"thread","tid":59,"message":"exiting.
+"}
+{"type":"thread","tid":27,"message":"is awake.
+"}
+{"type":"thread","tid":27,"message":"exiting.
+"}
+{"type":"thread","tid":12,"message":"is awake.
+"}
+{"type":"thread","tid":12,"message":"exiting.
+"}
+{"type":"thread","tid":60,"message":"is awake.
+"}
+{"type":"thread","tid":60,"message":"exiting.
+"}
+{"type":"thread","tid":3,"message":"is awake.
+"}
+{"type":"thread","tid":3,"message":"exiting.
+"}
+{"type":"trace","message":"shutdown: thread [3] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [4] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [4] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [5] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [5] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [6] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [6] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [7] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [7] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [8] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [8] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [9] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [9] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [10] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [10] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [11] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [11] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [12] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [12] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [13] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [13] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [14] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [14] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [15] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [15] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [16] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [16] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [17] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [17] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [18] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [18] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [19] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [19] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [20] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [20] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [21] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [21] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [22] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [22] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [23] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [23] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [24] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [24] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [25] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [25] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [26] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [26] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [27] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [27] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [28] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [28] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [29] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [29] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [30] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [30] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [31] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [31] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [32] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [32] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [33] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [33] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [34] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [34] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [35] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [35] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [36] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [36] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [37] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [37] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [38] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [38] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [39] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [39] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [40] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [40] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [41] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [41] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [42] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [42] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [43] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [43] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [44] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [44] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [45] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [45] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [46] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [46] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [47] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [47] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [48] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [48] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [49] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [49] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [50] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [50] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [51] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [51] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [52] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [52] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [53] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [53] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [54] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [54] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [55] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [55] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [56] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [56] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [57] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [57] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [58] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [58] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [59] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [59] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [60] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [60] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [61] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [61] has quit.
+"}
+{"type":"trace","message":"shutdown: waiting on thread [62] to quit.
+"}
+{"type":"trace","message":"shutdown: thread [62] has quit.
+"}
