@@ -1247,6 +1247,34 @@ void sgemm_k(cblas_args_t* args);
 void sgemm_k_fma(cblas_args_t* args);
 #endif
 
+/**
+ * @brief Single-precision GER kernel (rank-1 update)
+ * @param args Kernel arguments structure
+ * @note For internal use. Called via blas_kernels dispatch table.
+ */
+void sger_k(cblas_args_t* args);
+
+/**
+ * @brief Double-precision GER kernel (rank-1 update)
+ * @param args Kernel arguments structure
+ * @note For internal use. Called via blas_kernels dispatch table.
+ */
+void dger_k(cblas_args_t* args);
+
+/**
+ * @brief Single-precision GEMV kernel (matrix-vector multiply)
+ * @param args Kernel arguments structure
+ * @note For internal use. Called via blas_kernels dispatch table.
+ */
+void sgemv_k(cblas_args_t* args);
+
+/**
+ * @brief Double-precision GEMV kernel (matrix-vector multiply)
+ * @param args Kernel arguments structure
+ * @note For internal use. Called via blas_kernels dispatch table.
+ */
+void dgemv_k(cblas_args_t* args);
+
 #ifdef __cplusplus
     }
 #endif
