@@ -10,6 +10,7 @@ test_strided
 test_mt_debug
 test_threshold
 test_concurrent
+test_level2_mt
 build/
 build_*/
 _codeql_build_dir/

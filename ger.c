@@ -586,12 +586,27 @@ void dger_k(cblas_args_t* args)
 	CBLAS_INDEX lda = args->lda;
 	double alpha = *(double*)args->alpha;
 
-	// Use row-major layout (A(col, row) macro)
-	for (CBLAS_INDEX row = 0; row < m; row++)
+	// Use optimized path when alpha == 1.0
+	if (alpha == 1.0)
 	{
-		for (CBLAS_INDEX col = 0; col < n; col++)
+		// Optimized path for unit alpha
+		for (CBLAS_INDEX row = 0; row < m; row++)
 		{
-			a[row * lda + col] += alpha * x[row * incx] * y[col * incy];
+			for (CBLAS_INDEX col = 0; col < n; col++)
+			{
+				a[row * lda + col] += x[row * incx] * y[col * incy];
+			}
+		}
+	}
+	else
+	{
+		// Generic path for non-unit alpha
+		for (CBLAS_INDEX row = 0; row < m; row++)
+		{
+			for (CBLAS_INDEX col = 0; col < n; col++)
+			{
+				a[row * lda + col] += alpha * x[row * incx] * y[col * incy];
+			}
 		}
 	}
 }
