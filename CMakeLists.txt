@@ -21,6 +21,7 @@ enable_testing()
 add_test(NAME blas_test COMMAND blas_test)
 add_test(NAME test_strided COMMAND test_strided)
 add_test(NAME test_threshold COMMAND test_threshold)
+add_test(NAME test_dot_threshold COMMAND test_dot_threshold)
 add_test(NAME test_concurrent COMMAND test_concurrent)
 add_test(NAME test_level2_mt COMMAND test_level2_mt)
 add_test(NAME test_stats COMMAND test_stats)
@@ -109,6 +110,9 @@ target_link_libraries(ger_perf cblas ${MATH_LIB})
 add_executable(dot_perf dot_perf.c)
 target_link_libraries(dot_perf cblas ${MATH_LIB})
 
+add_executable(dot_threshold_tuning dot_threshold_tuning.c)
+target_link_libraries(dot_threshold_tuning cblas ${MATH_LIB})
+
 add_executable(nrm2_asum_rot_perf nrm2_asum_rot_perf.c)
 target_link_libraries(nrm2_asum_rot_perf cblas ${MATH_LIB})
 
@@ -126,6 +130,9 @@ target_link_libraries(test_stats cblas ${MATH_LIB})
 
 add_executable(test_threshold test_threshold.c)
 target_link_libraries(test_threshold cblas ${MATH_LIB})
+
+add_executable(test_dot_threshold test_dot_threshold.c)
+target_link_libraries(test_dot_threshold cblas ${MATH_LIB})
 
 add_executable(test_concurrent test_main.c test_concurrent.c)
 target_link_libraries(test_concurrent cblas ${MATH_LIB})
