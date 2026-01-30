@@ -196,7 +196,7 @@ void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
         if (incx == 1 && incy == 1)
             kernel = cblas_scopy_k_noinc;
 
-        cblas_level1_exec(sizeof(float), kernel, n, x, incx, y, incy);
+        cblas_level1_exec(sizeof(float), kernel, n, x, incx, y, incy, "SCOPY");
     }
     else
     {
@@ -279,7 +279,7 @@ void cblas_dcopy(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IN
     
     if (mt_used)
     {
-        cblas_level1_exec(sizeof(double), cblas_dcopy_k, n, x, incx, y, incy);
+        cblas_level1_exec(sizeof(double), cblas_dcopy_k, n, x, incx, y, incy, "DCOPY");
     }
     else
     {
