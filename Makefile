@@ -32,7 +32,7 @@ else
 	endif
 endif
 
-all: cblas_config.h $(LIBNAME) blas_stress blas_test test_strided test_stats test_threshold test_concurrent test_mt_debug test_level2_mt gemm_perf ger_perf dot_perf dot_threshold_tuning nrm2_asum_rot_perf
+all: cblas_config.h $(LIBNAME) blas_stress blas_test test_strided test_stats test_threshold test_dot_threshold test_concurrent test_mt_debug test_level2_mt gemm_perf ger_perf dot_perf dot_threshold_tuning nrm2_asum_rot_perf
 
 # Generate cblas_config.h from configuration variables
 cblas_config.h: cblas_config.h.in Makefile
@@ -63,6 +63,9 @@ test_overhead: $(LIBNAME) test_overhead.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 test_threshold: $(LIBNAME) test_threshold.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
+test_dot_threshold: $(LIBNAME) test_dot_threshold.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 test_concurrent: $(LIBNAME) test_main.o test_concurrent.o
@@ -102,5 +105,5 @@ test: all
 	./blas_test
 
 clean:
-	rm -f $(TARGET) $(OBJS) $(LIBNAME) test_main.o test.o test_stress.o blas_stress blas_test.o blas_test test_threshold.o test_threshold test_concurrent.o test_concurrent gemm_perf.o gemm_perf ger_perf.o ger_perf dot_perf.o dot_perf dot_threshold_tuning.o dot_threshold_tuning nrm2_asum_rot_perf.o nrm2_asum_rot_perf cblas_config.h test_strided.o test_strided test_stats.o test_stats
+	rm -f $(TARGET) $(OBJS) $(LIBNAME) test_main.o test.o test_stress.o blas_stress blas_test.o blas_test test_threshold.o test_threshold test_dot_threshold.o test_dot_threshold test_concurrent.o test_concurrent gemm_perf.o gemm_perf ger_perf.o ger_perf dot_perf.o dot_perf dot_threshold_tuning.o dot_threshold_tuning nrm2_asum_rot_perf.o nrm2_asum_rot_perf cblas_config.h test_strided.o test_strided test_stats.o test_stats
 
