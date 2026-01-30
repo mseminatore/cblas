@@ -264,40 +264,23 @@ static void cblas_sdot_k_noinc(cblas_args_t* args)
     // Fallback: scalar implementation with 4-way unrolling
     CBLAS_INDEX i = 0;
     register float sum0 = 0.0f, sum1 = 0.0f, sum2 = 0.0f, sum3 = 0.0f;
+    int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
 
-    if (n > CBLAS_PREFETCH_THRESHOLD)
+    for (; i + 4 <= n; i += 4)
     {
-        // Large vector path with prefetching
-        for (; i + 4 <= n; i += 4)
-        {
-            // Prefetch ahead for next iteration
-            if (i + CBLAS_PREFETCH_DISTANCE < n) {
-                __builtin_prefetch(x + CBLAS_PREFETCH_DISTANCE, 0, 0);
-                __builtin_prefetch(y + CBLAS_PREFETCH_DISTANCE, 0, 0);
-            }
-
-            sum0 += *x * *y;
-            sum1 += *(x + 1) * *(y + 1);
-            sum2 += *(x + 2) * *(y + 2);
-            sum3 += *(x + 3) * *(y + 3);
-
-            x += 4;
-            y += 4;
+        // Prefetch ahead for next iteration if vector is large
+        if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+            __builtin_prefetch(x + CBLAS_PREFETCH_DISTANCE, 0, 0);
+            __builtin_prefetch(y + CBLAS_PREFETCH_DISTANCE, 0, 0);
         }
-    }
-    else
-    {
-        // Small vector path without prefetching
-        for (; i + 4 <= n; i += 4)
-        {
-            sum0 += *x * *y;
-            sum1 += *(x + 1) * *(y + 1);
-            sum2 += *(x + 2) * *(y + 2);
-            sum3 += *(x + 3) * *(y + 3);
 
-            x += 4;
-            y += 4;
-        }
+        sum0 += *x * *y;
+        sum1 += *(x + 1) * *(y + 1);
+        sum2 += *(x + 2) * *(y + 2);
+        sum3 += *(x + 3) * *(y + 3);
+
+        x += 4;
+        y += 4;
     }
 
     register float sum = sum0 + sum1 + sum2 + sum3;
@@ -357,34 +340,20 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
             // Fallback: scalar implementation with 4-way unrolling
             CBLAS_INDEX i = 0;
             register float sum0 = 0.0f, sum1 = 0.0f, sum2 = 0.0f, sum3 = 0.0f;
+            int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
 
-            if (n > CBLAS_PREFETCH_THRESHOLD)
+            for (; i + 4 <= n; i += 4)
             {
-                // Large vector path with prefetching
-                for (; i + 4 <= n; i += 4)
-                {
-                    // Prefetch ahead for next iteration
-                    if (i + CBLAS_PREFETCH_DISTANCE < n) {
-                        __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                        __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                    }
+                // Prefetch ahead for next iteration if vector is large
+                if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+                    __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                    __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                }
 
-                    sum0 += x[i] * y[i];
-                    sum1 += x[i+1] * y[i+1];
-                    sum2 += x[i+2] * y[i+2];
-                    sum3 += x[i+3] * y[i+3];
-                }
-            }
-            else
-            {
-                // Small vector path without prefetching
-                for (; i + 4 <= n; i += 4)
-                {
-                    sum0 += x[i] * y[i];
-                    sum1 += x[i+1] * y[i+1];
-                    sum2 += x[i+2] * y[i+2];
-                    sum3 += x[i+3] * y[i+3];
-                }
+                sum0 += x[i] * y[i];
+                sum1 += x[i+1] * y[i+1];
+                sum2 += x[i+2] * y[i+2];
+                sum3 += x[i+3] * y[i+3];
             }
 
             sum = sum0 + sum1 + sum2 + sum3;
@@ -398,34 +367,20 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
             // Fallback: scalar implementation with 4-way unrolling
             CBLAS_INDEX i = 0;
             register float sum0 = 0.0f, sum1 = 0.0f, sum2 = 0.0f, sum3 = 0.0f;
+            int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
 
-            if (n > CBLAS_PREFETCH_THRESHOLD)
+            for (; i + 4 <= n; i += 4)
             {
-                // Large vector path with prefetching
-                for (; i + 4 <= n; i += 4)
-                {
-                    // Prefetch ahead for next iteration
-                    if (i + CBLAS_PREFETCH_DISTANCE < n) {
-                        __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                        __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                    }
+                // Prefetch ahead for next iteration if vector is large
+                if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+                    __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                    __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                }
 
-                    sum0 += x[i] * y[i];
-                    sum1 += x[i+1] * y[i+1];
-                    sum2 += x[i+2] * y[i+2];
-                    sum3 += x[i+3] * y[i+3];
-                }
-            }
-            else
-            {
-                // Small vector path without prefetching
-                for (; i + 4 <= n; i += 4)
-                {
-                    sum0 += x[i] * y[i];
-                    sum1 += x[i+1] * y[i+1];
-                    sum2 += x[i+2] * y[i+2];
-                    sum3 += x[i+3] * y[i+3];
-                }
+                sum0 += x[i] * y[i];
+                sum1 += x[i+1] * y[i+1];
+                sum2 += x[i+2] * y[i+2];
+                sum3 += x[i+3] * y[i+3];
             }
 
             sum = sum0 + sum1 + sum2 + sum3;
@@ -461,34 +416,19 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
         // Fallback: scalar implementation with 4-way unrolling
         CBLAS_INDEX i = 0;
         register float sum0 = 0.0f, sum1 = 0.0f, sum2 = 0.0f, sum3 = 0.0f;
+        int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
 
-        if (n > CBLAS_PREFETCH_THRESHOLD)
+        for (; i + 4 <= n; i += 4)
         {
-            // Large vector path with prefetching
-            for (; i + 4 <= n; i += 4)
-            {
-                // Prefetch ahead for next iteration
-                if (i + CBLAS_PREFETCH_DISTANCE < n) {
-                    __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                    __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                }
+            if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+                __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+            }
 
-                sum0 += x[i] * y[i];
-                sum1 += x[i+1] * y[i+1];
-                sum2 += x[i+2] * y[i+2];
-                sum3 += x[i+3] * y[i+3];
-            }
-        }
-        else
-        {
-            // Small vector path without prefetching
-            for (; i + 4 <= n; i += 4)
-            {
-                sum0 += x[i] * y[i];
-                sum1 += x[i+1] * y[i+1];
-                sum2 += x[i+2] * y[i+2];
-                sum3 += x[i+3] * y[i+3];
-            }
+            sum0 += x[i] * y[i];
+            sum1 += x[i+1] * y[i+1];
+            sum2 += x[i+2] * y[i+2];
+            sum3 += x[i+3] * y[i+3];
         }
 
         sum = sum0 + sum1 + sum2 + sum3;
@@ -502,34 +442,19 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
         // Fallback: scalar implementation with 4-way unrolling
         CBLAS_INDEX i = 0;
         register float sum0 = 0.0f, sum1 = 0.0f, sum2 = 0.0f, sum3 = 0.0f;
+        int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
 
-        if (n > CBLAS_PREFETCH_THRESHOLD)
+        for (; i + 4 <= n; i += 4)
         {
-            // Large vector path with prefetching
-            for (; i + 4 <= n; i += 4)
-            {
-                // Prefetch ahead for next iteration
-                if (i + CBLAS_PREFETCH_DISTANCE < n) {
-                    __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                    __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                }
+            if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+                __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+            }
 
-                sum0 += x[i] * y[i];
-                sum1 += x[i+1] * y[i+1];
-                sum2 += x[i+2] * y[i+2];
-                sum3 += x[i+3] * y[i+3];
-            }
-        }
-        else
-        {
-            // Small vector path without prefetching
-            for (; i + 4 <= n; i += 4)
-            {
-                sum0 += x[i] * y[i];
-                sum1 += x[i+1] * y[i+1];
-                sum2 += x[i+2] * y[i+2];
-                sum3 += x[i+3] * y[i+3];
-            }
+            sum0 += x[i] * y[i];
+            sum1 += x[i+1] * y[i+1];
+            sum2 += x[i+2] * y[i+2];
+            sum3 += x[i+3] * y[i+3];
         }
 
         sum = sum0 + sum1 + sum2 + sum3;
@@ -599,48 +524,28 @@ double cblas_ddot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_I
         cblas_ddot_k_noinc_neon(x, y, n, &sum);
 #else
         // Fallback: scalar implementation
-        if (n > CBLAS_PREFETCH_THRESHOLD)
+        int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
+        
+        for (CBLAS_INDEX i = 0; i < n; i++)
         {
-            // Large vector path with prefetching
-            for (CBLAS_INDEX i = 0; i < n; i++)
-            {
-                if (i + CBLAS_PREFETCH_DISTANCE < n) {
-                    __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                    __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                }
-                sum += x[i] * y[i];
+            if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+                __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
             }
-        }
-        else
-        {
-            // Small vector path without prefetching
-            for (CBLAS_INDEX i = 0; i < n; i++)
-            {
-                sum += x[i] * y[i];
-            }
+            sum += x[i] * y[i];
         }
 #endif
 #else
         // Fallback: scalar implementation
-        if (n > CBLAS_PREFETCH_THRESHOLD)
+        int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
+        
+        for (CBLAS_INDEX i = 0; i < n; i++)
         {
-            // Large vector path with prefetching
-            for (CBLAS_INDEX i = 0; i < n; i++)
-            {
-                if (i + CBLAS_PREFETCH_DISTANCE < n) {
-                    __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                    __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                }
-                sum += x[i] * y[i];
+            if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+                __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
             }
-        }
-        else
-        {
-            // Small vector path without prefetching
-            for (CBLAS_INDEX i = 0; i < n; i++)
-            {
-                sum += x[i] * y[i];
-            }
+            sum += x[i] * y[i];
         }
 #endif
     }

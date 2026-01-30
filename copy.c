@@ -30,24 +30,19 @@ CBLAS_UNUSED static void cblas_scopy_k_noinc_sse(cblas_args_t* args)
 
     for (; i + 16 < n; i += 16)
     {
-        a = _mm_load_ps(x);
-        b = _mm_load_ps(x + 4);
-        c = _mm_load_ps(x + 8);
-        d = _mm_load_ps(x + 12);
+        a = _mm_load_ps(x + i);
+        b = _mm_load_ps(x + i + 4);
+        c = _mm_load_ps(x + i + 8);
+        d = _mm_load_ps(x + i + 12);
 
-        x += 16;
-
-        _mm_store_ps(y, a);
-        _mm_store_ps(y + 4, b);
-        _mm_store_ps(y + 8, c);
-        _mm_store_ps(y + 12, d);
-
-        y += 16;
+        _mm_store_ps(y + i, a);
+        _mm_store_ps(y + i + 4, b);
+        _mm_store_ps(y + i + 8, c);
+        _mm_store_ps(y + i + 12, d);
     }
 
-    // TODO - possibly use switch with fall-through here?
     for (; i < n; i++)
-        *y++ = *x++;
+        y[i] = x[i];
 }
 
 #endif
@@ -69,24 +64,19 @@ CBLAS_UNUSED static void cblas_scopy_k_noinc_neon(cblas_args_t* args)
 
     for (; i + 16 < n; i += 16)
     {
-        a = vld1q_f32(x);
-        b = vld1q_f32(x + 4);
-        c = vld1q_f32(x + 8);
-        d = vld1q_f32(x + 12);
+        a = vld1q_f32(x + i);
+        b = vld1q_f32(x + i + 4);
+        c = vld1q_f32(x + i + 8);
+        d = vld1q_f32(x + i + 12);
 
-        x += 16;
-
-        vst1q_f32(y, a);
-        vst1q_f32(y + 4, b);
-        vst1q_f32(y + 8, c);
-        vst1q_f32(y + 12, d);
-
-        y += 16;
+        vst1q_f32(y + i, a);
+        vst1q_f32(y + i + 4, b);
+        vst1q_f32(y + i + 8, c);
+        vst1q_f32(y + i + 12, d);
     }
 
-    // TODO - possibly use switch with fall-through here?
     for (; i < n; i++)
-        *y++ = *x++;
+        y[i] = x[i];
 }
 
 #endif
@@ -104,18 +94,14 @@ static void cblas_scopy_k_noinc(cblas_args_t* args)
 
     for (; i + 4 < n; i += 4)
     {
-        *y = *x;
-        *(y + 1) = *(x + 1);
-        *(y + 2) = *(x + 2);
-        *(y + 3) = *(x + 3);
-
-        x += 4;
-        y += 4;
+        y[i] = x[i];
+        y[i + 1] = x[i + 1];
+        y[i + 2] = x[i + 2];
+        y[i + 3] = x[i + 3];
     }
 
-    // TODO - possibly use switch with fall-through here?
     for (; i < n; i++)
-        *y++ = *x++;
+        y[i] = x[i];
 }
 
 //------------------------------------------------------
@@ -148,18 +134,14 @@ CBLAS_UNUSED static void cblas_dcopy_k_noinc(cblas_args_t* args)
 
     for (; i + 4 < n; i += 4)
     {
-        *y = *x;
-        *(y + 1) = *(x + 1);
-        *(y + 2) = *(x + 2);
-        *(y + 3) = *(x + 3);
-
-        x += 4;
-        y += 4;
+        y[i] = x[i];
+        y[i + 1] = x[i + 1];
+        y[i + 2] = x[i + 2];
+        y[i + 3] = x[i + 3];
     }
 
-    // TODO - possibly use switch with fall-through here?
     for (; i < n; i++)
-        *y++ = *x++;
+        y[i] = x[i];
 }
 
 //------------------------------------------------------
