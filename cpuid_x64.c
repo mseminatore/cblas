@@ -213,13 +213,26 @@ static unsigned int __cpu_get_features(void)
 	return cpu_features;
 }
 
+#if !defined(_WIN32)
+#include <pthread.h>
+static pthread_mutex_t cpu_features_lock = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
 //------------------------------------------------------
 // get and cache cpu features
 //------------------------------------------------------
 unsigned int cpu_get_features(void)
 {
+#if !defined(_WIN32)
+	// Use mutex to prevent race condition on first call
+	pthread_mutex_lock(&cpu_features_lock);
 	if (cpu_features == CPU_NONE)
 		cpu_features = __cpu_get_features();
+	pthread_mutex_unlock(&cpu_features_lock);
+#else
+	if (cpu_features == CPU_NONE)
+		cpu_features = __cpu_get_features();
+#endif
 
 	return cpu_features;
 }
