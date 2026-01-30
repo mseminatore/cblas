@@ -42,6 +42,8 @@ elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "AppleClang")
 elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -Wextra -Wpedantic")
 elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
+    # Convert GCC-style flags to MSVC equivalents if they exist in CMAKE_C_FLAGS
+    string(REPLACE "-Werror" "/WX" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /arch:AVX /std:c11")
 #    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /STACK:0x800000")
 endif()
