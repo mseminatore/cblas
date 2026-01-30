@@ -223,9 +223,14 @@ static pthread_mutex_t cpu_features_lock = PTHREAD_MUTEX_INITIALIZER;
 //------------------------------------------------------
 unsigned int cpu_get_features(void)
 {
+	// Fast path: return cached value if already initialized
+	if (cpu_features != CPU_NONE)
+		return cpu_features;
+
 #if !defined(_WIN32)
-	// Use mutex to prevent race condition on first call
+	// Slow path: need to initialize (double-checked locking)
 	pthread_mutex_lock(&cpu_features_lock);
+	// Check again after acquiring lock (another thread may have initialized)
 	if (cpu_features == CPU_NONE)
 		cpu_features = __cpu_get_features();
 	pthread_mutex_unlock(&cpu_features_lock);
