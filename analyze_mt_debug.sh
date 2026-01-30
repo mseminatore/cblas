@@ -46,15 +46,15 @@ if command -v jq &> /dev/null; then
             min_us: (map(.duration_us) | min),
             max_us: (map(.duration_us) | max),
             avg_us: (map(.duration_us) | add / length)
-        })' | jq -r '.[] | "\(.operation): \(.count) calls, avg=\(.avg_us | floor)us, min=\(.min_us | floor)us, max=\(.max_us | floor)us"'
+        })' | jq -r '.[] | "\(.operation): \(.count) calls, avg=\(.avg_us)us, min=\(.min_us)us, max=\(.max_us)us"'
     echo ""
     
     echo "=== Load Balance Analysis ==="
     grep '"type":"load_balance"' mt_debug.json | jq -r '
         if .warning then 
-            "⚠ WARNING: \(.variance_pct | floor)% variance (min=\(.min_us | floor)us, max=\(.max_us | floor)us, avg=\(.avg_us | floor)us, threads=\(.thread_count))" 
+            "⚠ WARNING: \(.variance_pct)% variance (min=\(.min_us)us, max=\(.max_us)us, avg=\(.avg_us)us, threads=\(.thread_count))" 
         else 
-            "✓ OK: \(.variance_pct | floor)% variance (threads=\(.thread_count))"
+            "✓ OK: \(.variance_pct)% variance (threads=\(.thread_count))"
         end'
     echo ""
     
@@ -65,7 +65,7 @@ if command -v jq &> /dev/null; then
             thread: .[0].tid,
             total_us: (map(.duration_us) | add),
             tasks: length
-        }) | sort_by(.total_us) | reverse | .[0:5]' | jq -r '.[] | "Thread \(.thread): \(.tasks) tasks, total=\(.total_us | floor)us"'
+        }) | sort_by(.total_us) | reverse | .[0:5]' | jq -r '.[] | "Thread \(.thread): \(.tasks) tasks, total=\(.total_us)us"'
     
 else
     echo "jq not found. Install jq for advanced JSON analysis."

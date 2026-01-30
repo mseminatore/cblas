@@ -360,7 +360,7 @@ void cblas_print_configuration(void)
 }
 
 //------------------------------------------------------
-// leve1 1 dispatch
+// level 1 dispatch
 //------------------------------------------------------
 void cblas_level1_exec(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_INDEX n, void *x, CBLAS_INDEX incx, void *y, CBLAS_INDEX incy, const char* op_name)
 {
@@ -405,7 +405,7 @@ void cblas_level1_exec(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_IN
 }
 
 //------------------------------------------------------
-// leve1 1 dispatch
+// level 1 dispatch
 //------------------------------------------------------
 void cblas_level1_exec_result(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy, void *c, const char* op_name)
 {

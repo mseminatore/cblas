@@ -64,6 +64,8 @@ waking worker threads.
 
 ### JSON Mode (MT_DEBUG + MT_DEBUG_JSON)
 
+**Note:** The current JSON implementation does not escape special characters in trace/thread messages. For production use, filter to structured event types (timing, queue, load_balance) which are always valid JSON.
+
 Example output (one JSON object per line):
 
 ```json
@@ -235,8 +237,9 @@ CFLAGS="-DMT_DEBUG" make my_program
 CFLAGS="-DMT_DEBUG -DMT_DEBUG_JSON" make my_program
 ./my_program 2>debug.json
 
-# Parse JSON with jq
-./my_program 2>&1 | grep timing | jq -s 'group_by(.operation) | map({op: .[0].operation, count: length, avg: (map(.duration_us) | add / length)})'
+# Parse JSON with jq (filter first, then parse)
+./my_program 2>debug.json
+cat debug.json | grep timing | jq -s 'group_by(.operation) | map({op: .[0].operation, count: length, avg: (map(.duration_us) | add / length)})'
 ```
 
 ## Troubleshooting
@@ -261,5 +264,5 @@ CFLAGS="-DMT_DEBUG -DMT_DEBUG_JSON" make my_program
 ## See Also
 
 - [THREADING.md](THREADING.md) - General threading architecture
-- [cblas.h](../cblas.h) - MT_DEBUG macro definitions (lines 78-125)
+- [cblas.h](../cblas.h) - MT_DEBUG macro definitions (lines 81-152)
 - [test_mt_debug.c](../test_mt_debug.c) - Example debug usage
