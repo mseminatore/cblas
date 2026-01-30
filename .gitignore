@@ -80,3 +80,6 @@ Module.symvers
 Mkfile.old
 dkms.conf
 mt_debug*.json
+
+# Test programs
+test_*
