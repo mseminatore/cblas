@@ -35,13 +35,14 @@ endif()
 
 message("Compiler = ${CMAKE_C_COMPILER_ID}")
 
-if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -Wextra -Wpedantic")    
-elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "AppleClang")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -Wextra -Wpedantic")    
-elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -Wextra -Wpedantic")
+if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang" OR
+    "${CMAKE_C_COMPILER_ID}" STREQUAL "AppleClang" OR
+    "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -Wextra -Wpedantic -Werror")
 elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
+    # Note: /WX (warnings as errors) is not used due to pre-existing warnings in the codebase
+    # (C4996: deprecated functions, C4127: constant conditionals, C4702: unreachable code,
+    #  C4312/C4311: pointer/int type casting in server_win32.c)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /arch:AVX /std:c11")
 #    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /STACK:0x800000")
 endif()
