@@ -82,6 +82,9 @@ void tune_threshold(void)
            "Size", "Time(s)", "GFlops", "MT Used", "Performance");
     printf("----------------------------------------------------------------\n");
     
+    // Track baseline for relative performance (first measurement)
+    double baseline = 0.0;
+    
     // Test each size
     for (size_t i = 0; i < NUM_TEST_SIZES; i++) {
         CBLAS_INDEX n = test_sizes[i];
@@ -97,7 +100,6 @@ void tune_threshold(void)
         int mt_used = (stats && stats->mt_activations > 0) ? 1 : 0;
         
         // Calculate relative performance (normalized to first measurement)
-        static double baseline = 0.0;
         if (i == 0) baseline = gflops;
         double relative_perf = gflops / baseline;
         

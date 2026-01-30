@@ -89,6 +89,9 @@ dot_perf: $(LIBNAME) dot_perf.o
 dot_threshold_tuning: $(LIBNAME) dot_threshold_tuning.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
+dot_threshold_tuning_large: $(LIBNAME) dot_threshold_tuning_large.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
 nrm2_asum_rot_perf: $(LIBNAME) nrm2_asum_rot_perf.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
@@ -105,5 +108,5 @@ test: all
 	./blas_test
 
 clean:
-	rm -f $(TARGET) $(OBJS) $(LIBNAME) test_main.o test.o test_stress.o blas_stress blas_test.o blas_test test_threshold.o test_threshold test_dot_threshold.o test_dot_threshold test_concurrent.o test_concurrent gemm_perf.o gemm_perf ger_perf.o ger_perf dot_perf.o dot_perf dot_threshold_tuning.o dot_threshold_tuning nrm2_asum_rot_perf.o nrm2_asum_rot_perf cblas_config.h test_strided.o test_strided test_stats.o test_stats
+	rm -f $(TARGET) $(OBJS) $(LIBNAME) test_main.o test.o test_stress.o blas_stress blas_test.o blas_test test_threshold.o test_threshold test_dot_threshold.o test_dot_threshold test_concurrent.o test_concurrent gemm_perf.o gemm_perf ger_perf.o ger_perf dot_perf.o dot_perf dot_threshold_tuning.o dot_threshold_tuning dot_threshold_tuning_large.o dot_threshold_tuning_large nrm2_asum_rot_perf.o nrm2_asum_rot_perf cblas_config.h test_strided.o test_strided test_stats.o test_stats
 
