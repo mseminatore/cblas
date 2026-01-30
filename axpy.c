@@ -53,9 +53,25 @@ static void cblas_saxpy_k_noinc_sse(float alpha, float *x, float *y, CBLAS_INDEX
     }
     
     // Handle remaining elements
-    for (; i < n; i++)
+    if (n > CBLAS_PREFETCH_THRESHOLD)
     {
-        y[i] = alpha * x[i] + y[i];
+        // Large vector path with prefetching
+        for (; i < n; i++)
+        {
+            if (i + CBLAS_PREFETCH_DISTANCE < n) {
+                __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
+            }
+            y[i] = alpha * x[i] + y[i];
+        }
+    }
+    else
+    {
+        // Small vector path without prefetching
+        for (; i < n; i++)
+        {
+            y[i] = alpha * x[i] + y[i];
+        }
     }
 }
 
@@ -97,9 +113,25 @@ static void cblas_daxpy_k_noinc_sse(double alpha, double *x, double *y, CBLAS_IN
     }
     
     // Handle remaining elements
-    for (; i < n; i++)
+    if (n > CBLAS_PREFETCH_THRESHOLD)
     {
-        y[i] = alpha * x[i] + y[i];
+        // Large vector path with prefetching
+        for (; i < n; i++)
+        {
+            if (i + CBLAS_PREFETCH_DISTANCE < n) {
+                __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
+            }
+            y[i] = alpha * x[i] + y[i];
+        }
+    }
+    else
+    {
+        // Small vector path without prefetching
+        for (; i < n; i++)
+        {
+            y[i] = alpha * x[i] + y[i];
+        }
     }
 }
 
@@ -149,9 +181,25 @@ static void cblas_saxpy_k_noinc_neon(float alpha, float *x, float *y, CBLAS_INDE
     }
     
     // Handle remaining elements
-    for (; i < n; i++)
+    if (n > CBLAS_PREFETCH_THRESHOLD)
     {
-        y[i] = alpha * x[i] + y[i];
+        // Large vector path with prefetching
+        for (; i < n; i++)
+        {
+            if (i + CBLAS_PREFETCH_DISTANCE < n) {
+                __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
+            }
+            y[i] = alpha * x[i] + y[i];
+        }
+    }
+    else
+    {
+        // Small vector path without prefetching
+        for (; i < n; i++)
+        {
+            y[i] = alpha * x[i] + y[i];
+        }
     }
 }
 
@@ -197,9 +245,25 @@ static void cblas_daxpy_k_noinc_neon(double alpha, double *x, double *y, CBLAS_I
     }
     
     // Handle remaining elements
-    for (; i < n; i++)
+    if (n > CBLAS_PREFETCH_THRESHOLD)
     {
-        y[i] = alpha * x[i] + y[i];
+        // Large vector path with prefetching
+        for (; i < n; i++)
+        {
+            if (i + CBLAS_PREFETCH_DISTANCE < n) {
+                __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
+            }
+            y[i] = alpha * x[i] + y[i];
+        }
+    }
+    else
+    {
+        // Small vector path without prefetching
+        for (; i < n; i++)
+        {
+            y[i] = alpha * x[i] + y[i];
+        }
     }
 }
 
@@ -232,16 +296,48 @@ void cblas_saxpy(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *
         // Fallback scalar implementation
         if (alpha == 1.0f)
         {
-            for (CBLAS_INDEX i = 0; i < n; i++)
+            if (n > CBLAS_PREFETCH_THRESHOLD)
             {
-                y[i] = x[i] + y[i];
+                // Large vector path with prefetching
+                for (CBLAS_INDEX i = 0; i < n; i++)
+                {
+                    if (i + CBLAS_PREFETCH_DISTANCE < n) {
+                        __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                        __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
+                    }
+                    y[i] = x[i] + y[i];
+                }
+            }
+            else
+            {
+                // Small vector path without prefetching
+                for (CBLAS_INDEX i = 0; i < n; i++)
+                {
+                    y[i] = x[i] + y[i];
+                }
             }
         }
         else
         {
-            for (CBLAS_INDEX i = 0; i < n; i++)
+            if (n > CBLAS_PREFETCH_THRESHOLD)
             {
-                y[i] = alpha * x[i] + y[i];
+                // Large vector path with prefetching
+                for (CBLAS_INDEX i = 0; i < n; i++)
+                {
+                    if (i + CBLAS_PREFETCH_DISTANCE < n) {
+                        __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                        __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
+                    }
+                    y[i] = alpha * x[i] + y[i];
+                }
+            }
+            else
+            {
+                // Small vector path without prefetching
+                for (CBLAS_INDEX i = 0; i < n; i++)
+                {
+                    y[i] = alpha * x[i] + y[i];
+                }
             }
         }
     }
@@ -298,16 +394,48 @@ void cblas_daxpy(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, doubl
         // Fallback scalar implementation
         if (alpha == 1.0)
         {
-            for (CBLAS_INDEX i = 0; i < n; i++)
+            if (n > CBLAS_PREFETCH_THRESHOLD)
             {
-                y[i] = x[i] + y[i];
+                // Large vector path with prefetching
+                for (CBLAS_INDEX i = 0; i < n; i++)
+                {
+                    if (i + CBLAS_PREFETCH_DISTANCE < n) {
+                        __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                        __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
+                    }
+                    y[i] = x[i] + y[i];
+                }
+            }
+            else
+            {
+                // Small vector path without prefetching
+                for (CBLAS_INDEX i = 0; i < n; i++)
+                {
+                    y[i] = x[i] + y[i];
+                }
             }
         }
         else
         {
-            for (CBLAS_INDEX i = 0; i < n; i++)
+            if (n > CBLAS_PREFETCH_THRESHOLD)
             {
-                y[i] = alpha * x[i] + y[i];
+                // Large vector path with prefetching
+                for (CBLAS_INDEX i = 0; i < n; i++)
+                {
+                    if (i + CBLAS_PREFETCH_DISTANCE < n) {
+                        __builtin_prefetch(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                        __builtin_prefetch(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
+                    }
+                    y[i] = alpha * x[i] + y[i];
+                }
+            }
+            else
+            {
+                // Small vector path without prefetching
+                for (CBLAS_INDEX i = 0; i < n; i++)
+                {
+                    y[i] = alpha * x[i] + y[i];
+                }
             }
         }
     }

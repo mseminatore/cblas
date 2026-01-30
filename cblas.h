@@ -59,6 +59,10 @@
 #define CBLAS_MT_GEMM   10000
 #define CBLAS_MT_GEMV   10000
 
+// prefetching configuration
+#define CBLAS_PREFETCH_THRESHOLD 100000  // Enable prefetching for vectors >100K elements
+#define CBLAS_PREFETCH_DISTANCE  64      // Prefetch 64 elements ahead
+
 //------------------------------------------------------
 // Compiler-independent macros for code quality
 //------------------------------------------------------

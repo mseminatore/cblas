@@ -203,9 +203,26 @@ void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
         if (incx == 1 && incy == 1)
         {
             // TODO - unroll this loop
-            for (CBLAS_INDEX i = 0; i < n; i++)
+            if (n > CBLAS_PREFETCH_THRESHOLD)
             {
-                *y++ = *x++;
+                // Large vector path with prefetching
+                CBLAS_INDEX i = 0;
+                for (; i < n; i++)
+                {
+                    if (i + CBLAS_PREFETCH_DISTANCE < n) {
+                        __builtin_prefetch(x + CBLAS_PREFETCH_DISTANCE, 0, 0);
+                        __builtin_prefetch(y + CBLAS_PREFETCH_DISTANCE, 1, 0);
+                    }
+                    *y++ = *x++;
+                }
+            }
+            else
+            {
+                // Small vector path without prefetching
+                for (CBLAS_INDEX i = 0; i < n; i++)
+                {
+                    *y++ = *x++;
+                }
             }
         }
         else
@@ -223,9 +240,26 @@ void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
     if (incx == 1 && incy == 1)
     {
         // TODO - unroll this loop
-        for (CBLAS_INDEX i = 0; i < n; i++)
+        if (n > CBLAS_PREFETCH_THRESHOLD)
         {
-            *y++ = *x++;
+            // Large vector path with prefetching
+            CBLAS_INDEX i = 0;
+            for (; i < n; i++)
+            {
+                if (i + CBLAS_PREFETCH_DISTANCE < n) {
+                    __builtin_prefetch(x + CBLAS_PREFETCH_DISTANCE, 0, 0);
+                    __builtin_prefetch(y + CBLAS_PREFETCH_DISTANCE, 1, 0);
+                }
+                *y++ = *x++;
+            }
+        }
+        else
+        {
+            // Small vector path without prefetching
+            for (CBLAS_INDEX i = 0; i < n; i++)
+            {
+                *y++ = *x++;
+            }
         }
     }
     else
@@ -286,9 +320,26 @@ void cblas_dcopy(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IN
         if (incx == 1 && incy == 1)
         {
             // TODO - unroll this loop
-            for (CBLAS_INDEX i = 0; i < n; i++)
+            if (n > CBLAS_PREFETCH_THRESHOLD)
             {
-                *y++ = *x++;
+                // Large vector path with prefetching
+                CBLAS_INDEX i = 0;
+                for (; i < n; i++)
+                {
+                    if (i + CBLAS_PREFETCH_DISTANCE < n) {
+                        __builtin_prefetch(x + CBLAS_PREFETCH_DISTANCE, 0, 0);
+                        __builtin_prefetch(y + CBLAS_PREFETCH_DISTANCE, 1, 0);
+                    }
+                    *y++ = *x++;
+                }
+            }
+            else
+            {
+                // Small vector path without prefetching
+                for (CBLAS_INDEX i = 0; i < n; i++)
+                {
+                    *y++ = *x++;
+                }
             }
         }
         else
@@ -306,9 +357,26 @@ void cblas_dcopy(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IN
     if (incx == 1 && incy == 1)
     {
         // TODO - unroll this loop
-        for (CBLAS_INDEX i = 0; i < n; i++)
+        if (n > CBLAS_PREFETCH_THRESHOLD)
         {
-            *y++ = *x++;
+            // Large vector path with prefetching
+            CBLAS_INDEX i = 0;
+            for (; i < n; i++)
+            {
+                if (i + CBLAS_PREFETCH_DISTANCE < n) {
+                    __builtin_prefetch(x + CBLAS_PREFETCH_DISTANCE, 0, 0);
+                    __builtin_prefetch(y + CBLAS_PREFETCH_DISTANCE, 1, 0);
+                }
+                *y++ = *x++;
+            }
+        }
+        else
+        {
+            // Small vector path without prefetching
+            for (CBLAS_INDEX i = 0; i < n; i++)
+            {
+                *y++ = *x++;
+            }
         }
     }
     else
