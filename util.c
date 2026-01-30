@@ -82,8 +82,12 @@ static cblas_stats_t* get_stats_entry(const char* operation)
     for (int i = 0; i < STATS_TABLE_SIZE; i++) {
         if (stats_table[i].name[0] == 0) {
             // Empty slot - create new entry
+#ifdef _MSC_VER
+            strncpy_s(stats_table[i].name, sizeof(stats_table[i].name), operation, _TRUNCATE);
+#else
             strncpy(stats_table[i].name, operation, sizeof(stats_table[i].name) - 1);
             stats_table[i].name[sizeof(stats_table[i].name) - 1] = 0;
+#endif
             STATS_UNLOCK();
             return &stats_table[i].stats;
         }
