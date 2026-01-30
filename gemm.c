@@ -87,8 +87,8 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
 
         // Prefetch data ahead (after current load, before pointer update)
         if (p + PREFETCH_DISTANCE < k) {
-            __builtin_prefetch(a + (PREFETCH_DISTANCE * 4), 0, 3);
-            __builtin_prefetch(b + (PREFETCH_DISTANCE * 4), 0, 3);
+            CBLAS_PREFETCH(a + (PREFETCH_DISTANCE * 4), 0, 3);
+            CBLAS_PREFETCH(b + (PREFETCH_DISTANCE * 4), 0, 3);
         }
 
         a += 4;
@@ -139,8 +139,8 @@ static void AddDot4x4_fma(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CB
 
         // Prefetch data ahead (after current load, before pointer update)
         if (p + PREFETCH_DISTANCE < k) {
-            __builtin_prefetch(a + (PREFETCH_DISTANCE * 4), 0, 3);
-            __builtin_prefetch(b + (PREFETCH_DISTANCE * 4), 0, 3);
+            CBLAS_PREFETCH(a + (PREFETCH_DISTANCE * 4), 0, 3);
+            CBLAS_PREFETCH(b + (PREFETCH_DISTANCE * 4), 0, 3);
         }
 
         a += 4;
@@ -190,8 +190,8 @@ static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_
 
         // Prefetch data ahead (after current load, before pointer update)
         if (p + PREFETCH_DISTANCE < k) {
-            __builtin_prefetch(a + (PREFETCH_DISTANCE * 4), 0, 3);
-            __builtin_prefetch(b + (PREFETCH_DISTANCE * 4), 0, 3);
+            CBLAS_PREFETCH(a + (PREFETCH_DISTANCE * 4), 0, 3);
+            CBLAS_PREFETCH(b + (PREFETCH_DISTANCE * 4), 0, 3);
         }
 
         a += 4;
@@ -260,11 +260,11 @@ static void AddDot4x4(CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_
 
         // Prefetch data ahead (after current load, before pointer update)
         if (p + PREFETCH_DISTANCE < k) {
-            __builtin_prefetch(a + (PREFETCH_DISTANCE * 4), 0, 3);
-            __builtin_prefetch(&B(0, p + PREFETCH_DISTANCE), 0, 3);
-            __builtin_prefetch(&B(1, p + PREFETCH_DISTANCE), 0, 3);
-            __builtin_prefetch(&B(2, p + PREFETCH_DISTANCE), 0, 3);
-            __builtin_prefetch(&B(3, p + PREFETCH_DISTANCE), 0, 3);
+            CBLAS_PREFETCH(a + (PREFETCH_DISTANCE * 4), 0, 3);
+            CBLAS_PREFETCH(&B(0, p + PREFETCH_DISTANCE), 0, 3);
+            CBLAS_PREFETCH(&B(1, p + PREFETCH_DISTANCE), 0, 3);
+            CBLAS_PREFETCH(&B(2, p + PREFETCH_DISTANCE), 0, 3);
+            CBLAS_PREFETCH(&B(3, p + PREFETCH_DISTANCE), 0, 3);
         }
 
         a += 4;
