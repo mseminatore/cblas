@@ -360,9 +360,9 @@ void cblas_print_configuration(void)
 }
 
 //------------------------------------------------------
-// leve1 1 dispatch
+// level 1 dispatch
 //------------------------------------------------------
-void cblas_level1_exec(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_INDEX n, void *x, CBLAS_INDEX incx, void *y, CBLAS_INDEX incy)
+void cblas_level1_exec(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_INDEX n, void *x, CBLAS_INDEX incx, void *y, CBLAS_INDEX incy, const char* op_name)
 {
     work_queue_t queue[MAX_THREADS];
     cblas_args_t args[MAX_THREADS];
@@ -391,6 +391,11 @@ void cblas_level1_exec(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_IN
         queue[i].args       = &args[i];
         queue[i].kernel     = kernel;
         queue[i].next       = &queue[i + 1];
+#ifdef MT_DEBUG
+        queue[i].operation  = op_name ? op_name : "UNKNOWN";
+#else
+        (void)op_name;  // Suppress unused parameter warning
+#endif
     }
 
     // mark end of task queue
@@ -402,9 +407,9 @@ void cblas_level1_exec(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_IN
 }
 
 //------------------------------------------------------
-// leve1 1 dispatch
+// level 1 dispatch
 //------------------------------------------------------
-void cblas_level1_exec_result(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy, void *c)
+void cblas_level1_exec_result(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy, void *c, const char* op_name)
 {
     work_queue_t queue[MAX_THREADS];
     cblas_args_t args[MAX_THREADS];
@@ -434,6 +439,11 @@ void cblas_level1_exec_result(CBLAS_INDEX byte_stride, kernel_function kernel, C
         queue[i].args = &args[i];
         queue[i].kernel = kernel;
         queue[i].next = &queue[i + 1];
+#ifdef MT_DEBUG
+        queue[i].operation = op_name ? op_name : "UNKNOWN";
+#else
+        (void)op_name;  // Suppress unused parameter warning
+#endif
     }
 
     // mark end of task queue

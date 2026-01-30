@@ -46,6 +46,9 @@
 // uncomment to enable multi-threading debug messages
 //#define MT_DEBUG
 
+// uncomment to enable JSON format for MT debug output
+//#define MT_DEBUG_JSON
+
 // uncomment to enable performance counter tracking
 #define CBLAS_ENABLE_STATS
 
@@ -76,10 +79,29 @@
 typedef size_t CBLAS_INDEX;
 
 #ifdef MT_DEBUG
-#   define MT_TRACE(...) fprintf(stderr, __VA_ARGS__)
-#   define MT_TRACE_THREAD(tid, ...) fprintf(stderr, "[Thread %d] ", tid); fprintf(stderr, __VA_ARGS__)
-#   define MT_TRACE_TIMING(tid, op, duration_us) fprintf(stderr, "[Thread %d] %s took %.2f us\n", tid, op, duration_us)
-#   define MT_TRACE_QUEUE_DEPTH(depth) fprintf(stderr, "[Queue] Depth: %d\n", depth)
+#   ifdef MT_DEBUG_JSON
+        // JSON output mode
+#       define MT_TRACE(...) do { \
+            fprintf(stderr, "{\"type\":\"trace\",\"message\":\""); \
+            fprintf(stderr, __VA_ARGS__); \
+            fprintf(stderr, "\"}\n"); \
+        } while(0)
+#       define MT_TRACE_THREAD(tid, ...) do { \
+            fprintf(stderr, "{\"type\":\"thread\",\"tid\":%d,\"message\":\"", tid); \
+            fprintf(stderr, __VA_ARGS__); \
+            fprintf(stderr, "\"}\n"); \
+        } while(0)
+#       define MT_TRACE_TIMING(tid, op, duration_us) \
+            fprintf(stderr, "{\"type\":\"timing\",\"tid\":%d,\"operation\":\"%s\",\"duration_us\":%.2f}\n", tid, op, duration_us)
+#       define MT_TRACE_QUEUE_DEPTH(depth) \
+            fprintf(stderr, "{\"type\":\"queue\",\"depth\":%d}\n", depth)
+#   else
+        // Human-readable output mode
+#       define MT_TRACE(...) fprintf(stderr, __VA_ARGS__)
+#       define MT_TRACE_THREAD(tid, ...) fprintf(stderr, "[Thread %d] ", tid); fprintf(stderr, __VA_ARGS__)
+#       define MT_TRACE_TIMING(tid, op, duration_us) fprintf(stderr, "[Thread %d] %s took %.2f us\n", tid, op, duration_us)
+#       define MT_TRACE_QUEUE_DEPTH(depth) fprintf(stderr, "[Queue] Depth: %d\n", depth)
+#   endif
 #   define MT_TRACE_LOAD_BALANCE(thread_count, times) do { \
         if ((thread_count) > 0) { \
             double min_time = times[0], max_time = times[0], sum = times[0]; \
@@ -91,16 +113,21 @@ typedef size_t CBLAS_INDEX;
             double avg_time = sum / (thread_count); \
             if (avg_time > 0.0) { \
                 double variance = ((max_time - min_time) / avg_time) * 100.0; \
-                if (variance > 20.0) { \
-                    fprintf(stderr, "[Load Balance] WARNING: %.1f%% variance (min=%.2fus, max=%.2fus, avg=%.2fus)\n", \
-                            variance, min_time, max_time, avg_time); \
-                } else { \
-                    fprintf(stderr, "[Load Balance] OK: %.1f%% variance (min=%.2fus, max=%.2fus, avg=%.2fus)\n", \
-                            variance, min_time, max_time, avg_time); \
-                } \
+                int warning = (variance > 20.0) ? 1 : 0; \
+                CBLAS_MT_TRACE_LOAD_BALANCE_IMPL(thread_count, variance, min_time, max_time, avg_time, warning); \
             } \
         } \
     } while(0)
+
+#   ifdef MT_DEBUG_JSON
+#       define CBLAS_MT_TRACE_LOAD_BALANCE_IMPL(count, variance, min_t, max_t, avg_t, warn) \
+            fprintf(stderr, "{\"type\":\"load_balance\",\"thread_count\":%d,\"variance_pct\":%.1f,\"min_us\":%.2f,\"max_us\":%.2f,\"avg_us\":%.2f,\"warning\":%s}\n", \
+                    count, variance, min_t, max_t, avg_t, warn ? "true" : "false")
+#   else
+#       define CBLAS_MT_TRACE_LOAD_BALANCE_IMPL(count, variance, min_t, max_t, avg_t, warn) \
+            fprintf(stderr, "[Load Balance] %s: %.1f%% variance (min=%.2fus, max=%.2fus, avg=%.2fus)\n", \
+                    warn ? "WARNING" : "OK", variance, min_t, max_t, avg_t)
+#   endif
 
 // Helper function to get current time in microseconds for MT debug timing
 static inline double mt_get_time_us(void) {
@@ -468,6 +495,7 @@ typedef struct work_queue_t
     // Timing information for debug/profiling
     double start_time_us;       // when task started (microseconds)
     double end_time_us;         // when task completed (microseconds)
+    const char* operation;      // operation name for debugging (e.g., "DOT", "COPY", "GEMM")
 #endif
 } work_queue_t;
 
@@ -931,9 +959,10 @@ void cblas_execute_async_join(CBLAS_INDEX items, work_queue_t* queue);
  * @param incx Stride for X
  * @param y Pointer to vector Y
  * @param incy Stride for Y
+ * @param op_name Operation name for debug output (can be NULL)
  * @note For internal use by Level-1 BLAS functions.
  */
-void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy);
+void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy, const char* op_name);
 
 /**
  * @brief Execute Level-1 BLAS operation with result (internal)
@@ -945,9 +974,10 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
  * @param y Pointer to vector Y
  * @param incy Stride for Y
  * @param c Pointer to result storage
+ * @param op_name Operation name for debug output (can be NULL)
  * @note For internal use by Level-1 BLAS functions that return values.
  */
-void cblas_level1_exec_result(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy, void* c);
+void cblas_level1_exec_result(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy, void* c, const char* op_name);
 
 /**
  * @brief Get library configuration string

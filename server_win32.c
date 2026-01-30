@@ -266,7 +266,8 @@ static DWORD WINAPI cblas_worker_thread(void *pvArg)
         // Calculate and log execution time
         work_item->end_time_us = mt_get_time_us();
         double duration = work_item->end_time_us - work_item->start_time_us;
-        MT_TRACE_TIMING(thread_num, "task", duration);
+        const char* op = work_item->operation ? work_item->operation : "task";
+        MT_TRACE_TIMING(thread_num, op, duration);
 #endif
 
         MT_TRACE_THREAD(thread_num, "task completed.\n");
