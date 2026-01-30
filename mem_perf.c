@@ -62,7 +62,7 @@ float timer_get_delta(struct timer *t1, struct timer *t2)
 //------------------------------------------------------
 //
 //------------------------------------------------------
-void test_mem_read()
+void test_mem_read(void)
 {
     struct timer t1, t2;
     float dt, v CBLAS_UNUSED = 0.0f;
@@ -86,7 +86,7 @@ void test_mem_read()
 //------------------------------------------------------
 //
 //------------------------------------------------------
-void test_mem_write()
+void test_mem_write(void)
 {
     struct timer t1, t2;
     float dt, v CBLAS_UNUSED = 0.0f;

@@ -11,10 +11,10 @@
 #include "test.h"
 
 // Counter variables for test framework
-int test_number = 0;
-int test_suites = 0;
-int test_failures = 0;
-int test_modules = 0;
+// int test_number = 0;
+// int test_suites = 0;
+// int test_failures = 0;
+// int test_modules = 0;
 
 // Test GER with large matrices (should use MT)
 static int test_sger_mt(void)
@@ -340,8 +340,11 @@ static int test_small_no_mt(void)
     return 1;
 }
 
-int main(void)
+int test_main(int argc, char* argv[])
 {
+    (void)argc;
+    (void)argv;
+
     cblas_init(4);  // Initialize with 4 threads
     
     BEGIN_TESTS();

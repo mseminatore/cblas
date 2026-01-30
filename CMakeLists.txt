@@ -22,6 +22,7 @@ add_test(NAME blas_test COMMAND blas_test)
 add_test(NAME test_strided COMMAND test_strided)
 add_test(NAME test_threshold COMMAND test_threshold)
 add_test(NAME test_concurrent COMMAND test_concurrent)
+add_test(NAME test_level2_mt COMMAND test_level2_mt)
 
 # add the includes
 include_directories(${PROJECT_SOURCE_DIR})
@@ -123,6 +124,9 @@ target_link_libraries(test_concurrent Threads::Threads)
 
 add_executable(test_mt_debug test_mt_debug.c)
 target_link_libraries(test_mt_debug cblas ${MATH_LIB})
+
+add_executable(test_level2_mt test_main.c test_level2_mt.c)
+target_link_libraries(test_level2_mt cblas ${MATH_LIB})
 
 # install targets
 install(TARGETS cblas DESTINATION lib)

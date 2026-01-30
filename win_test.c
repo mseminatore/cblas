@@ -24,7 +24,7 @@ dtype result[size][2];
 //------------------------------------------------------
 //
 //------------------------------------------------------
-static int isclose()
+static int isclose(void)
 {
 	int count = 0;
 
@@ -43,7 +43,7 @@ static int isclose()
 }
 
 //
-void clear_result()
+void clear_result(void)
 {
 	for (int i = 0; i < size; i++)
 	{
@@ -55,7 +55,7 @@ void clear_result()
 //------------------------------------------------------
 //
 //------------------------------------------------------
-static void test_win_threads()
+static void test_win_threads(void)
 {
 	for (int i = 0; i < size; i++)
 	{

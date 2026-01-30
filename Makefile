@@ -32,7 +32,7 @@ else
 	endif
 endif
 
-all: cblas_config.h $(LIBNAME) blas_stress blas_test test_strided test_stats test_threshold test_concurrent test_mt_debug gemm_perf ger_perf dot_perf nrm2_asum_rot_perf
+all: cblas_config.h $(LIBNAME) blas_stress blas_test test_strided test_stats test_threshold test_concurrent test_mt_debug test_level2_mt gemm_perf ger_perf dot_perf nrm2_asum_rot_perf
 
 # Generate cblas_config.h from configuration variables
 cblas_config.h: cblas_config.h.in Makefile
@@ -69,6 +69,9 @@ test_concurrent: $(LIBNAME) test_main.o test_concurrent.o
 	$(CC) -o $@ $^ $(LFLAGS) -lpthread
 
 test_mt_debug: $(LIBNAME) test_mt_debug.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
+test_level2_mt: $(LIBNAME) test_main.o test_level2_mt.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 gemm_perf: $(LIBNAME) gemm_perf.o
