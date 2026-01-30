@@ -23,6 +23,13 @@ add_test(NAME test_strided COMMAND test_strided)
 add_test(NAME test_threshold COMMAND test_threshold)
 add_test(NAME test_concurrent COMMAND test_concurrent)
 add_test(NAME test_level2_mt COMMAND test_level2_mt)
+add_test(NAME test_stats COMMAND test_stats)
+add_test(NAME test_mt_debug COMMAND test_mt_debug)
+
+if ( WIN32 )
+    add_test(NAME win_test COMMAND win_test)
+#    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif()
 
 # add the includes
 include_directories(${PROJECT_SOURCE_DIR})
