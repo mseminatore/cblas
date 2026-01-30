@@ -27,7 +27,11 @@ add_test(NAME test_stats COMMAND test_stats)
 add_test(NAME test_mt_debug COMMAND test_mt_debug)
 
 if ( WIN32 )
-    add_test(NAME win_test COMMAND win_test)
+# The disabled test causes issues on Windows CI due to timeouts
+# The test can be run manually if needed
+# The test can take more than 2 minutes to complete
+#    add_test(NAME blas_stress COMMAND blas_stress)
+#    add_test(NAME win_test COMMAND win_test)
 #    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif()
 
