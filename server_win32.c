@@ -8,8 +8,8 @@
 
 extern volatile int cblas_max_threads;
 
-static HANDLE cblas_threads[MAX_THREADS];
-static DWORD cblas_thread_ids[MAX_THREADS];
+static HANDLE cblas_threads[MAX_THREADS] = {NULL};
+static DWORD cblas_thread_ids[MAX_THREADS] = {0};
 
 static HANDLE kickoff_event = NULL;
 
@@ -61,13 +61,17 @@ void cblas_set_num_threads(int threads)
 
         for (int i = threads - 1; i < thread_count - 1; i++)
         {
-            MT_TRACE("set_num_threads: waiting on thread [%d] to quit.\n", i);
+            if (cblas_threads[i] != NULL)
+            {
+                MT_TRACE("set_num_threads: waiting on thread [%d] to quit.\n", i);
 
-            WaitForSingleObject(cblas_threads[i], INFINITE);
+                WaitForSingleObject(cblas_threads[i], INFINITE);
 
-            MT_TRACE("set_num_threads: thread [%d] has quit.\n", i);
+                MT_TRACE("set_num_threads: thread [%d] has quit.\n", i);
 
-            CloseHandle(cblas_threads[i]);
+                CloseHandle(cblas_threads[i]);
+                cblas_threads[i] = NULL;
+            }
         }
 
         ResetEvent(kickoff_event);
@@ -80,8 +84,8 @@ void cblas_set_num_threads(int threads)
     {
         EnterCriticalSection(&server_lock);
 
-        int threads_to_add = threads - cblas_max_threads;
         int start = cblas_max_threads > 0 ? cblas_max_threads - 1 : 0;
+        cblas_max_threads = threads;
 
         for (int i = start; i < threads - 1; i++)
         {
@@ -97,8 +101,6 @@ void cblas_set_num_threads(int threads)
 
         LeaveCriticalSection(&server_lock);
     }
-
-    cblas_max_threads = threads;
 }
 
 //------------------------------------------------------

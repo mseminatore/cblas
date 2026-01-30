@@ -40,6 +40,8 @@ if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang" OR
     "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -Wextra -Wpedantic -Werror")
 elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
+    # Convert GCC-style flags to MSVC equivalents if they exist in CMAKE_C_FLAGS
+    string(REPLACE "-Werror" "/WX" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
     # Note: /WX (warnings as errors) is not used due to pre-existing warnings in the codebase
     # (C4996: deprecated functions, C4127: constant conditionals, C4702: unreachable code,
     #  C4312/C4311: pointer/int type casting in server_win32.c)
