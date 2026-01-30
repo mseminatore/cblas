@@ -53,7 +53,7 @@
 #define CBLAS_ENABLE_STATS
 
 // multi-threading threshold limits
-#define CBLAS_MT_DOT    10000
+#define CBLAS_MT_DOT    100000
 #define CBLAS_MT_COPY   10000
 #define CBLAS_MT_GER    10000
 #define CBLAS_MT_GEMM   10000
