@@ -560,12 +560,17 @@ void sger_k(cblas_args_t* args)
 	}
 	else
 	{
-		// Generic path for non-unit alpha
-		for (CBLAS_INDEX row = 0; row < m; row++)
+		// Generic path with cache blocking for non-unit alpha
+		for (CBLAS_INDEX i = 0; i < m; i += GER_BLOCK_SIZE)
 		{
-			for (CBLAS_INDEX col = 0; col < n; col++)
+			CBLAS_INDEX ib = (i + GER_BLOCK_SIZE < m) ? GER_BLOCK_SIZE : (m - i);
+			
+			for (CBLAS_INDEX row = i; row < i + ib; row++)
 			{
-				A(col, row) += alpha * X(row) * Y(col);
+				for (CBLAS_INDEX col = 0; col < n; col++)
+				{
+					A(col, row) += alpha * X(row) * Y(col);
+				}
 			}
 		}
 	}
@@ -589,23 +594,35 @@ void dger_k(cblas_args_t* args)
 	// Use optimized path when alpha == 1.0
 	if (alpha == 1.0)
 	{
-		// Optimized path for unit alpha
-		for (CBLAS_INDEX row = 0; row < m; row++)
+		// Process rows in cache-friendly blocks
+		for (CBLAS_INDEX i = 0; i < m; i += GER_BLOCK_SIZE)
 		{
-			for (CBLAS_INDEX col = 0; col < n; col++)
+			CBLAS_INDEX ib = (i + GER_BLOCK_SIZE < m) ? GER_BLOCK_SIZE : (m - i);
+			
+			// Optimized path for unit alpha
+			for (CBLAS_INDEX row = i; row < i + ib; row++)
 			{
-				a[row * lda + col] += x[row * incx] * y[col * incy];
+				for (CBLAS_INDEX col = 0; col < n; col++)
+				{
+					a[row * lda + col] += x[row * incx] * y[col * incy];
+				}
 			}
 		}
 	}
 	else
 	{
-		// Generic path for non-unit alpha
-		for (CBLAS_INDEX row = 0; row < m; row++)
+		// Process rows in cache-friendly blocks
+		for (CBLAS_INDEX i = 0; i < m; i += GER_BLOCK_SIZE)
 		{
-			for (CBLAS_INDEX col = 0; col < n; col++)
+			CBLAS_INDEX ib = (i + GER_BLOCK_SIZE < m) ? GER_BLOCK_SIZE : (m - i);
+			
+			// Generic path for non-unit alpha
+			for (CBLAS_INDEX row = i; row < i + ib; row++)
 			{
-				a[row * lda + col] += alpha * x[row * incx] * y[col * incy];
+				for (CBLAS_INDEX col = 0; col < n; col++)
+				{
+					a[row * lda + col] += alpha * x[row * incx] * y[col * incy];
+				}
 			}
 		}
 	}
@@ -697,11 +714,17 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
             }
             else
             {
-                for (CBLAS_INDEX row = 0; row < m; row++)
+                // Process rows in cache-friendly blocks
+                for (CBLAS_INDEX i = 0; i < m; i += GER_BLOCK_SIZE)
                 {
-                    for (CBLAS_INDEX col = 0; col < n; col++)
+                    CBLAS_INDEX ib = (i + GER_BLOCK_SIZE < m) ? GER_BLOCK_SIZE : (m - i);
+                    
+                    for (CBLAS_INDEX row = i; row < i + ib; row++)
                     {
-                        a[row * n + col] += alpha * x[row] * y[col];
+                        for (CBLAS_INDEX col = 0; col < n; col++)
+                        {
+                            a[row * n + col] += alpha * x[row] * y[col];
+                        }
                     }
                 }
             }
@@ -709,21 +732,33 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
         {
             if (alpha == 1.0f)
             {
-                for (CBLAS_INDEX col = 0; col < n; col++)
+                // Process columns in cache-friendly blocks
+                for (CBLAS_INDEX j = 0; j < n; j += GER_BLOCK_SIZE)
                 {
-                    for (CBLAS_INDEX row = 0; row < m; row++)
+                    CBLAS_INDEX jb = (j + GER_BLOCK_SIZE < n) ? GER_BLOCK_SIZE : (n - j);
+                    
+                    for (CBLAS_INDEX col = j; col < j + jb; col++)
                     {
-                        a[col * m + row] += x[row] * y[col];
+                        for (CBLAS_INDEX row = 0; row < m; row++)
+                        {
+                            a[col * m + row] += x[row] * y[col];
+                        }
                     }
                 }
             }
             else
             {
-                for (CBLAS_INDEX col = 0; col < n; col++)
+                // Process columns in cache-friendly blocks
+                for (CBLAS_INDEX j = 0; j < n; j += GER_BLOCK_SIZE)
                 {
-                    for (CBLAS_INDEX row = 0; row < m; row++)
+                    CBLAS_INDEX jb = (j + GER_BLOCK_SIZE < n) ? GER_BLOCK_SIZE : (n - j);
+                    
+                    for (CBLAS_INDEX col = j; col < j + jb; col++)
                     {
-                        a[col * m + row] += alpha * x[row] * y[col];
+                        for (CBLAS_INDEX row = 0; row < m; row++)
+                        {
+                            a[col * m + row] += alpha * x[row] * y[col];
+                        }
                     }
                 }
             }
@@ -805,21 +840,33 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
         {
             if (alpha == 1.0)
             {
-                for (CBLAS_INDEX row = 0; row < m; row++)
+                // Process rows in cache-friendly blocks
+                for (CBLAS_INDEX i = 0; i < m; i += GER_BLOCK_SIZE)
                 {
-                    for (CBLAS_INDEX col = 0; col < n; col++)
+                    CBLAS_INDEX ib = (i + GER_BLOCK_SIZE < m) ? GER_BLOCK_SIZE : (m - i);
+                    
+                    for (CBLAS_INDEX row = i; row < i + ib; row++)
                     {
-                        a[row * n + col] += x[row] * y[col];
+                        for (CBLAS_INDEX col = 0; col < n; col++)
+                        {
+                            a[row * n + col] += x[row] * y[col];
+                        }
                     }
                 }
             }
             else
             {
-                for (CBLAS_INDEX row = 0; row < m; row++)
+                // Process rows in cache-friendly blocks
+                for (CBLAS_INDEX i = 0; i < m; i += GER_BLOCK_SIZE)
                 {
-                    for (CBLAS_INDEX col = 0; col < n; col++)
+                    CBLAS_INDEX ib = (i + GER_BLOCK_SIZE < m) ? GER_BLOCK_SIZE : (m - i);
+                    
+                    for (CBLAS_INDEX row = i; row < i + ib; row++)
                     {
-                        a[row * n + col] += alpha * x[row] * y[col];
+                        for (CBLAS_INDEX col = 0; col < n; col++)
+                        {
+                            a[row * n + col] += alpha * x[row] * y[col];
+                        }
                     }
                 }
             }
@@ -827,21 +874,33 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
         {
             if (alpha == 1.0)
             {
-                for (CBLAS_INDEX col = 0; col < n; col++)
+                // Process columns in cache-friendly blocks
+                for (CBLAS_INDEX j = 0; j < n; j += GER_BLOCK_SIZE)
                 {
-                    for (CBLAS_INDEX row = 0; row < m; row++)
+                    CBLAS_INDEX jb = (j + GER_BLOCK_SIZE < n) ? GER_BLOCK_SIZE : (n - j);
+                    
+                    for (CBLAS_INDEX col = j; col < j + jb; col++)
                     {
-                        a[col * m + row] += x[row] * y[col];
+                        for (CBLAS_INDEX row = 0; row < m; row++)
+                        {
+                            a[col * m + row] += x[row] * y[col];
+                        }
                     }
                 }
             }
             else
             {
-                for (CBLAS_INDEX col = 0; col < n; col++)
+                // Process columns in cache-friendly blocks
+                for (CBLAS_INDEX j = 0; j < n; j += GER_BLOCK_SIZE)
                 {
-                    for (CBLAS_INDEX row = 0; row < m; row++)
+                    CBLAS_INDEX jb = (j + GER_BLOCK_SIZE < n) ? GER_BLOCK_SIZE : (n - j);
+                    
+                    for (CBLAS_INDEX col = j; col < j + jb; col++)
                     {
-                        a[col * m + row] += alpha * x[row] * y[col];
+                        for (CBLAS_INDEX row = 0; row < m; row++)
+                        {
+                            a[col * m + row] += alpha * x[row] * y[col];
+                        }
                     }
                 }
             }

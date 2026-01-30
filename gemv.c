@@ -29,15 +29,21 @@ void sgemv_k(cblas_args_t* args)
 
 	float sum;
 	
-	// Process each row assigned to this thread
-	for (CBLAS_INDEX row = 0; row < m; row++)
+	// Process rows in cache-friendly blocks
+	for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
 	{
-		sum = 0.0f;
-		for (CBLAS_INDEX col = 0; col < n; col++)
+		CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
+		
+		// Process ib rows at a time
+		for (CBLAS_INDEX row = i; row < i + ib; row++)
 		{
-			sum += alpha * a[row * lda + col] * x[col * incx];
+			sum = 0.0f;
+			for (CBLAS_INDEX col = 0; col < n; col++)
+			{
+				sum += alpha * a[row * lda + col] * x[col * incx];
+			}
+			y[row * incy] = beta * y[row * incy] + sum;
 		}
-		y[row * incy] = beta * y[row * incy] + sum;
 	}
 }
 
@@ -59,15 +65,21 @@ void dgemv_k(cblas_args_t* args)
 
 	double sum;
 	
-	// Process each row assigned to this thread
-	for (CBLAS_INDEX row = 0; row < m; row++)
+	// Process rows in cache-friendly blocks
+	for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
 	{
-		sum = 0.0;
-		for (CBLAS_INDEX col = 0; col < n; col++)
+		CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
+		
+		// Process ib rows at a time
+		for (CBLAS_INDEX row = i; row < i + ib; row++)
 		{
-			sum += alpha * a[row * lda + col] * x[col * incx];
+			sum = 0.0;
+			for (CBLAS_INDEX col = 0; col < n; col++)
+			{
+				sum += alpha * a[row * lda + col] * x[col * incx];
+			}
+			y[row * incy] = beta * y[row * incy] + sum;
 		}
-		y[row * incy] = beta * y[row * incy] + sum;
 	}
 }
 
@@ -175,32 +187,44 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 	{
 		if (alpha == 1.0f && beta == 1.0f)
 		{
-			// for each row of the matrix
-			for (CBLAS_INDEX row = 0; row < m; row++)
+			// Process rows in cache-friendly blocks
+			for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
 			{
-				sum = 0.0f;
-
-				for (CBLAS_INDEX col = 0; col < n; col++)
+				CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
+				
+				// for each row in the block
+				for (CBLAS_INDEX row = i; row < i + ib; row++)
 				{
-					sum += a[row * n + col] * x[col];
-				}
+					sum = 0.0f;
 
-				y[row] = y[row] + sum;
+					for (CBLAS_INDEX col = 0; col < n; col++)
+					{
+						sum += a[row * n + col] * x[col];
+					}
+
+					y[row] = y[row] + sum;
+				}
 			}
 		}
 		else
 		{
-			// for each row of the matrix
-			for (CBLAS_INDEX row = 0; row < m; row++)
+			// Process rows in cache-friendly blocks
+			for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
 			{
-				sum = 0.0f;
-
-				for (CBLAS_INDEX col = 0; col < n; col++)
+				CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
+				
+				// for each row in the block
+				for (CBLAS_INDEX row = i; row < i + ib; row++)
 				{
-					sum += alpha * a[row * n + col] * x[col];
-				}
+					sum = 0.0f;
 
-				y[row] = beta * y[row] + sum;
+					for (CBLAS_INDEX col = 0; col < n; col++)
+					{
+						sum += alpha * a[row * n + col] * x[col];
+					}
+
+					y[row] = beta * y[row] + sum;
+				}
 			}
 		}
 	}
@@ -343,32 +367,44 @@ void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 	{
 		if (alpha == 1.0 && beta == 1.0)
 		{
-			// for each row of the matrix
-			for (CBLAS_INDEX row = 0; row < m; row++)
+			// Process rows in cache-friendly blocks
+			for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
 			{
-				sum = 0.0;
-
-				for (CBLAS_INDEX col = 0; col < n; col++)
+				CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
+				
+				// for each row in the block
+				for (CBLAS_INDEX row = i; row < i + ib; row++)
 				{
-					sum += a[row * n + col] * x[col];
-				}
+					sum = 0.0;
 
-				y[row] = y[row] + sum;
+					for (CBLAS_INDEX col = 0; col < n; col++)
+					{
+						sum += a[row * n + col] * x[col];
+					}
+
+					y[row] = y[row] + sum;
+				}
 			}
 		}
 		else
 		{
-			// for each row of the matrix
-			for (CBLAS_INDEX row = 0; row < m; row++)
+			// Process rows in cache-friendly blocks
+			for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
 			{
-				sum = 0.0;
-
-				for (CBLAS_INDEX col = 0; col < n; col++)
+				CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
+				
+				// for each row in the block
+				for (CBLAS_INDEX row = i; row < i + ib; row++)
 				{
-					sum += alpha * a[row * n + col] * x[col];
-				}
+					sum = 0.0;
 
-				y[row] = beta * y[row] + sum;
+					for (CBLAS_INDEX col = 0; col < n; col++)
+					{
+						sum += alpha * a[row * n + col] * x[col];
+					}
+
+					y[row] = beta * y[row] + sum;
+				}
 			}
 		}
 	}

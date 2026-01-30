@@ -40,6 +40,10 @@
 #define CBLAS_SMALL_BUF 256
 #define CBLAS_LARGE_BUF 1024
 
+// cache-aware block sizes for Level-2 operations
+#define GEMV_BLOCK_SIZE 256  // Fits in L1 cache
+#define GER_BLOCK_SIZE 256   // Fits in L1 cache
+
 // uncomment to enable FMA3 instruction usage
 //#define USE_INTEL_FMA
 
