@@ -29,13 +29,30 @@ void sgemv_k(cblas_args_t* args)
 
 	float sum;
 	
-	// Process rows in cache-friendly blocks
-	for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
+	// Use cache blocking only for matrices large enough to benefit (>2x block size)
+	if (m > 2 * GEMV_BLOCK_SIZE)
 	{
-		CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
-		
-		// Process ib rows at a time
-		for (CBLAS_INDEX row = i; row < i + ib; row++)
+		// Process rows in cache-friendly blocks
+		for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
+		{
+			CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
+			
+			// Process ib rows at a time
+			for (CBLAS_INDEX row = i; row < i + ib; row++)
+			{
+				sum = 0.0f;
+				for (CBLAS_INDEX col = 0; col < n; col++)
+				{
+					sum += alpha * a[row * lda + col] * x[col * incx];
+				}
+				y[row * incy] = beta * y[row * incy] + sum;
+			}
+		}
+	}
+	else
+	{
+		// Direct processing for small matrices
+		for (CBLAS_INDEX row = 0; row < m; row++)
 		{
 			sum = 0.0f;
 			for (CBLAS_INDEX col = 0; col < n; col++)
@@ -65,13 +82,30 @@ void dgemv_k(cblas_args_t* args)
 
 	double sum;
 	
-	// Process rows in cache-friendly blocks
-	for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
+	// Use cache blocking only for matrices large enough to benefit (>2x block size)
+	if (m > 2 * GEMV_BLOCK_SIZE)
 	{
-		CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
-		
-		// Process ib rows at a time
-		for (CBLAS_INDEX row = i; row < i + ib; row++)
+		// Process rows in cache-friendly blocks
+		for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
+		{
+			CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
+			
+			// Process ib rows at a time
+			for (CBLAS_INDEX row = i; row < i + ib; row++)
+			{
+				sum = 0.0;
+				for (CBLAS_INDEX col = 0; col < n; col++)
+				{
+					sum += alpha * a[row * lda + col] * x[col * incx];
+				}
+				y[row * incy] = beta * y[row * incy] + sum;
+			}
+		}
+	}
+	else
+	{
+		// Direct processing for small matrices
+		for (CBLAS_INDEX row = 0; row < m; row++)
 		{
 			sum = 0.0;
 			for (CBLAS_INDEX col = 0; col < n; col++)
@@ -187,42 +221,76 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 	{
 		if (alpha == 1.0f && beta == 1.0f)
 		{
-			// Process rows in cache-friendly blocks
-			for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
+			// Use cache blocking only for large matrices
+			if (m > 2 * GEMV_BLOCK_SIZE)
 			{
-				CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
-				
-				// for each row in the block
-				for (CBLAS_INDEX row = i; row < i + ib; row++)
+				// Process rows in cache-friendly blocks
+				for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
+				{
+					CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
+					
+					// for each row in the block
+					for (CBLAS_INDEX row = i; row < i + ib; row++)
+					{
+						sum = 0.0f;
+
+						for (CBLAS_INDEX col = 0; col < n; col++)
+						{
+							sum += a[row * n + col] * x[col];
+						}
+
+						y[row] = y[row] + sum;
+					}
+				}
+			}
+			else
+			{
+				// Direct processing for small matrices
+				for (CBLAS_INDEX row = 0; row < m; row++)
 				{
 					sum = 0.0f;
-
 					for (CBLAS_INDEX col = 0; col < n; col++)
 					{
 						sum += a[row * n + col] * x[col];
 					}
-
 					y[row] = y[row] + sum;
 				}
 			}
 		}
 		else
 		{
-			// Process rows in cache-friendly blocks
-			for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
+			// Use cache blocking only for large matrices
+			if (m > 2 * GEMV_BLOCK_SIZE)
 			{
-				CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
-				
-				// for each row in the block
-				for (CBLAS_INDEX row = i; row < i + ib; row++)
+				// Process rows in cache-friendly blocks
+				for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
+				{
+					CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
+					
+					// for each row in the block
+					for (CBLAS_INDEX row = i; row < i + ib; row++)
+					{
+						sum = 0.0f;
+
+						for (CBLAS_INDEX col = 0; col < n; col++)
+						{
+							sum += alpha * a[row * n + col] * x[col];
+						}
+
+						y[row] = beta * y[row] + sum;
+					}
+				}
+			}
+			else
+			{
+				// Direct processing for small matrices
+				for (CBLAS_INDEX row = 0; row < m; row++)
 				{
 					sum = 0.0f;
-
 					for (CBLAS_INDEX col = 0; col < n; col++)
 					{
 						sum += alpha * a[row * n + col] * x[col];
 					}
-
 					y[row] = beta * y[row] + sum;
 				}
 			}
@@ -367,42 +435,76 @@ void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 	{
 		if (alpha == 1.0 && beta == 1.0)
 		{
-			// Process rows in cache-friendly blocks
-			for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
+			// Use cache blocking only for large matrices
+			if (m > 2 * GEMV_BLOCK_SIZE)
 			{
-				CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
-				
-				// for each row in the block
-				for (CBLAS_INDEX row = i; row < i + ib; row++)
+				// Process rows in cache-friendly blocks
+				for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
+				{
+					CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
+					
+					// for each row in the block
+					for (CBLAS_INDEX row = i; row < i + ib; row++)
+					{
+						sum = 0.0;
+
+						for (CBLAS_INDEX col = 0; col < n; col++)
+						{
+							sum += a[row * n + col] * x[col];
+						}
+
+						y[row] = y[row] + sum;
+					}
+				}
+			}
+			else
+			{
+				// Direct processing for small matrices
+				for (CBLAS_INDEX row = 0; row < m; row++)
 				{
 					sum = 0.0;
-
 					for (CBLAS_INDEX col = 0; col < n; col++)
 					{
 						sum += a[row * n + col] * x[col];
 					}
-
 					y[row] = y[row] + sum;
 				}
 			}
 		}
 		else
 		{
-			// Process rows in cache-friendly blocks
-			for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
+			// Use cache blocking only for large matrices
+			if (m > 2 * GEMV_BLOCK_SIZE)
 			{
-				CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
-				
-				// for each row in the block
-				for (CBLAS_INDEX row = i; row < i + ib; row++)
+				// Process rows in cache-friendly blocks
+				for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
+				{
+					CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
+					
+					// for each row in the block
+					for (CBLAS_INDEX row = i; row < i + ib; row++)
+					{
+						sum = 0.0;
+
+						for (CBLAS_INDEX col = 0; col < n; col++)
+						{
+							sum += alpha * a[row * n + col] * x[col];
+						}
+
+						y[row] = beta * y[row] + sum;
+					}
+				}
+			}
+			else
+			{
+				// Direct processing for small matrices
+				for (CBLAS_INDEX row = 0; row < m; row++)
 				{
 					sum = 0.0;
-
 					for (CBLAS_INDEX col = 0; col < n; col++)
 					{
 						sum += alpha * a[row * n + col] * x[col];
 					}
-
 					y[row] = beta * y[row] + sum;
 				}
 			}
