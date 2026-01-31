@@ -778,6 +778,8 @@ void cblas_sgemm_naive(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSP
 
 //------------------------------------------------------
 // Double-precision SIMD: compute 4 dot products at a time, 2 cols x 2 rows
+// NOTE: Currently unused. Reserved for future packed-matrix SIMD implementation
+// similar to sgemm's AddDot4x4. Requires matrix packing before use.
 //------------------------------------------------------
 #if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
 
