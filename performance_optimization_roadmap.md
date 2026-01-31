@@ -1,0 +1,321 @@
+# Performance Optimization Roadmap for BLAS Operations
+
+## Issue: Apply Memory-Bound Operation Optimizations to Remaining BLAS Functions
+
+### Background
+
+Recent optimizations to `dot` and `ger` operations demonstrated significant performance improvements (3-4x) through:
+- Multi-accumulator unrolling to reduce dependency chains
+- Software prefetching to hide memory latency
+- Lower multi-threading thresholds for memory-bound operations
+- Bug fixes in kernel implementations
+
+**Current Performance Baseline:**
+- **dot**: Improved from ~0.3-0.7 GFlops to ~0.8-1.4 GFlops (out-of-cache)
+- **ger**: Improved from ~0.24-0.35 GFlops to ~1.04-1.42 GFlops
+
+These operations are fundamentally memory-bandwidth limited, achieving ~3-8 GB/s sustained throughput, which is reasonable given single-threaded sequential access patterns and the low arithmetic intensity of these operations.
+
+### Operations Requiring Optimization
+
+The following operations should receive similar treatment:
+
+#### Level 1 (Vector-Vector Operations)
+- [x] `dot` - **COMPLETED** (4-way accumulators, prefetching, MT threshold: 32768)
+- [ ] `copy` - Memory bandwidth limited, simple copy operation
+- [ ] `axpy` - Y = alpha*X + Y (similar to dot, but with writes)
+- [ ] `scal` - X = alpha*X (in-place scaling)
+- [ ] `swap` - Exchange X and Y vectors
+- [ ] `asum` - Sum of absolute values (reduction operation)
+- [ ] `nrm2` - Euclidean norm (reduction with squares)
+- [ ] `rot` - Apply Givens rotation
+
+#### Level 2 (Matrix-Vector Operations)
+- [x] `ger` - **COMPLETED** (prefetching, MT threshold: 2048, bug fixes)
+- [ ] `gemv` - Matrix-vector multiply (A*x or A^T*x)
+
+#### Level 3 (Matrix-Matrix Operations)
+- [ ] `gemm` - Matrix-matrix multiply (needs review for additional optimizations)
+
+### Optimization Techniques to Apply
+
+#### 1. Multi-Accumulator Unrolling
+**Purpose:** Reduce dependency chains, improve instruction-level parallelism
+
+**Implementation:**
+```c
+// Before: Single accumulator
+for (i = 0; i < n; i += 8) {
+    sum = _mm256_fmadd_ps(x, y, sum);
+}
+
+// After: 4 independent accumulators
+for (i = 0; i < n; i += 32) {
+    sum0 = _mm256_fmadd_ps(x0, y0, sum0);
+    sum1 = _mm256_fmadd_ps(x1, y1, sum1);
+    sum2 = _mm256_fmadd_ps(x2, y2, sum2);
+    sum3 = _mm256_fmadd_ps(x3, y3, sum3);
+}
+// Combine accumulators at end
+```
+
+**Target operations:** dot, asum, nrm2, axpy, copy, scal, gemv
+
+#### 2. Software Prefetching
+**Purpose:** Hide memory latency by prefetching data ahead of use
+
+**Implementation:**
+```c
+#if defined(CBLAS_PREFETCH)
+    const CBLAS_INDEX prefetch_distance = 64; // 256 bytes ahead
+    
+    if (i + prefetch_distance < n) {
+        CBLAS_PREFETCH(x + i + prefetch_distance, 0, 3);  // read
+        CBLAS_PREFETCH(y + i + prefetch_distance, 1, 3);  // write
+    }
+#endif
+```
+
+**Parameters:**
+- Read-only: `CBLAS_PREFETCH(addr, 0, 3)` - locality level 3 (stay in cache)
+- Write: `CBLAS_PREFETCH(addr, 1, 3)` - prepare for write
+- Distance: 64-128 elements (256-512 bytes) ahead
+
+**Target operations:** All Level 1 and Level 2 operations
+
+#### 3. Multi-Threading Threshold Tuning
+**Purpose:** Enable MT earlier for memory-bound operations where overhead is justified
+
+**Current thresholds:**
+```c
+#define CBLAS_MT_DOT    32768   // Optimized (was 100000)
+#define CBLAS_MT_COPY   10000   // Review needed
+#define CBLAS_MT_GER    2048    // Optimized (was 10000)
+#define CBLAS_MT_GEMM   10000   // Review needed
+#define CBLAS_MT_GEMV   10000   // Review needed
+```
+
+**Recommended approach:**
+1. Create threshold tuning test for each operation
+2. Measure performance at various sizes (4KB to 16MB)
+3. Find crossover point where MT overhead < MT benefit
+4. Set threshold to ~0.5-0.75x of crossover point
+
+**Target operations:** copy, axpy, scal, gemv (lower thresholds likely beneficial)
+
+#### 4. Bug Fixes and Code Review
+**Purpose:** Identify and fix correctness/performance bugs
+
+**Areas to review:**
+- Pointer arithmetic in loop increments
+- Off-by-one errors in leftover element handling
+- Correct use of `incx`/`incy` strides
+- Alignment requirements for SIMD loads/stores
+- Cache line boundary handling
+
+**Example from ger fix:**
+```c
+// Bug: xr pointer not incremented correctly
+xr = &X(row + i);  // Wrong: sets to row+i each iteration
+
+// Fix: Simple increment
+xr++;  // Correct: advances to next element
+```
+
+#### 5. Performance Test Harness Updates
+**Purpose:** Measure and report realistic performance metrics
+
+**Required changes for each operation:**
+1. Initialize test arrays with non-zero values (avoid zero-page optimizations)
+2. Report GFlops **and** GB/s bandwidth
+3. Test range from L1 cache (4KB) to out-of-cache (16MB+)
+4. Add operation-specific notes about arithmetic intensity
+
+**Template:**
+```c
+// Initialize with non-zero values
+for (CBLAS_INDEX i = 0; i < n; i++) {
+    x[i] = (float)(i % 100) / 100.0f + 1.0f;
+}
+
+// Calculate metrics
+float gflops = (float)(flops) / dt / 1e9;
+float bytes = /* operation-specific memory traffic */;
+float gbytes_per_sec = bytes / dt / 1e9;
+
+printf("%10s %10s %12s %12s\n", "Size", "GFlops", "GB/s", "Time(s)");
+printf("%10d %10.2f %12.2f %12.6f\n", size, gflops, gbytes_per_sec, dt);
+```
+
+### Implementation Plan
+
+#### Phase 1: Level 1 Memory-Bound Operations (Copy, AXPY, SCAL)
+**Priority:** High (simple, high-impact)
+
+**Steps:**
+1. Update `copy_perf.c` with initialization and bandwidth reporting
+2. Implement 4-way unrolling in `copy.c` SIMD kernel
+3. Add prefetching to copy kernel
+4. Tune `CBLAS_MT_COPY` threshold (likely lower to 16384-32768)
+5. Run performance tests and verify improvement
+
+**Repeat for:**
+- `axpy` (Y = alpha*X + Y) - 2 reads, 1 write per element
+- `scal` (X = alpha*X) - 1 read, 1 write per element
+
+**Expected improvements:** 2-3x for out-of-cache workloads
+
+#### Phase 2: Level 1 Reduction Operations (ASUM, NRM2)
+**Priority:** Medium (reduction patterns need careful handling)
+
+**Challenges:**
+- Reduction requires combining accumulators correctly
+- ASUM needs absolute values (affects SIMD strategy)
+- NRM2 needs squares (overflow/underflow considerations)
+
+**Steps:**
+1. Review current implementation for SIMD efficiency
+2. Implement 4-way accumulator unrolling
+3. Add prefetching for input vector
+4. Test numerical stability (especially NRM2)
+5. Tune MT thresholds
+
+**Expected improvements:** 1.5-2x for large vectors
+
+#### Phase 3: Level 2 Operations (GEMV)
+**Priority:** High (matrix-vector is common operation)
+
+**Challenges:**
+- Row-major vs column-major access patterns
+- Transpose vs non-transpose cases
+- Cache blocking may be needed
+
+**Steps:**
+1. Analyze current cache blocking strategy in `gemv.c`
+2. Add prefetching for matrix rows and vector elements
+3. Implement row-wise accumulator unrolling
+4. Lower MT threshold (likely to 4096 or 8192)
+5. Test both transpose and non-transpose cases
+
+**Expected improvements:** 2-3x, especially for cache-unfriendly access patterns
+
+#### Phase 4: Level 3 Review (GEMM)
+**Priority:** Medium (already has blocking and SIMD)
+
+**Focus areas:**
+- Review prefetch distance and strategy in InnerKernel
+- Verify packed buffer strategies are optimal
+- Check MT tile distribution efficiency
+- Validate leading dimension parameters (after recent bug fix)
+
+**Steps:**
+1. Audit recent bug fixes for leading dimensions
+2. Review tile size calculations (mc, kc, nb)
+3. Add prefetching if not already present in all code paths
+4. Run larger benchmark suite (up to 16384×16384)
+
+**Expected improvements:** 10-20% (already well-optimized)
+
+### Testing Requirements
+
+#### Correctness Tests
+- [ ] All existing unit tests must pass after optimizations
+- [ ] Add edge case tests for new code paths (prefetching, unrolling)
+- [ ] Verify numerical accuracy is maintained (especially for reductions)
+- [ ] Test with various strides (incx=2, incy=3, etc.)
+- [ ] Validate alignment handling for unaligned arrays
+
+#### Performance Tests
+- [ ] Create/update `<op>_perf.c` for each optimized operation
+- [ ] Test size range: 4, 8, 16, ..., up to 16M elements
+- [ ] Report both GFlops and GB/s
+- [ ] Run on both in-cache and out-of-cache datasets
+- [ ] Measure improvement vs baseline (save baseline results)
+
+#### Threshold Tuning Tests
+- [ ] Create `<op>_threshold_tuning.c` for operations with MT
+- [ ] Test threshold range from 1K to 1M elements
+- [ ] Measure single-thread vs multi-thread performance
+- [ ] Identify crossover point
+- [ ] Update threshold tests to validate new values
+
+#### Regression Tests
+- [ ] Run full test suite before and after changes
+- [ ] Use CTest to automate test execution
+- [ ] Check that no performance regressions occur for small sizes
+- [ ] Verify MT overhead is acceptable at threshold boundaries
+
+### Acceptance Criteria
+
+#### Minimum Requirements
+- [x] All correctness tests pass (ctest shows 100%)
+- [ ] Performance improvements documented with before/after numbers
+- [ ] No performance regressions for small sizes (< 1KB)
+- [ ] Code follows existing patterns and style
+- [ ] Comments explain optimization techniques used
+- [ ] MT thresholds justified by empirical testing
+
+#### Performance Targets
+
+**Level 1 Operations (per-operation basis):**
+- Out-of-cache bandwidth: ≥3 GB/s (memory-limited operations)
+- In-cache throughput: Approach L2 bandwidth (~20-30 GB/s)
+- Minimum 1.5x improvement over baseline for n > 100K
+- MT activation provides measurable benefit at tuned threshold
+
+**Level 2 Operations (GEMV):**
+- Matrix-vector multiply: ≥5 GFlops for large matrices (m,n > 4096)
+- Cache-friendly access: ≥15 GB/s effective bandwidth
+- Minimum 2x improvement over baseline
+
+**Level 3 Operations (GEMM):**
+- Peak performance: ≥7 GFlops (already achieved)
+- No regressions in existing benchmarks
+- Any improvements are bonus (already well-optimized)
+
+#### Documentation
+- [ ] Update `.github/copilot-instructions.md` with optimization patterns
+- [ ] Document new MT thresholds and rationale in `cblas.h` comments
+- [ ] Add performance notes to README.md
+- [ ] Create or update `docs/PERFORMANCE.md` with benchmark results
+
+### Priority Ranking
+
+1. **High Priority** (immediate impact, low risk):
+   - `copy` - Pure memory bandwidth test
+   - `axpy` - Common operation, straightforward optimization
+   - `gemv` - High-value Level 2 operation
+
+2. **Medium Priority** (moderate impact, some complexity):
+   - `scal` - In-place operation, simpler than axpy
+   - `asum` - Reduction pattern, numerical considerations
+   - `nrm2` - More complex reduction, overflow/underflow handling
+
+3. **Low Priority** (specialized or already optimized):
+   - `swap` - Less common, but easy to optimize
+   - `rot` - Specialized Givens rotation, less common
+   - `gemm` - Already has extensive optimizations
+
+### References
+
+**Completed Optimizations:**
+- `dot.c` - 4-way accumulator unrolling, prefetching (lines 13-107)
+- `ger.c` - Prefetching, MT threshold tuning, bug fixes (lines 638-695)
+- `cblas.h` - Updated MT thresholds (lines 63-67)
+- `test_dot_threshold.c` - Updated threshold validation (lines 128-141)
+
+**Performance Results:**
+- See `dot_perf` output: ~1.4 GFlops, ~5.6 GB/s at 8192 elements
+- See `ger_perf` output: ~1.35 GFlops, ~5.4 GB/s at 8192×8192
+
+**Configuration:**
+- Prefetch distance: 128 elements (512 bytes) - `cblas.h:71`
+- Prefetch threshold: 100K elements - `cblas.h:70`
+- Prefetch macro: `CBLAS_PREFETCH(addr, rw, locality)` - `cblas.h:75-80`
+
+---
+
+**Status:** Planning
+**Assignee:** TBD
+**Labels:** performance, optimization, enhancement
+**Milestone:** v0.26
