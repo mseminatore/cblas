@@ -1,4 +1,5 @@
 # Project files
+axpy_perf
 blas_test
 blas_stress
 blas_perf

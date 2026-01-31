@@ -10,15 +10,62 @@
 
 //------------------------------------------------------
 // single-precision axpy kernel incx == 1 && incy == 1 (SSE/AVX)
+// Optimized with 4-way unrolling and prefetching
 //------------------------------------------------------
 static void cblas_saxpy_k_noinc_sse(float alpha, float *x, float *y, CBLAS_INDEX n)
 {
     CBLAS_INDEX i = 0;
 
 #if defined(__AVX2__)
-    // AVX2 path: process 8 floats at a time
+    // AVX2 path: Use 4 independent accumulators to reduce dependency chains
     __m256 alpha_vec = _mm256_set1_ps(alpha);
     
+    // Process 32 floats per iteration (4 accumulators × 8 floats)
+    CBLAS_INDEX unroll_end = (n / 32) * 32;
+    
+#if defined(CBLAS_PREFETCH)
+    const CBLAS_INDEX prefetch_distance = 128; // Prefetch 128 floats ahead (512 bytes)
+#endif
+    
+    for (; i < unroll_end; i += 32)
+    {
+#if defined(CBLAS_PREFETCH)
+        // Prefetch data ahead to hide memory latency
+        if (i + prefetch_distance < n) {
+            CBLAS_PREFETCH(x + i + prefetch_distance, 0, 3);
+            CBLAS_PREFETCH(y + i + prefetch_distance, 1, 3);  // Write prefetch
+        }
+#endif
+        
+        __m256 x0 = _mm256_loadu_ps(x + i);
+        __m256 x1 = _mm256_loadu_ps(x + i + 8);
+        __m256 x2 = _mm256_loadu_ps(x + i + 16);
+        __m256 x3 = _mm256_loadu_ps(x + i + 24);
+        
+        __m256 y0 = _mm256_loadu_ps(y + i);
+        __m256 y1 = _mm256_loadu_ps(y + i + 8);
+        __m256 y2 = _mm256_loadu_ps(y + i + 16);
+        __m256 y3 = _mm256_loadu_ps(y + i + 24);
+        
+#if defined(USE_INTEL_FMA)
+        y0 = _mm256_fmadd_ps(alpha_vec, x0, y0);
+        y1 = _mm256_fmadd_ps(alpha_vec, x1, y1);
+        y2 = _mm256_fmadd_ps(alpha_vec, x2, y2);
+        y3 = _mm256_fmadd_ps(alpha_vec, x3, y3);
+#else
+        y0 = _mm256_add_ps(_mm256_mul_ps(alpha_vec, x0), y0);
+        y1 = _mm256_add_ps(_mm256_mul_ps(alpha_vec, x1), y1);
+        y2 = _mm256_add_ps(_mm256_mul_ps(alpha_vec, x2), y2);
+        y3 = _mm256_add_ps(_mm256_mul_ps(alpha_vec, x3), y3);
+#endif
+        
+        _mm256_storeu_ps(y + i, y0);
+        _mm256_storeu_ps(y + i + 8, y1);
+        _mm256_storeu_ps(y + i + 16, y2);
+        _mm256_storeu_ps(y + i + 24, y3);
+    }
+    
+    // Handle remaining blocks of 8
     for (; i + 8 <= n; i += 8)
     {
         __m256 x_vec = _mm256_loadu_ps(x + i);
@@ -46,30 +93,69 @@ static void cblas_saxpy_k_noinc_sse(float alpha, float *x, float *y, CBLAS_INDEX
     }
     
     // Handle remaining elements
-    CBLAS_INDEX remaining = n - i;
-    int use_prefetch = (remaining > CBLAS_PREFETCH_THRESHOLD);
-    
     for (; i < n; i++)
     {
-        if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-            CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-            CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
-        }
         y[i] = alpha * x[i] + y[i];
     }
 }
 
 //------------------------------------------------------
 // double-precision axpy kernel incx == 1 && incy == 1 (SSE/AVX)
+// Optimized with 4-way unrolling and prefetching
 //------------------------------------------------------
 static void cblas_daxpy_k_noinc_sse(double alpha, double *x, double *y, CBLAS_INDEX n)
 {
     CBLAS_INDEX i = 0;
 
 #if defined(__AVX2__)
-    // AVX2 path: process 4 doubles at a time
+    // AVX2 path: Use 4 independent accumulators
     __m256d alpha_vec = _mm256_set1_pd(alpha);
     
+    // Process 16 doubles per iteration (4 accumulators × 4 doubles)
+    CBLAS_INDEX unroll_end = (n / 16) * 16;
+    
+#if defined(CBLAS_PREFETCH)
+    const CBLAS_INDEX prefetch_distance = 128;
+#endif
+    
+    for (; i < unroll_end; i += 16)
+    {
+#if defined(CBLAS_PREFETCH)
+        if (i + prefetch_distance < n) {
+            CBLAS_PREFETCH(x + i + prefetch_distance, 0, 3);
+            CBLAS_PREFETCH(y + i + prefetch_distance, 1, 3);
+        }
+#endif
+        
+        __m256d x0 = _mm256_loadu_pd(x + i);
+        __m256d x1 = _mm256_loadu_pd(x + i + 4);
+        __m256d x2 = _mm256_loadu_pd(x + i + 8);
+        __m256d x3 = _mm256_loadu_pd(x + i + 12);
+        
+        __m256d y0 = _mm256_loadu_pd(y + i);
+        __m256d y1 = _mm256_loadu_pd(y + i + 4);
+        __m256d y2 = _mm256_loadu_pd(y + i + 8);
+        __m256d y3 = _mm256_loadu_pd(y + i + 12);
+        
+#if defined(USE_INTEL_FMA)
+        y0 = _mm256_fmadd_pd(alpha_vec, x0, y0);
+        y1 = _mm256_fmadd_pd(alpha_vec, x1, y1);
+        y2 = _mm256_fmadd_pd(alpha_vec, x2, y2);
+        y3 = _mm256_fmadd_pd(alpha_vec, x3, y3);
+#else
+        y0 = _mm256_add_pd(_mm256_mul_pd(alpha_vec, x0), y0);
+        y1 = _mm256_add_pd(_mm256_mul_pd(alpha_vec, x1), y1);
+        y2 = _mm256_add_pd(_mm256_mul_pd(alpha_vec, x2), y2);
+        y3 = _mm256_add_pd(_mm256_mul_pd(alpha_vec, x3), y3);
+#endif
+        
+        _mm256_storeu_pd(y + i, y0);
+        _mm256_storeu_pd(y + i + 4, y1);
+        _mm256_storeu_pd(y + i + 8, y2);
+        _mm256_storeu_pd(y + i + 12, y3);
+    }
+    
+    // Handle remaining blocks of 4
     for (; i + 4 <= n; i += 4)
     {
         __m256d x_vec = _mm256_loadu_pd(x + i);
@@ -97,15 +183,8 @@ static void cblas_daxpy_k_noinc_sse(double alpha, double *x, double *y, CBLAS_IN
     }
     
     // Handle remaining elements
-    CBLAS_INDEX remaining = n - i;
-    int use_prefetch = (remaining > CBLAS_PREFETCH_THRESHOLD);
-    
     for (; i < n; i++)
     {
-        if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-            CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-            CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
-        }
         y[i] = alpha * x[i] + y[i];
     }
 }

@@ -61,6 +61,7 @@
 
 // multi-threading threshold limits
 #define CBLAS_MT_DOT    32768   // Lower threshold for better MT performance on memory-bound operations
+#define CBLAS_MT_AXPY   32768   // Lower threshold for AXPY - memory-bound write operation
 #define CBLAS_MT_COPY   10000
 #define CBLAS_MT_GER    2048    // Lower threshold for GER - matrix operations benefit from earlier MT
 #define CBLAS_MT_GEMM   10000
