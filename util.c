@@ -16,10 +16,11 @@ kernels_t blas_kernels;
 
 //------------------------------------------------------
 // GEMM cache-aware block sizes (initialized at runtime)
+// Default values match 32KB L1d configuration (Intel/AMD)
 //------------------------------------------------------
-int cblas_gemm_mc = 256;   // Rows of A to pack
-int cblas_gemm_kc = 128;   // Inner dimension
-int cblas_gemm_nb = 1024;  // Columns of B to pack
+int cblas_gemm_mc = 128;   // Rows of A to pack
+int cblas_gemm_kc = 256;   // Inner dimension
+int cblas_gemm_nb = 256;   // Columns of B to pack
 
 //------------------------------------------------------
 // Performance counters - track stats per operation
@@ -557,9 +558,9 @@ static void cblas_compute_gemm_block_sizes(void)
     int total_kb = ((cblas_gemm_mc * cblas_gemm_kc + 
                      cblas_gemm_kc * cblas_gemm_nb) * 4) / 1024;
     
-    // If too large, scale down proportionally
+    // If too large, scale down linearly
     if (total_kb > target_kb) {
-        float scale = sqrtf((float)target_kb / (float)total_kb);
+        float scale = (float)target_kb / (float)total_kb;
         cblas_gemm_mc = (int)(cblas_gemm_mc * scale);
         cblas_gemm_kc = (int)(cblas_gemm_kc * scale);
         cblas_gemm_nb = (int)(cblas_gemm_nb * scale);

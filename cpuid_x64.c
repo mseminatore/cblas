@@ -130,7 +130,8 @@ int cpu_get_l1_data_cache_size(void)
 #ifdef __APPLE__
     size_t len = sizeof(l1_cache_size);
     
-    sysctlbyname("hw.l1dcachesize", &l1_cache_size, &len, NULL, 0);
+    if (sysctlbyname("hw.l1dcachesize", &l1_cache_size, &len, NULL, 0) != 0)
+        return 0;  // Return 0 on failure to trigger fallback
     return l1_cache_size/1024;
 #else
 	#if defined(_MSC_VER)
@@ -138,7 +139,7 @@ int cpu_get_l1_data_cache_size(void)
 		__cpuid(regs, 0x80000005);
 		l1_cache_size = (regs[ECX] >> 24) & 0xFF; // Extract L1 data cache size in KB
 	#else
-		unsigned int eax, ebx, ecx, edx = 0;
+		unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
 
 		__cpuid(0x80000005, eax, ebx, ecx, edx);
 		l1_cache_size = (ecx >> 24) & 0xFF; // Extract L1 data cache size in KB
