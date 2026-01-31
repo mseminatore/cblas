@@ -123,6 +123,8 @@ static void cblas_scopy_k(cblas_args_t *args)
     }
 }
 
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
+
 //------------------------------------------------------
 // double-precision copy kernel incx == incy == 1 (SSE)
 //------------------------------------------------------
@@ -160,6 +162,8 @@ CBLAS_UNUSED static void cblas_dcopy_k_noinc_sse(cblas_args_t* args)
     for (; i < n; i++)
         y[i] = x[i];
 }
+
+#endif
 
 //------------------------------------------------------
 // double-precision copy kernel incx == incy == 1
