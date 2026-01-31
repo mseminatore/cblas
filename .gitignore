@@ -87,3 +87,4 @@ mt_debug*.json
 
 # Test programs
 test_*
+gemv_perf
