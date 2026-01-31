@@ -68,7 +68,7 @@ if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "A
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx2 -mfma -DUSE_INTEL_FMA")
     elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
         # MSVC on x86_64: /arch:AVX2 enables AVX2 and FMA
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /arch:AVX2 -DUSE_INTEL_FMA")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /arch:AVX2 /DUSE_INTEL_FMA")
     endif()
 endif()
 
