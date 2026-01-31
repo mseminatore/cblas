@@ -4,19 +4,12 @@
 //------------------------------------------------------
 
 #include "cblas.h"
+#include "cblas_simd.h"
 
 #ifdef _WIN32
 #	include <malloc.h>
 #else
 #	include <alloca.h>
-#endif
-
-#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
-#   include <immintrin.h>
-#endif
-
-#if defined(__aarch64__) && defined(__ARM_NEON)
-#   include <arm_neon.h>
 #endif
 
 // helpful macros

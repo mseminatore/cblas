@@ -4,14 +4,7 @@
 //------------------------------------------------------
 
 #include "cblas.h"
-
-#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
-#   include <immintrin.h>
-#endif
-
-#if defined(__aarch64__) && defined(__ARM_NEON)
-#   include <arm_neon.h>
-#endif
+#include "cblas_simd.h"
 
 #if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 

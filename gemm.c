@@ -4,17 +4,10 @@
 //------------------------------------------------------
 
 #include "cblas.h"
+#include "cblas_simd.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-
-#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
-#   include <immintrin.h>
-#endif
-
-#if defined(__aarch64__) && defined(__ARM_NEON)
-#   include <arm_neon.h>
-#endif
 
 // Matrix sub-tile block sizes for caching data in contiguous memory
 // These are now runtime-determined based on cache size (see cblas_gemm_mc, cblas_gemm_kc, cblas_gemm_nb)
