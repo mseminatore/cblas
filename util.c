@@ -367,7 +367,9 @@ void cblas_print_configuration(void)
 	printf("ISA Extensions: %s\n", cblas_get_isa_features());
     printf(" Cores/Threads: %d/%d\n", cblas_get_num_procs(), cblas_get_num_threads());
     printf(" L1$ line size: %d bytes\n", cpu_get_cacheline_size());
-    printf("      L2$ size: %d Kbytes\n\n", cpu_get_l2_cache_size());
+    printf("  L1$ data size: %d Kbytes\n", cpu_get_l1_data_cache_size());
+    printf("      L2$ size: %d Kbytes\n", cpu_get_l2_cache_size());
+    printf("GEMM block sz: mc=%d, kc=%d, nb=%d\n\n", cblas_gemm_mc, cblas_gemm_kc, cblas_gemm_nb);
 }
 
 //------------------------------------------------------
@@ -567,6 +569,13 @@ static void cblas_compute_gemm_block_sizes(void)
         cblas_gemm_kc = MAX(cblas_gemm_kc, 64);
         cblas_gemm_nb = MAX(cblas_gemm_nb, 64);
     }
+    
+#ifdef USE_STATIC_BUFFERS
+    // Clamp to maximum static buffer sizes
+    cblas_gemm_mc = MIN(cblas_gemm_mc, 512);  // MAX_MC
+    cblas_gemm_kc = MIN(cblas_gemm_kc, 256);  // MAX_KC
+    cblas_gemm_nb = MIN(cblas_gemm_nb, 1024); // MAX_NB
+#endif
 }
 
 //------------------------------------------------------
