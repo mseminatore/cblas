@@ -36,6 +36,9 @@
 // Include CMake-generated configuration
 #include "cblas_config.h"
 
+// Include platform abstraction headers
+#include "platform/cpuid.h"
+
 // set the sizes of various buffers
 #define CBLAS_SMALL_BUF 256
 #define CBLAS_LARGE_BUF 1024

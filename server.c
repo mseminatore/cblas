@@ -4,19 +4,24 @@
 //------------------------------------------------------
 #include <stdio.h>
 #include <stdint.h>
-#include <pthread.h>
+#include "platform/threading.h"
 #include "cblas.h"
 
 extern volatile int cblas_max_threads;
 
 static work_queue_t *work_queue = NULL;
-static pthread_t cblas_thread_ids[MAX_THREADS] = {0};
+static platform_thread_t cblas_thread_ids[MAX_THREADS] = {0};
 
-static void *cblas_worker_thread(void* pvoid);
+// Forward declaration of worker thread function
+#ifdef _WIN32
+static DWORD WINAPI cblas_worker_thread(void *pvoid);
+#else
+static void *cblas_worker_thread(void *pvoid);
+#endif
 
-static pthread_mutex_t queue_lock   = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t server_lock   = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t kickoff_event = PTHREAD_COND_INITIALIZER;
+static platform_mutex_t queue_lock   = PLATFORM_MUTEX_INITIALIZER;
+static platform_mutex_t server_lock   = PLATFORM_MUTEX_INITIALIZER;
+static platform_cond_t kickoff_event = PLATFORM_COND_INITIALIZER;
 
 //------------------------------------------------------
 // set the active number of threads [1..cores]
@@ -40,12 +45,12 @@ void cblas_set_num_threads(int threads)
     // reduce threads
     if (cblas_is_server_alive() && threads < cblas_max_threads)
     {
-        pthread_mutex_lock(&server_lock);
+        platform_mutex_lock(&server_lock);
 
         int thread_count = cblas_max_threads;
         cblas_max_threads = threads;
 
-        pthread_cond_broadcast(&kickoff_event);
+        platform_cond_broadcast(&kickoff_event);
 
         for (int i = threads - 1; i < thread_count - 1; i++)
         {
@@ -53,7 +58,7 @@ void cblas_set_num_threads(int threads)
             {
                 MT_TRACE("set_num_threads: waiting on thread [%d] to quit.\n", i);
 
-                pthread_join(cblas_thread_ids[i], NULL);
+                platform_thread_join(cblas_thread_ids[i]);
 
                 MT_TRACE("set_num_threads: thread [%d] has quit.\n", i);
                 
@@ -61,23 +66,24 @@ void cblas_set_num_threads(int threads)
             }
         }
 
-        pthread_mutex_unlock(&server_lock);
+        platform_mutex_unlock(&server_lock);
     }
 
     // add more threads if needed
     if (cblas_is_server_alive() && threads > cblas_max_threads)
     {
-        pthread_mutex_lock(&server_lock);
+        platform_mutex_lock(&server_lock);
 
         int start = cblas_max_threads > 0 ? cblas_max_threads - 1 : 0;
         cblas_max_threads = threads;
 
         for (int i = start; i < threads - 1; i++)
         {
-            pthread_create(&cblas_thread_ids[i], NULL, cblas_worker_thread, (void*)(intptr_t)i);
+            platform_thread_id_t tid;
+            platform_thread_create(&cblas_thread_ids[i], cblas_worker_thread, i, &tid);
         }
 
-        pthread_mutex_unlock(&server_lock);
+        platform_mutex_unlock(&server_lock);
     }
 }
 
@@ -92,17 +98,18 @@ int cblas_init_server(void)
     // pthread_mutex_init(&queue_lock, NULL);
     // pthread_cond_init(&kickoff_event, NULL);
 
-    pthread_mutex_lock(&server_lock);
+    platform_mutex_lock(&server_lock);
 
     // create the worker threads
     for (int i = 0; i < cblas_max_threads - 1; i++)
     {
-        pthread_create(&cblas_thread_ids[i], NULL, cblas_worker_thread, (void*)(intptr_t)i);
+        platform_thread_id_t tid;
+        platform_thread_create(&cblas_thread_ids[i], cblas_worker_thread, i, &tid);
     }
 
     cblas_set_server_alive(CBLAS_TRUE);
 
-    pthread_mutex_unlock(&server_lock);
+    platform_mutex_unlock(&server_lock);
 
     return CBLAS_TRUE;
 }
@@ -118,24 +125,24 @@ void cblas_shutdown(void)
     cblas_set_server_alive(CBLAS_FALSE);
 
     // Wake all threads and wait for them to exit gracefully
-    pthread_mutex_lock(&server_lock);
+    platform_mutex_lock(&server_lock);
     
     int thread_count = cblas_max_threads;
     cblas_max_threads = 1;  // Signal all threads to exit
     
     // Wake up all waiting threads
-    pthread_cond_broadcast(&kickoff_event);
+    platform_cond_broadcast(&kickoff_event);
     
     // Wait for all threads to complete
     for (int i = 0; i < thread_count - 1; i++)
     {
         MT_TRACE("shutdown: waiting on thread [%d] to quit.\n", i);
-        pthread_join(cblas_thread_ids[i], NULL);
+        platform_thread_join(cblas_thread_ids[i]);
         MT_TRACE("shutdown: thread [%d] has quit.\n", i);
         cblas_thread_ids[i] = 0;
     }
     
-    pthread_mutex_unlock(&server_lock);
+    platform_mutex_unlock(&server_lock);
 
     // Note: We do not destroy statically initialized synchronization primitives
     // (queue_lock, kickoff_event, server_lock) as they are initialized with
@@ -151,7 +158,11 @@ void cblas_shutdown(void)
 //------------------------------------------------------
 // thread server worker thread
 //------------------------------------------------------
+#ifdef _WIN32
+static DWORD WINAPI cblas_worker_thread(void *pvoid)
+#else
 static void *cblas_worker_thread(void *pvoid)
+#endif
 {
     work_queue_t* work_item;
 
@@ -164,17 +175,17 @@ static void *cblas_worker_thread(void *pvoid)
         MT_TRACE_THREAD(thread_num, "waits.\n");
 
         // the lock is released if/when this thread sleeps on the condition variable
-        pthread_mutex_lock(&queue_lock);
+        platform_mutex_lock(&queue_lock);
         
         while (!work_queue && thread_num <= cblas_max_threads - 2)
-            pthread_cond_wait(&kickoff_event, &queue_lock);
+            platform_cond_wait(&kickoff_event, &queue_lock);
         
         MT_TRACE_THREAD(thread_num, "is awake.\n");
 
         if (thread_num > cblas_max_threads - 2)
         {
             MT_TRACE_THREAD(thread_num, "exiting.\n");
-            pthread_mutex_unlock(&queue_lock);
+            platform_mutex_unlock(&queue_lock);
 
             // excess thread, so worker thread exits
             break;
@@ -185,13 +196,13 @@ static void *cblas_worker_thread(void *pvoid)
             work_queue = work_queue->next;
 
         // release the queue lock acquired via cond_wait
-        pthread_mutex_unlock(&queue_lock);
+        platform_mutex_unlock(&queue_lock);
 
         // if no work, reset event and then go to sleep to wait for more work
         if (!work_item)
         {
             MT_TRACE_THREAD(thread_num, "no work, trying again.\n");
-            sched_yield();
+            platform_yield();
             continue;
         }
 
@@ -223,7 +234,11 @@ static void *cblas_worker_thread(void *pvoid)
         MT_TRACE_THREAD(thread_num, "task completed.\n");
     }
 
+#ifdef _WIN32
+    return 0;
+#else
     return NULL;
+#endif
 }
 
 //------------------------------------------------------
@@ -262,7 +277,7 @@ void cblas_execute_async(CBLAS_INDEX items, work_queue_t* queue)
     MT_TRACE("adding %zu items to the queue.\n", items);
 
     // add new work to the end of the work_queue
-    pthread_mutex_lock(&queue_lock);
+    platform_mutex_lock(&queue_lock);
 
     if (!work_queue)
     {
@@ -296,12 +311,12 @@ void cblas_execute_async(CBLAS_INDEX items, work_queue_t* queue)
     MT_TRACE_QUEUE_DEPTH(depth);
 #endif
 
-    pthread_mutex_unlock(&queue_lock);
+    platform_mutex_unlock(&queue_lock);
 
     // wake up the worker threads
     MT_TRACE("waking worker threads.\n");
 
-    pthread_cond_broadcast(&kickoff_event);
+    platform_cond_broadcast(&kickoff_event);
 }
 
 //------------------------------------------------------
@@ -321,7 +336,7 @@ void cblas_execute_async_join(CBLAS_INDEX items, work_queue_t* queue)
     while (items)
     {
         while (!queue->finished)
-            sched_yield();
+            platform_yield();
 
         queue = queue->next;
         items--;
