@@ -561,12 +561,16 @@ CBLAS_UNUSED static void sger_row_noalpha8x4(CBLAS_INDEX m, CBLAS_INDEX n, float
 }
 
 //------------------------------------------------------
-//
+// Non-FMA version with prefetching
 //------------------------------------------------------
 static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_INDEX incx, float* y, CBLAS_INDEX incy, float* a, CBLAS_INDEX lda)
 {
 	float *xr, *yc, *ap;
 	CBLAS_INDEX col, row;
+	
+#if defined(CBLAS_PREFETCH)
+	const CBLAS_INDEX prefetch_distance = 64;
+#endif
 
 	for (row = 0; row + 4 <= m; row += 4)
 	{
@@ -576,6 +580,15 @@ static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_IN
 
 		for (col = 0; col + 4 <= n; col += 4)
 		{
+#if defined(CBLAS_PREFETCH)
+			if (col + prefetch_distance < n) {
+				CBLAS_PREFETCH(ap + prefetch_distance, 1, 3);
+				CBLAS_PREFETCH(ap + lda + prefetch_distance, 1, 3);
+				CBLAS_PREFETCH(ap + 2*lda + prefetch_distance, 1, 3);
+				CBLAS_PREFETCH(ap + 3*lda + prefetch_distance, 1, 3);
+				CBLAS_PREFETCH(yc + prefetch_distance, 0, 3);
+			}
+#endif
 			AddProd4x4_SIMD(xr, yc, ap, lda);
 			yc += 4;
 			ap += 4;
@@ -595,7 +608,7 @@ static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_IN
 			case 0:;	// do nothing!
 			}
 
-			xr = &X(row + i);
+			xr++;
 		}
 	}
 
@@ -615,12 +628,16 @@ static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_IN
 #if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
 
 //------------------------------------------------------
-// FMA version of sger_row_noalpha4x4
+// FMA version of sger_row_noalpha4x4 with prefetching
 //------------------------------------------------------
 static void sger_row_noalpha4x4_fma(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_INDEX incx, float* y, CBLAS_INDEX incy, float* a, CBLAS_INDEX lda)
 {
 	float *xr, *yc, *ap;
 	CBLAS_INDEX col, row;
+	
+#if defined(CBLAS_PREFETCH)
+	const CBLAS_INDEX prefetch_distance = 64; // Prefetch 64 floats ahead (256 bytes)
+#endif
 
 	for (row = 0; row + 4 <= m; row += 4)
 	{
@@ -630,6 +647,19 @@ static void sger_row_noalpha4x4_fma(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLA
 
 		for (col = 0; col + 4 <= n; col += 4)
 		{
+#if defined(CBLAS_PREFETCH)
+			// Prefetch next block of matrix data
+			if (col + prefetch_distance < n) {
+				CBLAS_PREFETCH(ap + prefetch_distance, 1, 3);
+				CBLAS_PREFETCH(ap + lda + prefetch_distance, 1, 3);
+				CBLAS_PREFETCH(ap + 2*lda + prefetch_distance, 1, 3);
+				CBLAS_PREFETCH(ap + 3*lda + prefetch_distance, 1, 3);
+			}
+			// Prefetch y vector ahead
+			if (col + prefetch_distance < n) {
+				CBLAS_PREFETCH(yc + prefetch_distance, 0, 3);
+			}
+#endif
 			AddProd4x4_SIMD_fma(xr, yc, ap, lda);
 			yc += 4;
 			ap += 4;
@@ -649,7 +679,7 @@ static void sger_row_noalpha4x4_fma(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLA
 			case 0:;	// do nothing!
 			}
 
-			xr = &X(row + i);
+			xr++;
 		}
 	}
 

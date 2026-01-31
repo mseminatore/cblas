@@ -40,8 +40,20 @@ void test_ger(void)
 {
     struct cblas_timer t1, t2;
     float dt;
+    
+    // Initialize arrays with non-zero values
+    for (CBLAS_INDEX i = 0; i < MAX_SIZE; i++) {
+        x[i] = (float)(i % 100) / 100.0f + 1.0f;
+        y[i] = (float)(i % 100) / 100.0f + 1.0f;
+    }
+    for (CBLAS_INDEX i = 0; i < MAX_SIZE * MAX_SIZE; i++) {
+        a[i] = 0.0f;
+    }
 
-    printf("Testing performance of cblas_sger()\n\n");
+    printf("Testing performance of cblas_sger()\n");
+    printf("Note: GER performs outer product (rank-1 update): A += x * y^T\n\n");
+    printf("%10s %10s %12s %12s\n", "Size", "GFlops", "GB/s", "Time(s)");
+    printf("-------------------------------------------------------\n");
 
     CBLAS_INDEX m,n;
 
@@ -51,13 +63,18 @@ void test_ger(void)
 
         cbu_timer_get_time(&t1);
 
-        cblas_sger(CblasRowMajor, m, n, 1.0f, x, 1, y, 1, a, m);
+        cblas_sger(CblasRowMajor, m, n, 1.0f, x, 1, y, 1, a, n);
 
         cbu_timer_get_time(&t2);
 
         dt = cbu_timer_get_delta(&t1, &t2);
+        
+        // GER does m*n FMA operations (multiply-add)
+        float gflops = (float)(2.0 * m * n) / dt / 1e9;
+        // Memory: read m elements from x, n from y, m*n from A, write m*n to A
+        float gbytes_per_sec = (float)((m + n + 2*m*n) * sizeof(float)) / dt / 1e9;
 
-        printf("%4d: %5.2f GFlops in %5.2fs\n", i, (float)2 * m * n / 1000000000 / dt, dt);
+        printf("%10d %10.2f %12.2f %12.6f\n", i, gflops, gbytes_per_sec, dt);
     }
 }
 
