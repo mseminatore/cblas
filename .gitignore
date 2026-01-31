@@ -3,6 +3,7 @@ axpy_perf
 blas_test
 blas_stress
 blas_perf
+copy_perf
 ger_perf
 dger_perf
 gemm_perf
