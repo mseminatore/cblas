@@ -368,9 +368,9 @@ void cblas_print_configuration(void)
 	printf("ISA Extensions: %s\n", cblas_get_isa_features());
     printf(" Cores/Threads: %d/%d\n", cblas_get_num_procs(), cblas_get_num_threads());
     printf(" L1$ line size: %d bytes\n", cpu_get_cacheline_size());
-    printf("  L1$ data size: %d Kbytes\n", cpu_get_l1_data_cache_size());
+    printf(" L1$ data size: %d Kbytes\n", cpu_get_l1_data_cache_size());
     printf("      L2$ size: %d Kbytes\n", cpu_get_l2_cache_size());
-    printf("GEMM block sz: mc=%zu, kc=%zu, nb=%zu\n\n", cblas_gemm_mc, cblas_gemm_kc, cblas_gemm_nb);
+    printf(" GEMM block sz: mc=%zu, kc=%zu, nb=%zu\n\n", cblas_gemm_mc, cblas_gemm_kc, cblas_gemm_nb);
 }
 
 //------------------------------------------------------

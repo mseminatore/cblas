@@ -27,7 +27,7 @@
 #   define LIB_CBLAS
 #endif
 
-#define CBLAS_VERSION "0.16"
+#define CBLAS_VERSION "0.25"
 
 //[]------------------------------------------------------[]
 // configurable library parameters
@@ -60,7 +60,7 @@
 #define CBLAS_ENABLE_STATS
 
 // multi-threading threshold limits
-#define CBLAS_MT_DOT    100000
+#define CBLAS_MT_DOT    32768   // Lower threshold for better MT performance on memory-bound operations
 #define CBLAS_MT_COPY   10000
 #define CBLAS_MT_GER    10000
 #define CBLAS_MT_GEMM   10000
@@ -68,7 +68,7 @@
 
 // prefetching configuration
 #define CBLAS_PREFETCH_THRESHOLD 100000  // Enable prefetching for vectors >100K elements
-#define CBLAS_PREFETCH_DISTANCE  64      // Prefetch 64 elements ahead
+#define CBLAS_PREFETCH_DISTANCE  128     // Prefetch 128 elements ahead (512 bytes)
 
 // Cross-platform prefetch macros
 #if defined(__GNUC__) || defined(__clang__)
