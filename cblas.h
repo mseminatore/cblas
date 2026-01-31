@@ -1075,6 +1075,25 @@ void cblas_print_configuration(void);
  */
 int cpu_get_l2_cache_size(void);
 
+/**
+ * @brief Get L1 data cache size
+ * @return L1 data cache size in KB
+ * @note Thread-safe. Used for cache blocking tuning.
+ */
+int cpu_get_l1_data_cache_size(void);
+
+//------------------------------------------------------
+// GEMM block size configuration
+//------------------------------------------------------
+
+/**
+ * @brief Runtime-computed GEMM block sizes for cache optimization
+ * @note These are initialized by cblas_init() based on detected cache sizes
+ */
+extern int cblas_gemm_mc;   // Rows of A to pack
+extern int cblas_gemm_kc;   // Inner dimension
+extern int cblas_gemm_nb;   // Columns of B to pack
+
 //------------------------------------------------------
 // internal functions
 //------------------------------------------------------
