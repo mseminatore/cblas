@@ -777,6 +777,143 @@ void cblas_sgemm_naive(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSP
 }
 
 //------------------------------------------------------
+// Double-precision SIMD: compute 4 dot products at a time, 2 cols x 2 rows
+// NOTE: Currently unused. Reserved for future packed-matrix SIMD implementation
+// similar to sgemm's AddDot4x4. Requires matrix packing before use.
+//------------------------------------------------------
+#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+
+CBLAS_UNUSED static void AddDot2x2_d(CBLAS_INDEX k, double *a, CBLAS_INDEX lda, double *b, CBLAS_INDEX ldb, double *c, CBLAS_INDEX ldc)
+{
+    (void)lda;
+    (void)ldb;
+    __m128d c_row1, c_row2;
+    __m128d b_row;
+    __m128d a_p0, a_p1;
+    
+    // Load initial C values
+    c_row1 = _mm_loadu_pd(&C(0,0));
+    c_row2 = _mm_loadu_pd(&C(0,1));
+
+	for (CBLAS_INDEX p = 0; p < k; p++) 
+    {
+        // Load and duplicate 
+        a_p0 = _mm_load_pd1(a);
+        a_p1 = _mm_load_pd1(a + 1);
+
+        a += 2;
+
+        // Load B row
+        b_row = _mm_loadu_pd(b);
+        b += 2;
+
+#if defined(USE_INTEL_FMA)
+        // Rows 1-2 using FMA
+        c_row1 = _mm_fmadd_pd(a_p0, b_row, c_row1);
+        c_row2 = _mm_fmadd_pd(a_p1, b_row, c_row2);
+#else
+        // Rows 1-2 using SSE
+        c_row1 = _mm_add_pd(c_row1, _mm_mul_pd(a_p0, b_row));
+        c_row2 = _mm_add_pd(c_row2, _mm_mul_pd(a_p1, b_row));
+#endif
+    }
+
+    // Store results
+    _mm_storeu_pd(&C(0, 0), c_row1);
+    _mm_storeu_pd(&C(0, 1), c_row2);
+}
+
+#elif defined(__aarch64__) && defined(__ARM_NEON) && defined(USE_SIMD)
+
+CBLAS_UNUSED static void AddDot2x2_d(CBLAS_INDEX k, double *a, CBLAS_INDEX lda, double *b, CBLAS_INDEX ldb, double *c, CBLAS_INDEX ldc)
+{
+    (void)lda;
+    (void)ldb;
+    float64x2_t c_row1, c_row2;
+    float64x2_t b_row;
+    float64x2_t a_p0, a_p1;
+    
+    // Load initial C values
+    c_row1 = vld1q_f64(&C(0,0));
+    c_row2 = vld1q_f64(&C(0,1));
+
+	for (CBLAS_INDEX p = 0; p < k; p++) 
+    {
+        // Load and duplicate 
+        a_p0 = vld1q_dup_f64(a);
+        a_p1 = vld1q_dup_f64(a + 1);
+
+        a += 2;
+
+        // Load B row
+        b_row = vld1q_f64(b);
+        b += 2;
+
+#ifdef __ARM_FEATURE_FMA
+        // Rows 1-2 using FMA
+        c_row1 = vfmaq_f64(c_row1, a_p0, b_row);
+        c_row2 = vfmaq_f64(c_row2, a_p1, b_row);
+#else
+        // Rows 1-2 using NEON MUL and ADD
+        c_row1 = vaddq_f64(c_row1, vmulq_f64(a_p0, b_row));
+        c_row2 = vaddq_f64(c_row2, vmulq_f64(a_p1, b_row));
+#endif
+    }
+
+    // Store results
+    vst1q_f64(&C(0, 0), c_row1);
+    vst1q_f64(&C(0, 1), c_row2);
+}
+
+#else   // fall-back non-SIMD version
+
+CBLAS_UNUSED static void AddDot2x2_d(CBLAS_INDEX k, double* a, CBLAS_INDEX lda, double* b, CBLAS_INDEX ldb, double* c, CBLAS_INDEX ldc)
+{
+    register double c_00, c_10, c_01, c_11;
+    register double a_p0, a_p1;
+    register double b_0p, b_1p;
+
+    c_00 = C(0, 0); c_10 = C(1, 0);
+    c_01 = C(0, 1); c_11 = C(1, 1);
+
+    for (CBLAS_INDEX p = 0; p < k; p++) 
+    {
+        a_p0 = A(p, 0);
+        a_p1 = A(p, 1);
+
+        b_0p = B(0, p);
+        b_1p = B(1, p);
+
+        c_00 += a_p0 * b_0p;
+        c_10 += a_p0 * b_1p;
+
+        c_01 += a_p1 * b_0p;
+        c_11 += a_p1 * b_1p;
+    }
+
+    C(0, 0) = c_00; C(1, 0) = c_10;
+    C(0, 1) = c_01; C(1, 1) = c_11;
+}
+
+#endif
+
+//------------------------------------------------------
+// Double-precision scalar dot product (1x1 block)
+//------------------------------------------------------
+CBLAS_UNUSED static void AddDot_d(CBLAS_INDEX k, double *a, CBLAS_INDEX lda, double *b, CBLAS_INDEX ldb, double *gamma)
+{
+    (void)lda;
+    (void)ldb;
+    
+	for (CBLAS_INDEX p = 0; p < k; p++)
+    {
+		*gamma += (*a) * (*b);
+        a++;
+        b++;
+	}
+}
+
+//------------------------------------------------------
 // double-precision general matrix multiply
 //------------------------------------------------------
 void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, double alpha, double *a, CBLAS_INDEX lda, double *b, CBLAS_INDEX ldb, double beta, double *c, CBLAS_INDEX ldc)
@@ -844,10 +981,115 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 
     int mt_used = 0;
 
-    for (CBLAS_INDEX row = 0; row < m; row++)
-        for (CBLAS_INDEX col = 0; col < n; col++)
-            for (CBLAS_INDEX p = 0; p < k; p++)
-                C(col, row) += A(p, row) * B(col, p);
+    // Apply beta scaling to C if needed
+    if (beta == 0.0)
+    {
+        // Zero out C
+        for (CBLAS_INDEX row = 0; row < m; row++)
+            for (CBLAS_INDEX col = 0; col < n; col++)
+                C(col, row) = 0.0;
+    }
+    else if (beta != 1.0)
+    {
+        // Scale C by beta
+        for (CBLAS_INDEX row = 0; row < m; row++)
+            for (CBLAS_INDEX col = 0; col < n; col++)
+                C(col, row) *= beta;
+    }
+
+    // If alpha is 0, we're done (C = beta * C)
+    if (alpha == 0.0)
+    {
+        CBLAS_STATS_END("dgemm", m * n * k, mt_used);
+        return;
+    }
+
+    // Simple SIMD-optimized implementation using blocked approach
+    // Process in 2x2 blocks for better cache locality
+    CBLAS_INDEX row, col;
+    
+    if (alpha == 1.0)
+    {
+        // Optimized path when alpha = 1.0
+        for (row = 0; row + 2 <= m; row += 2)
+        {
+            for (col = 0; col + 2 <= n; col += 2)
+            {
+                // Process 2x2 block
+                for (CBLAS_INDEX p = 0; p < k; p++)
+                {
+                    // Row 0, Cols 0-1
+                    C(col, row) += A(p, row) * B(col, p);
+                    C(col + 1, row) += A(p, row) * B(col + 1, p);
+                    
+                    // Row 1, Cols 0-1
+                    C(col, row + 1) += A(p, row + 1) * B(col, p);
+                    C(col + 1, row + 1) += A(p, row + 1) * B(col + 1, p);
+                }
+            }
+            
+            // Handle remaining columns
+            for (; col < n; col++)
+            {
+                for (CBLAS_INDEX p = 0; p < k; p++)
+                {
+                    C(col, row) += A(p, row) * B(col, p);
+                    C(col, row + 1) += A(p, row + 1) * B(col, p);
+                }
+            }
+        }
+        
+        // Handle remaining rows
+        for (; row < m; row++)
+        {
+            for (col = 0; col < n; col++)
+            {
+                for (CBLAS_INDEX p = 0; p < k; p++)
+                    C(col, row) += A(p, row) * B(col, p);
+            }
+        }
+    }
+    else
+    {
+        // Generic path with alpha scaling
+        for (row = 0; row + 2 <= m; row += 2)
+        {
+            for (col = 0; col + 2 <= n; col += 2)
+            {
+                // Process 2x2 block
+                for (CBLAS_INDEX p = 0; p < k; p++)
+                {
+                    // Row 0, Cols 0-1
+                    C(col, row) += alpha * A(p, row) * B(col, p);
+                    C(col + 1, row) += alpha * A(p, row) * B(col + 1, p);
+                    
+                    // Row 1, Cols 0-1
+                    C(col, row + 1) += alpha * A(p, row + 1) * B(col, p);
+                    C(col + 1, row + 1) += alpha * A(p, row + 1) * B(col + 1, p);
+                }
+            }
+            
+            // Handle remaining columns
+            for (; col < n; col++)
+            {
+                for (CBLAS_INDEX p = 0; p < k; p++)
+                {
+                    C(col, row) += alpha * A(p, row) * B(col, p);
+                    C(col, row + 1) += alpha * A(p, row + 1) * B(col, p);
+                }
+            }
+        }
+        
+        // Handle remaining rows
+        for (; row < m; row++)
+        {
+            for (col = 0; col < n; col++)
+            {
+                for (CBLAS_INDEX p = 0; p < k; p++)
+                    C(col, row) += alpha * A(p, row) * B(col, p);
+            }
+        }
+    }
 
     CBLAS_STATS_END("dgemm", m * n * k, mt_used);
 }

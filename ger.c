@@ -311,6 +311,203 @@ CBLAS_UNUSED static void AddProd4x4(float* x, float* y, float* a, CBLAS_INDEX ld
 }
 
 //------------------------------------------------------
+// Double-precision helper: compute single element product
+//------------------------------------------------------
+static void AddProdD(double x, double y, double *a)
+{
+	*a += x * y;
+}
+
+//------------------------------------------------------
+// Double-precision SIMD: compute 2 cols x 2 rows product
+//------------------------------------------------------
+static void AddProd2x2_SIMD_d(double* x, double* y, double* a, CBLAS_INDEX lda)
+{
+#if defined(__aarch64__) && defined(__ARM_NEON)
+	float64x2_t x0, x1, y0, a0, a1;
+
+	x0 = vld1q_dup_f64(x);
+	x1 = vld1q_dup_f64(x + 1);
+
+	y0 = vld1q_f64(y);
+
+	a0 = vld1q_f64(a);
+	a1 = vld1q_f64(a + lda);
+
+#ifdef __ARM_FEATURE_FMA
+	// compute 2x2 product using FMA
+	a0 = vfmaq_f64(a0, x0, y0);
+	a1 = vfmaq_f64(a1, x1, y0);
+#else
+	// compute 2x2 product using MUL and ADD
+	a0 = vaddq_f64(a0, vmulq_f64(x0, y0));
+	a1 = vaddq_f64(a1, vmulq_f64(x1, y0));
+#endif
+
+	// store 2x2 doubles
+	vst1q_f64(a, a0);
+	vst1q_f64(a + lda, a1);
+
+#else
+	__m128d x0, x1, y0, a0, a1;
+
+	x0 = _mm_load_pd1(x);
+	x1 = _mm_load_pd1(x + 1);
+	
+	y0 = _mm_load_pd(y);
+	
+	a0 = _mm_loadu_pd(a);
+	a1 = _mm_loadu_pd(a + lda);
+
+	// compute 2x2 product (non-FMA)
+	a0 = _mm_add_pd(a0, _mm_mul_pd(x0, y0));
+	a1 = _mm_add_pd(a1, _mm_mul_pd(x1, y0));
+
+	// store results
+	_mm_storeu_pd(a, a0);
+	_mm_storeu_pd(a + lda, a1);
+#endif
+}
+
+#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+
+//------------------------------------------------------
+// Double-precision SIMD: compute 2 cols x 2 rows product (FMA version)
+//------------------------------------------------------
+static void AddProd2x2_SIMD_d_fma(double* x, double* y, double* a, CBLAS_INDEX lda)
+{
+	__m128d x0, x1, y0, a0, a1;
+
+	x0 = _mm_load_pd1(x);
+	x1 = _mm_load_pd1(x + 1);
+	
+	y0 = _mm_load_pd(y);
+	
+	a0 = _mm_loadu_pd(a);
+	a1 = _mm_loadu_pd(a + lda);
+
+	// compute 2x2 product using FMA
+	a0 = _mm_fmadd_pd(x0, y0, a0);
+	a1 = _mm_fmadd_pd(x1, y0, a1);
+
+	// store results
+	_mm_storeu_pd(a, a0);
+	_mm_storeu_pd(a + lda, a1);
+}
+
+//------------------------------------------------------
+// Double-precision AVX2: compute 4 cols x 2 rows product (FMA version)
+//------------------------------------------------------
+CBLAS_UNUSED static void AddProd4x2_AVX_d_fma(double* x, double* y, double* a, CBLAS_INDEX lda)
+{
+	__m256d x0, x1, y0, a0, a1;
+
+	// copy single double to all 4 elements of vector
+	x0 = _mm256_broadcast_sd(x);
+	x1 = _mm256_broadcast_sd(x + 1);
+
+	y0 = _mm256_load_pd(y);
+
+	// load 2 rows of destination
+	a0 = _mm256_load_pd(a);
+	a1 = _mm256_load_pd(a + lda);
+
+	// compute 4x2 products using FMA
+	a0 = _mm256_fmadd_pd(x0, y0, a0);
+	a1 = _mm256_fmadd_pd(x1, y0, a1);
+
+	// store results
+	_mm256_store_pd(a, a0);
+	_mm256_store_pd(a + lda, a1);
+}
+
+#endif
+
+//------------------------------------------------------
+// Double-precision: optimized path for alpha == 1.0, 2x2 blocks
+//------------------------------------------------------
+static void dger_row_noalpha2x2(CBLAS_INDEX m, CBLAS_INDEX n, double* x, CBLAS_INDEX incx, double* y, CBLAS_INDEX incy, double* a, CBLAS_INDEX lda)
+{
+	double *xr, *yc, *ap;
+	CBLAS_INDEX col, row;
+
+	for (row = 0; row + 2 <= m; row += 2)
+	{
+		xr = &X(row);
+		yc = y;
+		ap = &A(0, row);
+
+		for (col = 0; col + 2 <= n; col += 2)
+		{
+			AddProd2x2_SIMD_d(xr, yc, ap, lda);
+			yc += 2;
+			ap += 2;
+		}
+
+		// handle leftover cols for each of the 2 rows in this block
+		for (CBLAS_INDEX i = 0; i < 2; i++)
+		{
+			if (n - col == 1)
+			{
+				AddProdD(*xr, Y(col), &A(col, row + i));
+			}
+			xr = &X(row + i + 1);
+		}
+	}
+
+	// handle leftover rows
+	if (m - row >= 1)
+	{
+		for (col = 0; col < n; col++)
+			AddProdD(X(row), Y(col), &A(col, row));
+	}
+}
+
+#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+
+//------------------------------------------------------
+// Double-precision FMA version: optimized path for alpha == 1.0, 2x2 blocks
+//------------------------------------------------------
+static void dger_row_noalpha2x2_fma(CBLAS_INDEX m, CBLAS_INDEX n, double* x, CBLAS_INDEX incx, double* y, CBLAS_INDEX incy, double* a, CBLAS_INDEX lda)
+{
+	double *xr, *yc, *ap;
+	CBLAS_INDEX col, row;
+
+	for (row = 0; row + 2 <= m; row += 2)
+	{
+		xr = &X(row);
+		yc = y;
+		ap = &A(0, row);
+
+		for (col = 0; col + 2 <= n; col += 2)
+		{
+			AddProd2x2_SIMD_d_fma(xr, yc, ap, lda);
+			yc += 2;
+			ap += 2;
+		}
+
+		// handle leftover cols for each of the 2 rows in this block
+		for (CBLAS_INDEX i = 0; i < 2; i++)
+		{
+			if (n - col == 1)
+			{
+				AddProdD(*xr, Y(col), &A(col, row + i));
+			}
+			xr = &X(row + i + 1);
+		}
+	}
+
+	// handle leftover rows
+	if (m - row >= 1)
+	{
+		for (col = 0; col < n; col++)
+			AddProdD(X(row), Y(col), &A(col, row));
+	}
+}
+
+#endif
+
+//------------------------------------------------------
 //
 //------------------------------------------------------
 CBLAS_UNUSED static void sger_row_noalpha8x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_INDEX incx, float* y, CBLAS_INDEX incy, float* a, CBLAS_INDEX lda)
@@ -609,34 +806,16 @@ void dger_k(cblas_args_t* args)
 	// Use optimized path when alpha == 1.0
 	if (alpha == 1.0)
 	{
-		// Use cache blocking only for large matrices
-		if (m > 2 * GER_BLOCK_SIZE)
+#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+		// Use FMA version if CPU supports it
+		if (cpu_get_features() & CPU_x64_FMA3)
 		{
-			// Process rows in cache-friendly blocks
-			for (CBLAS_INDEX i = 0; i < m; i += GER_BLOCK_SIZE)
-			{
-				CBLAS_INDEX ib = (i + GER_BLOCK_SIZE < m) ? GER_BLOCK_SIZE : (m - i);
-				
-				// Optimized path for unit alpha
-				for (CBLAS_INDEX row = i; row < i + ib; row++)
-				{
-					for (CBLAS_INDEX col = 0; col < n; col++)
-					{
-						a[row * lda + col] += x[row * incx] * y[col * incy];
-					}
-				}
-			}
+			dger_row_noalpha2x2_fma(m, n, x, incx, y, incy, a, lda);
 		}
 		else
+#endif
 		{
-			// Direct processing for small matrices
-			for (CBLAS_INDEX row = 0; row < m; row++)
-			{
-				for (CBLAS_INDEX col = 0; col < n; col++)
-				{
-					a[row * lda + col] += x[row * incx] * y[col * incy];
-				}
-			}
+			dger_row_noalpha2x2(m, n, x, incx, y, incy, a, lda);
 		}
 	}
 	else
@@ -930,33 +1109,16 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
         {
             if (alpha == 1.0)
             {
-                // Use cache blocking only for large matrices
-                if (m > 2 * GER_BLOCK_SIZE)
+#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+                // Use FMA version if CPU supports it
+                if (cpu_get_features() & CPU_x64_FMA3)
                 {
-                    // Process rows in cache-friendly blocks
-                    for (CBLAS_INDEX i = 0; i < m; i += GER_BLOCK_SIZE)
-                    {
-                        CBLAS_INDEX ib = (i + GER_BLOCK_SIZE < m) ? GER_BLOCK_SIZE : (m - i);
-                        
-                        for (CBLAS_INDEX row = i; row < i + ib; row++)
-                        {
-                            for (CBLAS_INDEX col = 0; col < n; col++)
-                            {
-                                a[row * n + col] += x[row] * y[col];
-                            }
-                        }
-                    }
+                    dger_row_noalpha2x2_fma(m, n, x, incx, y, incy, a, lda);
                 }
                 else
+#endif
                 {
-                    // Direct processing for small matrices
-                    for (CBLAS_INDEX row = 0; row < m; row++)
-                    {
-                        for (CBLAS_INDEX col = 0; col < n; col++)
-                        {
-                            a[row * n + col] += x[row] * y[col];
-                        }
-                    }
+                    dger_row_noalpha2x2(m, n, x, incx, y, incy, a, lda);
                 }
             }
             else
