@@ -119,6 +119,12 @@ target_link_libraries(gemv_perf cblas ${MATH_LIB})
 add_executable(dot_perf dot_perf.c)
 target_link_libraries(dot_perf cblas ${MATH_LIB})
 
+add_executable(axpy_perf axpy_perf.c)
+target_link_libraries(axpy_perf cblas ${MATH_LIB})
+
+add_executable(copy_perf copy_perf.c)
+target_link_libraries(copy_perf cblas ${MATH_LIB})
+
 add_executable(dot_threshold_tuning dot_threshold_tuning.c)
 target_link_libraries(dot_threshold_tuning cblas ${MATH_LIB})
 
