@@ -176,3 +176,24 @@ int cpu_get_l2_cache_size(void)
 
     return l2_cache_size/1024;
 }
+
+//------------------------------------------------------
+// return the L1 data cache size in KBytes
+//------------------------------------------------------
+int cpu_get_l1_data_cache_size(void)
+{
+    long l1_cache_size = 0;
+
+#ifdef __APPLE__
+    size_t len = sizeof(l1_cache_size);
+    
+    if (sysctlbyname("hw.l1dcachesize", &l1_cache_size, &len, NULL, 0) != 0)
+        return 0;  // Return 0 on failure to trigger fallback
+    return l1_cache_size/1024;
+#else
+    l1_cache_size = sysconf(_SC_LEVEL1_DCACHE_SIZE);
+    if (l1_cache_size <= 0)
+        return 0;  // Return 0 on failure to trigger fallback
+    return l1_cache_size/1024;
+#endif
+}
