@@ -18,9 +18,9 @@ kernels_t blas_kernels;
 // GEMM cache-aware block sizes (initialized at runtime)
 // Default values match 32KB L1d configuration (Intel/AMD)
 //------------------------------------------------------
-int cblas_gemm_mc = 128;   // Rows of A to pack
-int cblas_gemm_kc = 256;   // Inner dimension
-int cblas_gemm_nb = 256;   // Columns of B to pack
+CBLAS_INDEX cblas_gemm_mc = 128;   // Rows of A to pack
+CBLAS_INDEX cblas_gemm_kc = 256;   // Inner dimension
+CBLAS_INDEX cblas_gemm_nb = 256;   // Columns of B to pack
 
 //------------------------------------------------------
 // Performance counters - track stats per operation
@@ -370,7 +370,7 @@ void cblas_print_configuration(void)
     printf(" L1$ line size: %d bytes\n", cpu_get_cacheline_size());
     printf("  L1$ data size: %d Kbytes\n", cpu_get_l1_data_cache_size());
     printf("      L2$ size: %d Kbytes\n", cpu_get_l2_cache_size());
-    printf("GEMM block sz: mc=%d, kc=%d, nb=%d\n\n", cblas_gemm_mc, cblas_gemm_kc, cblas_gemm_nb);
+    printf("GEMM block sz: mc=%zu, kc=%zu, nb=%zu\n\n", cblas_gemm_mc, cblas_gemm_kc, cblas_gemm_nb);
 }
 
 //------------------------------------------------------
@@ -561,9 +561,9 @@ static void cblas_compute_gemm_block_sizes(void)
     // If too large, scale down linearly
     if (total_kb > target_kb) {
         float scale = (float)target_kb / (float)total_kb;
-        cblas_gemm_mc = (int)(cblas_gemm_mc * scale);
-        cblas_gemm_kc = (int)(cblas_gemm_kc * scale);
-        cblas_gemm_nb = (int)(cblas_gemm_nb * scale);
+        cblas_gemm_mc = (CBLAS_INDEX)(cblas_gemm_mc * scale);
+        cblas_gemm_kc = (CBLAS_INDEX)(cblas_gemm_kc * scale);
+        cblas_gemm_nb = (CBLAS_INDEX)(cblas_gemm_nb * scale);
         
         // Ensure minimum sizes (must be at least 64)
         cblas_gemm_mc = MAX(cblas_gemm_mc, 64);

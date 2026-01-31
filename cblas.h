@@ -1090,9 +1090,9 @@ int cpu_get_l1_data_cache_size(void);
  * @brief Runtime-computed GEMM block sizes for cache optimization
  * @note These are initialized by cblas_init() based on detected cache sizes
  */
-extern int cblas_gemm_mc;   // Rows of A to pack
-extern int cblas_gemm_kc;   // Inner dimension
-extern int cblas_gemm_nb;   // Columns of B to pack
+extern CBLAS_INDEX cblas_gemm_mc;   // Rows of A to pack
+extern CBLAS_INDEX cblas_gemm_kc;   // Inner dimension
+extern CBLAS_INDEX cblas_gemm_nb;   // Columns of B to pack
 
 //------------------------------------------------------
 // internal functions
