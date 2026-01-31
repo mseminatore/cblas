@@ -94,7 +94,7 @@ CBLAS_UNUSED static void cblas_scopy_k_noinc(cblas_args_t* args)
     
     register CBLAS_INDEX i = 0;
 
-    for (; i + 4 < n; i += 4)
+    for (; i + 4 <= n; i += 4)
     {
         y[i] = x[i];
         y[i + 1] = x[i + 1];
@@ -122,6 +122,8 @@ static void cblas_scopy_k(cblas_args_t *args)
         y += incy;
     }
 }
+
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 
 //------------------------------------------------------
 // double-precision copy kernel incx == incy == 1 (SSE)
@@ -157,6 +159,31 @@ CBLAS_UNUSED static void cblas_dcopy_k_noinc_sse(cblas_args_t* args)
     }
 
     // Process remaining elements
+    for (; i < n; i++)
+        y[i] = x[i];
+}
+
+#endif
+
+//------------------------------------------------------
+// double-precision copy kernel incx == incy == 1
+//------------------------------------------------------
+CBLAS_UNUSED static void cblas_dcopy_k_noinc(cblas_args_t* args)
+{
+    double* x = args->x;
+    double* y = args->y;
+    register CBLAS_INDEX n = args->n;
+    
+    register CBLAS_INDEX i = 0;
+
+    for (; i + 4 <= n; i += 4)
+    {
+        y[i] = x[i];
+        y[i + 1] = x[i + 1];
+        y[i + 2] = x[i + 2];
+        y[i + 3] = x[i + 3];
+    }
+
     for (; i < n; i++)
         y[i] = x[i];
 }
