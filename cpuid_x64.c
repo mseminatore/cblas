@@ -121,6 +121,35 @@ int cpu_get_l2_cache_size(void)
 }
 
 //------------------------------------------------------
+// return the L1 data cache size in KBytes
+//------------------------------------------------------
+int cpu_get_l1_data_cache_size(void)
+{
+    long l1_cache_size = 0;
+
+#ifdef __APPLE__
+    size_t len = sizeof(l1_cache_size);
+    
+    if (sysctlbyname("hw.l1dcachesize", &l1_cache_size, &len, NULL, 0) != 0)
+        return 0;  // Return 0 on failure to trigger fallback
+    return l1_cache_size/1024;
+#else
+	#if defined(_MSC_VER)
+		uint32_t regs[4];
+		__cpuid(regs, 0x80000005);
+		l1_cache_size = (regs[ECX] >> 24) & 0xFF; // Extract L1 data cache size in KB
+	#else
+		unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
+
+		__cpuid(0x80000005, eax, ebx, ecx, edx);
+		l1_cache_size = (ecx >> 24) & 0xFF; // Extract L1 data cache size in KB
+	#endif
+#endif
+
+	return l1_cache_size;
+}
+
+//------------------------------------------------------
 // return the CPU core brand name
 //------------------------------------------------------
 const char* cpu_get_brand_string(void)

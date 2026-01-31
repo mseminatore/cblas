@@ -15,6 +15,14 @@ static int cblas_server_alive   = CBLAS_FALSE;  // has thread server been initia
 kernels_t blas_kernels;
 
 //------------------------------------------------------
+// GEMM cache-aware block sizes (initialized at runtime)
+// Default values match 32KB L1d configuration (Intel/AMD)
+//------------------------------------------------------
+CBLAS_INDEX cblas_gemm_mc = 128;   // Rows of A to pack
+CBLAS_INDEX cblas_gemm_kc = 256;   // Inner dimension
+CBLAS_INDEX cblas_gemm_nb = 256;   // Columns of B to pack
+
+//------------------------------------------------------
 // Performance counters - track stats per operation
 //------------------------------------------------------
 #define STATS_TABLE_SIZE 32
@@ -360,7 +368,9 @@ void cblas_print_configuration(void)
 	printf("ISA Extensions: %s\n", cblas_get_isa_features());
     printf(" Cores/Threads: %d/%d\n", cblas_get_num_procs(), cblas_get_num_threads());
     printf(" L1$ line size: %d bytes\n", cpu_get_cacheline_size());
-    printf("      L2$ size: %d Kbytes\n\n", cpu_get_l2_cache_size());
+    printf("  L1$ data size: %d Kbytes\n", cpu_get_l1_data_cache_size());
+    printf("      L2$ size: %d Kbytes\n", cpu_get_l2_cache_size());
+    printf("GEMM block sz: mc=%zu, kc=%zu, nb=%zu\n\n", cblas_gemm_mc, cblas_gemm_kc, cblas_gemm_nb);
 }
 
 //------------------------------------------------------
@@ -507,6 +517,69 @@ void cblas_level3_exec(void)
 }
 
 //------------------------------------------------------
+// Calculate optimal GEMM block sizes based on cache
+//------------------------------------------------------
+static void cblas_compute_gemm_block_sizes(void)
+{
+    int l1_cache_kb = cpu_get_l1_data_cache_size();
+    int l2_cache_kb = cpu_get_l2_cache_size();
+    
+    // Default values if cache detection fails
+    if (l1_cache_kb == 0) l1_cache_kb = 32;
+    if (l2_cache_kb == 0) l2_cache_kb = 256;
+    
+    // Target: fit packed A and B in L2 cache
+    // Packed A: mc × kc × 4 bytes
+    // Packed B: kc × nb × 4 bytes
+    // Total: (mc × kc + kc × nb) × 4 bytes should fit in L2
+    
+    // Conservative approach: use 75% of L2 cache
+    int target_kb = (l2_cache_kb * 3) / 4;
+    
+    // Adjust block sizes based on L1 cache size
+    if (l1_cache_kb >= 128) {
+        // Apple M-series (128KB L1d): larger blocks
+        cblas_gemm_mc = 512;
+        cblas_gemm_kc = 256;
+        cblas_gemm_nb = 512;
+    } else if (l1_cache_kb >= 64) {
+        // ARM Cortex (64KB L1d): medium blocks
+        cblas_gemm_mc = 256;
+        cblas_gemm_kc = 256;
+        cblas_gemm_nb = 512;
+    } else {
+        // Intel/AMD (32KB L1d): smaller blocks
+        cblas_gemm_mc = 128;
+        cblas_gemm_kc = 256;
+        cblas_gemm_nb = 256;
+    }
+    
+    // Verify total size fits in L2 cache
+    int total_kb = ((cblas_gemm_mc * cblas_gemm_kc + 
+                     cblas_gemm_kc * cblas_gemm_nb) * 4) / 1024;
+    
+    // If too large, scale down linearly
+    if (total_kb > target_kb) {
+        float scale = (float)target_kb / (float)total_kb;
+        cblas_gemm_mc = (CBLAS_INDEX)(cblas_gemm_mc * scale);
+        cblas_gemm_kc = (CBLAS_INDEX)(cblas_gemm_kc * scale);
+        cblas_gemm_nb = (CBLAS_INDEX)(cblas_gemm_nb * scale);
+        
+        // Ensure minimum sizes (must be at least 64)
+        cblas_gemm_mc = MAX(cblas_gemm_mc, 64);
+        cblas_gemm_kc = MAX(cblas_gemm_kc, 64);
+        cblas_gemm_nb = MAX(cblas_gemm_nb, 64);
+    }
+    
+#ifdef USE_STATIC_BUFFERS
+    // Clamp to maximum static buffer sizes
+    cblas_gemm_mc = MIN(cblas_gemm_mc, 512);  // MAX_MC
+    cblas_gemm_kc = MIN(cblas_gemm_kc, 256);  // MAX_KC
+    cblas_gemm_nb = MIN(cblas_gemm_nb, 1024); // MAX_NB
+#endif
+}
+
+//------------------------------------------------------
 // initialize the CBLAS library
 //------------------------------------------------------
 void cblas_init(int threads)
@@ -531,8 +604,11 @@ void cblas_init(int threads)
 
     cblas_set_num_threads(threads);
 
-    // TODO - detect cache sizes?
-    // TODO - detect cpu features?
+    // Compute optimal GEMM block sizes based on cache
+    cblas_compute_gemm_block_sizes();
+    
+    // Detect CPU features for kernel dispatch
+    cpu_get_features();
 
     // start thread server
 #ifdef MT_ENABLED

@@ -17,9 +17,11 @@
 #endif
 
 // Matrix sub-tile block sizes for caching data in contiguous memory
-#define mc 256
-#define kc 128
-#define nb 1024
+// These are now runtime-determined based on cache size (see cblas_gemm_mc, cblas_gemm_kc, cblas_gemm_nb)
+// Maximum buffer sizes for static allocation (when USE_STATIC_BUFFERS is defined)
+#define MAX_MC 512
+#define MAX_KC 256
+#define MAX_NB 1024
 
 // Prefetch distance tuning - prefetch this many iterations ahead
 #define PREFETCH_DISTANCE 8
@@ -36,9 +38,9 @@
 
 #ifdef USE_STATIC_BUFFERS
     static int aguard CBLAS_UNUSED = 0xbaadf00d;
-    static float packedA[mc * kc];
+    static float packedA[MAX_MC * MAX_KC];
     static int bguard CBLAS_UNUSED = 0xbaadf00d;
-    static float packedB[kc * nb];
+    static float packedB[MAX_KC * MAX_NB];
     static int cguard CBLAS_UNUSED = 0xbaadf00d;
 #endif
 
@@ -418,15 +420,15 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
 #if !defined(USE_STATIC_BUFFERS)
     #ifdef _WIN32
         int aguard = 0xbaadf00d;
-        float* packedA = _malloca(mc * kc * sizeof(float));
+        float* packedA = _malloca(cblas_gemm_mc * cblas_gemm_kc * sizeof(float));
         int bguard = 0xbaadf00d;
-        float* packedB = _malloca(kc * nb * sizeof(float));
+        float* packedB = _malloca(cblas_gemm_kc * cblas_gemm_nb * sizeof(float));
         int cguard = 0xbaadf00d;
     #else
         int aguard = 0xbaadf00d;
-        float* packedA = alloca(mc * kc * sizeof(float));
+        float* packedA = alloca(cblas_gemm_mc * cblas_gemm_kc * sizeof(float));
         int bguard = 0xbaadf00d;
-        float* packedB = alloca(kc * nb * sizeof(float));
+        float* packedB = alloca(cblas_gemm_kc * cblas_gemm_nb * sizeof(float));
         int cguard = 0xbaadf00d;
     #endif
 #endif
@@ -513,15 +515,15 @@ static void InnerKernel_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* 
 #if !defined(USE_STATIC_BUFFERS)
     #ifdef _WIN32
         int aguard = 0xbaadf00d;
-        float* packedA = _malloca(mc * kc * sizeof(float));
+        float* packedA = _malloca(cblas_gemm_mc * cblas_gemm_kc * sizeof(float));
         int bguard = 0xbaadf00d;
-        float* packedB = _malloca(kc * nb * sizeof(float));
+        float* packedB = _malloca(cblas_gemm_kc * cblas_gemm_nb * sizeof(float));
         int cguard = 0xbaadf00d;
     #else
         int aguard = 0xbaadf00d;
-        float* packedA = alloca(mc * kc * sizeof(float));
+        float* packedA = alloca(cblas_gemm_mc * cblas_gemm_kc * sizeof(float));
         int bguard = 0xbaadf00d;
-        float* packedB = alloca(kc * nb * sizeof(float));
+        float* packedB = alloca(cblas_gemm_kc * cblas_gemm_nb * sizeof(float));
         int cguard = 0xbaadf00d;
     #endif
 #endif
@@ -668,8 +670,8 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     
     if (mt_used)
     {
-        CBLAS_INDEX horiz_tiles = k / kc + 1;
-        CBLAS_INDEX vert_tiles = m / mc + 1;
+        CBLAS_INDEX horiz_tiles = k / cblas_gemm_kc + 1;
+        CBLAS_INDEX vert_tiles = m / cblas_gemm_mc + 1;
         CBLAS_INDEX total_tiles = horiz_tiles * vert_tiles;
         CBLAS_INDEX tile_count = 0;
 
@@ -683,12 +685,12 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         #endif
 
         // Compute an mc x n block of C by a call to the InnerKernel
-        for (CBLAS_INDEX p = 0; p < k; p += kc) 
+        for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
         {
-            pb = MIN(k - p, kc);
-            for (CBLAS_INDEX row = 0; row < m; row += mc) 
+            pb = MIN(k - p, cblas_gemm_kc);
+            for (CBLAS_INDEX row = 0; row < m; row += cblas_gemm_mc) 
             {
-                ib = MIN(m - row, mc);
+                ib = MIN(m - row, cblas_gemm_mc);
 
                 args[tile_count].incx = 1;
                 args[tile_count].incy = 1;
@@ -723,12 +725,12 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     else
     {
         // Below threshold, use single-threaded implementation
-        for (CBLAS_INDEX p = 0; p < k; p += kc) 
+        for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
         {
-            pb = MIN(k - p, kc);
-            for (CBLAS_INDEX row = 0; row < m; row += mc) 
+            pb = MIN(k - p, cblas_gemm_kc);
+            for (CBLAS_INDEX row = 0; row < m; row += cblas_gemm_mc) 
             {
-                ib = MIN(m - row, mc);
+                ib = MIN(m - row, cblas_gemm_mc);
                 InnerKernel(ib, n, pb, &A(p, row), lda, &B(0, p), ldb, &C(0, row), ldc);
             }
         }
@@ -737,12 +739,12 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 #else
     int mt_used = 0;
     // Compute an mc x n block of C by a call to the InnerKernel
-    for (CBLAS_INDEX p = 0; p < k; p += kc) 
+    for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
     {
-        pb = MIN(k - p, kc);
-        for (CBLAS_INDEX row = 0; row < m; row += mc) 
+        pb = MIN(k - p, cblas_gemm_kc);
+        for (CBLAS_INDEX row = 0; row < m; row += cblas_gemm_mc) 
         {
-            ib = MIN(m - row, mc);
+            ib = MIN(m - row, cblas_gemm_mc);
             InnerKernel(ib, n, pb, &A(p, row), lda, &B(0, p), ldb, &C(0, row), ldc);
         }
     }
