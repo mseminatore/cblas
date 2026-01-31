@@ -113,6 +113,9 @@ target_link_libraries(ger_perf cblas ${MATH_LIB})
 add_executable(dger_perf dger_perf.c)
 target_link_libraries(dger_perf cblas ${MATH_LIB})
 
+add_executable(gemv_perf gemv_perf.c)
+target_link_libraries(gemv_perf cblas ${MATH_LIB})
+
 add_executable(dot_perf dot_perf.c)
 target_link_libraries(dot_perf cblas ${MATH_LIB})
 
