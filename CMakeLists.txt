@@ -64,8 +64,8 @@ endif()
 
 # Add Intel specific compiler flags for x86_64 architecture
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
-    if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx2 -mfma")
+    if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "AppleClang" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx2 -mfma -DUSE_INTEL_FMA")
     endif()
 endif()
 
@@ -104,8 +104,14 @@ target_link_libraries(blas_stress cblas ${MATH_LIB})
 add_executable(gemm_perf gemm_perf.c)
 target_link_libraries(gemm_perf cblas ${MATH_LIB})
 
+add_executable(dgemm_perf dgemm_perf.c)
+target_link_libraries(dgemm_perf cblas ${MATH_LIB})
+
 add_executable(ger_perf ger_perf.c)
 target_link_libraries(ger_perf cblas ${MATH_LIB})
+
+add_executable(dger_perf dger_perf.c)
+target_link_libraries(dger_perf cblas ${MATH_LIB})
 
 add_executable(dot_perf dot_perf.c)
 target_link_libraries(dot_perf cblas ${MATH_LIB})
@@ -134,11 +140,14 @@ target_link_libraries(test_threshold cblas ${MATH_LIB})
 add_executable(test_dot_threshold test_dot_threshold.c)
 target_link_libraries(test_dot_threshold cblas ${MATH_LIB})
 
-add_executable(test_concurrent test_main.c test_concurrent.c)
-target_link_libraries(test_concurrent cblas ${MATH_LIB})
+find_package(Threads)
 
-find_package(Threads REQUIRED)
-target_link_libraries(test_concurrent Threads::Threads)
+add_executable(test_concurrent test_main.c test_concurrent.c)
+if(Threads_FOUND)
+    target_link_libraries(test_concurrent cblas ${MATH_LIB} Threads::Threads)
+else()
+    target_link_libraries(test_concurrent cblas ${MATH_LIB} pthread)
+endif()
 
 add_executable(test_mt_debug test_mt_debug.c)
 target_link_libraries(test_mt_debug cblas ${MATH_LIB})
