@@ -560,12 +560,32 @@ void sger_k(cblas_args_t* args)
 	}
 	else
 	{
-		// Generic path for non-unit alpha
-		for (CBLAS_INDEX row = 0; row < m; row++)
+		// Use cache blocking only for large matrices
+		if (m > 2 * GER_BLOCK_SIZE)
 		{
-			for (CBLAS_INDEX col = 0; col < n; col++)
+			// Generic path with cache blocking for non-unit alpha
+			for (CBLAS_INDEX i = 0; i < m; i += GER_BLOCK_SIZE)
 			{
-				A(col, row) += alpha * X(row) * Y(col);
+				CBLAS_INDEX ib = (i + GER_BLOCK_SIZE < m) ? GER_BLOCK_SIZE : (m - i);
+				
+				for (CBLAS_INDEX row = i; row < i + ib; row++)
+				{
+					for (CBLAS_INDEX col = 0; col < n; col++)
+					{
+						A(col, row) += alpha * X(row) * Y(col);
+					}
+				}
+			}
+		}
+		else
+		{
+			// Direct processing for small matrices
+			for (CBLAS_INDEX row = 0; row < m; row++)
+			{
+				for (CBLAS_INDEX col = 0; col < n; col++)
+				{
+					A(col, row) += alpha * X(row) * Y(col);
+				}
 			}
 		}
 	}
@@ -589,23 +609,65 @@ void dger_k(cblas_args_t* args)
 	// Use optimized path when alpha == 1.0
 	if (alpha == 1.0)
 	{
-		// Optimized path for unit alpha
-		for (CBLAS_INDEX row = 0; row < m; row++)
+		// Use cache blocking only for large matrices
+		if (m > 2 * GER_BLOCK_SIZE)
 		{
-			for (CBLAS_INDEX col = 0; col < n; col++)
+			// Process rows in cache-friendly blocks
+			for (CBLAS_INDEX i = 0; i < m; i += GER_BLOCK_SIZE)
 			{
-				a[row * lda + col] += x[row * incx] * y[col * incy];
+				CBLAS_INDEX ib = (i + GER_BLOCK_SIZE < m) ? GER_BLOCK_SIZE : (m - i);
+				
+				// Optimized path for unit alpha
+				for (CBLAS_INDEX row = i; row < i + ib; row++)
+				{
+					for (CBLAS_INDEX col = 0; col < n; col++)
+					{
+						a[row * lda + col] += x[row * incx] * y[col * incy];
+					}
+				}
+			}
+		}
+		else
+		{
+			// Direct processing for small matrices
+			for (CBLAS_INDEX row = 0; row < m; row++)
+			{
+				for (CBLAS_INDEX col = 0; col < n; col++)
+				{
+					a[row * lda + col] += x[row * incx] * y[col * incy];
+				}
 			}
 		}
 	}
 	else
 	{
-		// Generic path for non-unit alpha
-		for (CBLAS_INDEX row = 0; row < m; row++)
+		// Use cache blocking only for large matrices
+		if (m > 2 * GER_BLOCK_SIZE)
 		{
-			for (CBLAS_INDEX col = 0; col < n; col++)
+			// Process rows in cache-friendly blocks
+			for (CBLAS_INDEX i = 0; i < m; i += GER_BLOCK_SIZE)
 			{
-				a[row * lda + col] += alpha * x[row * incx] * y[col * incy];
+				CBLAS_INDEX ib = (i + GER_BLOCK_SIZE < m) ? GER_BLOCK_SIZE : (m - i);
+				
+				// Generic path for non-unit alpha
+				for (CBLAS_INDEX row = i; row < i + ib; row++)
+				{
+					for (CBLAS_INDEX col = 0; col < n; col++)
+					{
+						a[row * lda + col] += alpha * x[row * incx] * y[col * incy];
+					}
+				}
+			}
+		}
+		else
+		{
+			// Direct processing for small matrices
+			for (CBLAS_INDEX row = 0; row < m; row++)
+			{
+				for (CBLAS_INDEX col = 0; col < n; col++)
+				{
+					a[row * lda + col] += alpha * x[row * incx] * y[col * incy];
+				}
 			}
 		}
 	}
@@ -697,11 +759,32 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
             }
             else
             {
-                for (CBLAS_INDEX row = 0; row < m; row++)
+                // Use cache blocking only for large matrices
+                if (m > 2 * GER_BLOCK_SIZE)
                 {
-                    for (CBLAS_INDEX col = 0; col < n; col++)
+                    // Process rows in cache-friendly blocks
+                    for (CBLAS_INDEX i = 0; i < m; i += GER_BLOCK_SIZE)
                     {
-                        a[row * n + col] += alpha * x[row] * y[col];
+                        CBLAS_INDEX ib = (i + GER_BLOCK_SIZE < m) ? GER_BLOCK_SIZE : (m - i);
+                        
+                        for (CBLAS_INDEX row = i; row < i + ib; row++)
+                        {
+                            for (CBLAS_INDEX col = 0; col < n; col++)
+                            {
+                                a[row * n + col] += alpha * x[row] * y[col];
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Direct processing for small matrices
+                    for (CBLAS_INDEX row = 0; row < m; row++)
+                    {
+                        for (CBLAS_INDEX col = 0; col < n; col++)
+                        {
+                            a[row * n + col] += alpha * x[row] * y[col];
+                        }
                     }
                 }
             }
@@ -709,21 +792,63 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
         {
             if (alpha == 1.0f)
             {
-                for (CBLAS_INDEX col = 0; col < n; col++)
+                // Use cache blocking only for large matrices
+                if (n > 2 * GER_BLOCK_SIZE)
                 {
-                    for (CBLAS_INDEX row = 0; row < m; row++)
+                    // Process columns in cache-friendly blocks
+                    for (CBLAS_INDEX j = 0; j < n; j += GER_BLOCK_SIZE)
                     {
-                        a[col * m + row] += x[row] * y[col];
+                        CBLAS_INDEX jb = (j + GER_BLOCK_SIZE < n) ? GER_BLOCK_SIZE : (n - j);
+                        
+                        for (CBLAS_INDEX col = j; col < j + jb; col++)
+                        {
+                            for (CBLAS_INDEX row = 0; row < m; row++)
+                            {
+                                a[col * m + row] += x[row] * y[col];
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Direct processing for small matrices
+                    for (CBLAS_INDEX col = 0; col < n; col++)
+                    {
+                        for (CBLAS_INDEX row = 0; row < m; row++)
+                        {
+                            a[col * m + row] += x[row] * y[col];
+                        }
                     }
                 }
             }
             else
             {
-                for (CBLAS_INDEX col = 0; col < n; col++)
+                // Use cache blocking only for large matrices
+                if (n > 2 * GER_BLOCK_SIZE)
                 {
-                    for (CBLAS_INDEX row = 0; row < m; row++)
+                    // Process columns in cache-friendly blocks
+                    for (CBLAS_INDEX j = 0; j < n; j += GER_BLOCK_SIZE)
                     {
-                        a[col * m + row] += alpha * x[row] * y[col];
+                        CBLAS_INDEX jb = (j + GER_BLOCK_SIZE < n) ? GER_BLOCK_SIZE : (n - j);
+                        
+                        for (CBLAS_INDEX col = j; col < j + jb; col++)
+                        {
+                            for (CBLAS_INDEX row = 0; row < m; row++)
+                            {
+                                a[col * m + row] += alpha * x[row] * y[col];
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Direct processing for small matrices
+                    for (CBLAS_INDEX col = 0; col < n; col++)
+                    {
+                        for (CBLAS_INDEX row = 0; row < m; row++)
+                        {
+                            a[col * m + row] += alpha * x[row] * y[col];
+                        }
                     }
                 }
             }
@@ -805,21 +930,63 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
         {
             if (alpha == 1.0)
             {
-                for (CBLAS_INDEX row = 0; row < m; row++)
+                // Use cache blocking only for large matrices
+                if (m > 2 * GER_BLOCK_SIZE)
                 {
-                    for (CBLAS_INDEX col = 0; col < n; col++)
+                    // Process rows in cache-friendly blocks
+                    for (CBLAS_INDEX i = 0; i < m; i += GER_BLOCK_SIZE)
                     {
-                        a[row * n + col] += x[row] * y[col];
+                        CBLAS_INDEX ib = (i + GER_BLOCK_SIZE < m) ? GER_BLOCK_SIZE : (m - i);
+                        
+                        for (CBLAS_INDEX row = i; row < i + ib; row++)
+                        {
+                            for (CBLAS_INDEX col = 0; col < n; col++)
+                            {
+                                a[row * n + col] += x[row] * y[col];
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Direct processing for small matrices
+                    for (CBLAS_INDEX row = 0; row < m; row++)
+                    {
+                        for (CBLAS_INDEX col = 0; col < n; col++)
+                        {
+                            a[row * n + col] += x[row] * y[col];
+                        }
                     }
                 }
             }
             else
             {
-                for (CBLAS_INDEX row = 0; row < m; row++)
+                // Use cache blocking only for large matrices
+                if (m > 2 * GER_BLOCK_SIZE)
                 {
-                    for (CBLAS_INDEX col = 0; col < n; col++)
+                    // Process rows in cache-friendly blocks
+                    for (CBLAS_INDEX i = 0; i < m; i += GER_BLOCK_SIZE)
                     {
-                        a[row * n + col] += alpha * x[row] * y[col];
+                        CBLAS_INDEX ib = (i + GER_BLOCK_SIZE < m) ? GER_BLOCK_SIZE : (m - i);
+                        
+                        for (CBLAS_INDEX row = i; row < i + ib; row++)
+                        {
+                            for (CBLAS_INDEX col = 0; col < n; col++)
+                            {
+                                a[row * n + col] += alpha * x[row] * y[col];
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Direct processing for small matrices
+                    for (CBLAS_INDEX row = 0; row < m; row++)
+                    {
+                        for (CBLAS_INDEX col = 0; col < n; col++)
+                        {
+                            a[row * n + col] += alpha * x[row] * y[col];
+                        }
                     }
                 }
             }
@@ -827,21 +994,63 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
         {
             if (alpha == 1.0)
             {
-                for (CBLAS_INDEX col = 0; col < n; col++)
+                // Use cache blocking only for large matrices
+                if (n > 2 * GER_BLOCK_SIZE)
                 {
-                    for (CBLAS_INDEX row = 0; row < m; row++)
+                    // Process columns in cache-friendly blocks
+                    for (CBLAS_INDEX j = 0; j < n; j += GER_BLOCK_SIZE)
                     {
-                        a[col * m + row] += x[row] * y[col];
+                        CBLAS_INDEX jb = (j + GER_BLOCK_SIZE < n) ? GER_BLOCK_SIZE : (n - j);
+                        
+                        for (CBLAS_INDEX col = j; col < j + jb; col++)
+                        {
+                            for (CBLAS_INDEX row = 0; row < m; row++)
+                            {
+                                a[col * m + row] += x[row] * y[col];
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Direct processing for small matrices
+                    for (CBLAS_INDEX col = 0; col < n; col++)
+                    {
+                        for (CBLAS_INDEX row = 0; row < m; row++)
+                        {
+                            a[col * m + row] += x[row] * y[col];
+                        }
                     }
                 }
             }
             else
             {
-                for (CBLAS_INDEX col = 0; col < n; col++)
+                // Use cache blocking only for large matrices
+                if (n > 2 * GER_BLOCK_SIZE)
                 {
-                    for (CBLAS_INDEX row = 0; row < m; row++)
+                    // Process columns in cache-friendly blocks
+                    for (CBLAS_INDEX j = 0; j < n; j += GER_BLOCK_SIZE)
                     {
-                        a[col * m + row] += alpha * x[row] * y[col];
+                        CBLAS_INDEX jb = (j + GER_BLOCK_SIZE < n) ? GER_BLOCK_SIZE : (n - j);
+                        
+                        for (CBLAS_INDEX col = j; col < j + jb; col++)
+                        {
+                            for (CBLAS_INDEX row = 0; row < m; row++)
+                            {
+                                a[col * m + row] += alpha * x[row] * y[col];
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Direct processing for small matrices
+                    for (CBLAS_INDEX col = 0; col < n; col++)
+                    {
+                        for (CBLAS_INDEX row = 0; row < m; row++)
+                        {
+                            a[col * m + row] += alpha * x[row] * y[col];
+                        }
                     }
                 }
             }
