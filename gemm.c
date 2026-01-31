@@ -438,15 +438,15 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
     {
         // we are pre-caching all cols so we need to do it only once
         if (row == 0)
-            PackMatrixB(k, &B(0, row), ldb, &packedB[row * k]);
+            PackMatrixB(k, &B(0, 0), ldb, packedB);
 
         for (col = 0; col + 4 <= n; col += 4)
         {
             // we are pre-caching all rows so we need to do it only once
             if (col == 0) 
-                PackMatrixA(k, &A(col, 0), lda, &packedA[row * k]);
+                PackMatrixA(k, &A(0, row), lda, packedA);
 
-            AddDot4x4(k, &packedA[row * k], 4, &packedB[col * k], k, &C(col, row), ldc);
+            AddDot4x4(k, packedA, 4, packedB, k, &C(col, row), ldc);
         }
 
         // handle leftover columns
@@ -529,15 +529,15 @@ static void InnerKernel_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* 
     {
         // we are pre-caching all cols so we need to do it only once
         if (row == 0)
-            PackMatrixB(k, &B(0, row), ldb, &packedB[row * k]);
+            PackMatrixB(k, &B(0, 0), ldb, packedB);
 
         for (col = 0; col + 4 <= n; col += 4)
         {
             // we are pre-caching all rows so we need to do it only once
             if (col == 0) 
-                PackMatrixA(k, &A(col, 0), lda, &packedA[row * k]);
+                PackMatrixA(k, &A(0, row), lda, packedA);
 
-            AddDot4x4_fma(k, &packedA[row * k], 4, &packedB[col * k], k, &C(col, row), ldc);
+            AddDot4x4_fma(k, packedA, 4, packedB, k, &C(col, row), ldc);
         }
 
         // handle leftover columns
@@ -669,13 +669,15 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         CBLAS_INDEX tile_count = 0;
 
         //printf("tile count = %u\n", total_tiles);
-        #ifdef _WIN32
-            work_queue_t *queue = _malloca(total_tiles * sizeof(work_queue_t));
-            cblas_args_t *args = _malloca(total_tiles * sizeof(cblas_args_t));
-        #else
-            work_queue_t *queue = alloca(total_tiles * sizeof(work_queue_t));
-            cblas_args_t *args = alloca(total_tiles * sizeof(cblas_args_t));
-        #endif
+        // Use heap allocation for large tile arrays to avoid stack overflow
+        work_queue_t *queue = (work_queue_t*)malloc(total_tiles * sizeof(work_queue_t));
+        cblas_args_t *args = (cblas_args_t*)malloc(total_tiles * sizeof(cblas_args_t));
+        
+        if (!queue || !args) {
+            free(queue);
+            free(args);
+            return;  // Out of memory
+        }
 
         // Compute an mc x n block of C by a call to the InnerKernel
         for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
@@ -714,6 +716,10 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 
         // synchronously execute task queue
         cblas_execute(tile_count, queue);
+        
+        // Free heap-allocated arrays
+        free(queue);
+        free(args);
     }
     else
     {
