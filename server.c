@@ -79,7 +79,7 @@ void cblas_set_num_threads(int threads)
 
         for (int i = start; i < threads - 1; i++)
         {
-            platform_thread_id_t tid;
+            platform_thread_id_t tid CBLAS_UNUSED;
             platform_thread_create(&cblas_thread_ids[i], cblas_worker_thread, i, &tid);
         }
 
@@ -103,7 +103,7 @@ int cblas_init_server(void)
     // create the worker threads
     for (int i = 0; i < cblas_max_threads - 1; i++)
     {
-        platform_thread_id_t tid;
+        platform_thread_id_t tid CBLAS_UNUSED;
         platform_thread_create(&cblas_thread_ids[i], cblas_worker_thread, i, &tid);
     }
 
