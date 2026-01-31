@@ -3,7 +3,9 @@ blas_test
 blas_stress
 blas_perf
 ger_perf
+dger_perf
 gemm_perf
+dgemm_perf
 dot_perf
 dot_threshold_tuning
 dot_threshold_tuning_large
