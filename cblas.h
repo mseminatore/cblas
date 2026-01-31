@@ -47,8 +47,8 @@
 #define GEMV_BLOCK_SIZE 256  // Fits in L1 cache
 #define GER_BLOCK_SIZE 256   // Fits in L1 cache
 
-// uncomment to enable FMA3 instruction usage
-//#define USE_INTEL_FMA
+// uncomment to enable FMA3 instruction usage (requires -mavx2 -mfma compile flags)
+#define USE_INTEL_FMA
 
 // uncomment to enable multi-threading debug messages
 //#define MT_DEBUG
@@ -1075,6 +1075,13 @@ const char *cblas_get_isa_features(void);
  * @note Displays version, threads, CPU info, ISA features.
  */
 void cblas_print_configuration(void);
+
+/**
+ * @brief Print active kernel configuration to stdout
+ * @note Displays detected CPU features, SIMD variant, optimizations, and MT thresholds.
+ *       Useful for understanding which kernels are executing on different machines.
+ */
+void cblas_print_kernels(void);
 
 /**
  * @brief Get L2 cache size

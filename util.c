@@ -374,6 +374,97 @@ void cblas_print_configuration(void)
 }
 
 //------------------------------------------------------
+// Print active kernel configuration
+//------------------------------------------------------
+void cblas_print_kernels(void)
+{
+    unsigned int cpu = cpu_get_features();
+    
+    printf("=== Active CBLAS Kernels ===\n");
+    
+    // Determine kernel variant based on CPU features and build config
+#if defined(USE_SSE) && defined(USE_SIMD)
+    #if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
+        if (cpu & CPU_AVX2) {
+            printf("Architecture: x86_64 with AVX2\n");
+            printf("SIMD Width:   256-bit (8 floats, 4 doubles)\n");
+            if (cpu & CPU_x64_FMA3) {
+                printf("FMA Support:  Yes (FMA3)\n");
+            } else {
+                printf("FMA Support:  No\n");
+            }
+        } else if (cpu & CPU_AVX) {
+            printf("Architecture: x86_64 with AVX\n");
+            printf("SIMD Width:   256-bit (8 floats, 4 doubles)\n");
+            printf("FMA Support:  No\n");
+        } else if (cpu & CPU_SSE) {
+            printf("Architecture: x86_64 with SSE\n");
+            printf("SIMD Width:   128-bit (4 floats, 2 doubles)\n");
+            printf("FMA Support:  No\n");
+        } else {
+            printf("Architecture: x86_64 (scalar fallback)\n");
+            printf("SIMD Width:   None\n");
+        }
+        printf("Kernel Variant: SSE/AVX optimized (_k_noinc_sse)\n");
+    #elif defined(__aarch64__) && defined(__ARM_NEON)
+        printf("Architecture: ARM64 with NEON\n");
+        printf("SIMD Width:   128-bit (4 floats, 2 doubles)\n");
+        if (cpu & CPU_NEON_FMA) {
+            printf("FMA Support:  Yes (NEON FMA)\n");
+        } else {
+            printf("FMA Support:  No\n");
+        }
+        printf("Kernel Variant: NEON optimized (_k_noinc_neon)\n");
+    #else
+        printf("Architecture: Generic\n");
+        printf("Kernel Variant: Scalar fallback\n");
+    #endif
+#else
+    printf("Architecture: Generic (SIMD disabled)\n");
+    printf("Kernel Variant: Scalar fallback (_k_noinc)\n");
+#endif
+
+    printf("\nOptimizations:\n");
+    printf("  - 4-way accumulator unrolling: ");
+#if defined(USE_SSE) && defined(USE_SIMD)
+    printf("Yes (32 floats/16 doubles per iteration)\n");
+#else
+    printf("No\n");
+#endif
+    
+    printf("  - FMA instructions:           ");
+#if defined(USE_INTEL_FMA) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+    printf("Yes (Intel FMA3)\n");
+#elif defined(__aarch64__) && defined(__ARM_NEON)
+    if (cpu & CPU_NEON_FMA) {
+        printf("Yes (ARM NEON)\n");
+    } else {
+        printf("No (separate mul+add)\n");
+    }
+#else
+    printf("No (separate mul+add)\n");
+#endif
+    
+    printf("  - Software prefetching:       ");
+#if defined(__GNUC__) || defined(__clang__) || defined(_MSC_VER)
+    printf("Yes (%d elements ahead)\n", CBLAS_PREFETCH_DISTANCE);
+#else
+    printf("No\n");
+#endif
+
+    printf("  - Multi-threading:            ");
+#ifdef MT_ENABLED
+    printf("Yes (%d threads)\n", cblas_get_num_threads());
+#else
+    printf("No\n");
+#endif
+
+    printf("\nMT Thresholds:\n");
+    printf("  DOT:  %d   AXPY: %d   COPY: %d\n", CBLAS_MT_DOT, CBLAS_MT_AXPY, CBLAS_MT_COPY);
+    printf("  GER:  %d   GEMM: %d   GEMV: %d\n\n", CBLAS_MT_GER, CBLAS_MT_GEMM, CBLAS_MT_GEMV);
+}
+
+//------------------------------------------------------
 // level 1 dispatch
 //------------------------------------------------------
 void cblas_level1_exec(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_INDEX n, void *x, CBLAS_INDEX incx, void *y, CBLAS_INDEX incy, const char* op_name)
