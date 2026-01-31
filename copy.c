@@ -94,7 +94,7 @@ CBLAS_UNUSED static void cblas_scopy_k_noinc(cblas_args_t* args)
     
     register CBLAS_INDEX i = 0;
 
-    for (; i + 4 < n; i += 4)
+    for (; i + 4 <= n; i += 4)
     {
         y[i] = x[i];
         y[i + 1] = x[i + 1];
@@ -172,7 +172,7 @@ CBLAS_UNUSED static void cblas_dcopy_k_noinc(cblas_args_t* args)
     
     register CBLAS_INDEX i = 0;
 
-    for (; i + 4 < n; i += 4)
+    for (; i + 4 <= n; i += 4)
     {
         y[i] = x[i];
         y[i + 1] = x[i + 1];
