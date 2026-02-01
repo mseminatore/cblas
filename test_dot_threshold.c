@@ -123,8 +123,8 @@ static int test_threshold_value(void)
     int threshold_ok = (CBLAS_MT_DOT >= 16384 && CBLAS_MT_DOT <= 100000);
     
     if (!threshold_ok) {
-        fprintf(stderr, "CBLAS_MT_DOT (%d) is outside reasonable range (16384-100000)\n", 
-                CBLAS_MT_DOT);
+        fprintf(stderr, "CBLAS_MT_DOT (%lu) is outside reasonable range (16384-100000)\n", 
+                (unsigned long)CBLAS_MT_DOT);
     }
     
     return threshold_ok;
