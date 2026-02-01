@@ -47,8 +47,8 @@
 #define GEMV_BLOCK_SIZE 256  // Fits in L1 cache
 #define GER_BLOCK_SIZE 256   // Fits in L1 cache
 
-// NOTE: USE_INTEL_FMA is now defined via compiler flags in CMakeLists.txt and Makefile
-// Do not define it here to avoid conflicts
+// Note: FMA usage is now determined at runtime via cpu_get_features()
+// No need for compile-time USE_INTEL_FMA define
 
 // uncomment to enable multi-threading debug messages
 //#define MT_DEBUG
@@ -1075,6 +1075,13 @@ const char *cblas_get_isa_features(void);
  * @note Displays version, threads, CPU info, ISA features.
  */
 void cblas_print_configuration(void);
+
+/**
+ * @brief Print active kernel configuration to stdout
+ * @note Displays detected CPU features, SIMD variant, optimizations, and MT thresholds.
+ *       Useful for understanding which kernels are executing on different machines.
+ */
+void cblas_print_kernels(void);
 
 /**
  * @brief Get L2 cache size

@@ -28,6 +28,10 @@ int main(void)
 
     cblas_init(CBLAS_DEFAULT_THREADS);
 
+    // Show kernel configuration
+    cblas_print_kernels();
+    printf("\n");
+
     // Print table header
     printf("%-10s  %-12s  %-12s  %-12s\n", "Size", "Time (s)", "Bandwidth", "Ops/s");
     printf("%-10s  %-12s  %-12s  %-12s\n", "----------", "------------", "------------", "------------");

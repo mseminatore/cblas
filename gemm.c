@@ -724,13 +724,27 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     else
     {
         // Below threshold, use single-threaded implementation
+        // Runtime dispatch: check for FMA support once and cache result
+        static int fma_available = -1;
+        if (fma_available == -1) {
+            unsigned int features = cpu_get_features();
+            fma_available = (features & CPU_x64_FMA3) ? 1 : 0;
+        }
+        
         for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
         {
             pb = MIN(k - p, cblas_gemm_kc);
             for (CBLAS_INDEX row = 0; row < m; row += cblas_gemm_mc) 
             {
                 ib = MIN(m - row, cblas_gemm_mc);
-                InnerKernel(ib, n, pb, &A(p, row), lda, &B(0, p), ldb, &C(0, row), ldc);
+#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+                if (fma_available) {
+                    InnerKernel_fma(ib, n, pb, &A(p, row), lda, &B(0, p), ldb, &C(0, row), ldc);
+                } else
+#endif
+                {
+                    InnerKernel(ib, n, pb, &A(p, row), lda, &B(0, p), ldb, &C(0, row), ldc);
+                }
             }
         }
     }
@@ -738,13 +752,27 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 #else
     int mt_used = 0;
     // Compute an mc x n block of C by a call to the InnerKernel
+    // Runtime dispatch: check for FMA support once and cache result
+    static int fma_available = -1;
+    if (fma_available == -1) {
+        unsigned int features = cpu_get_features();
+        fma_available = (features & CPU_x64_FMA3) ? 1 : 0;
+    }
+    
     for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
     {
         pb = MIN(k - p, cblas_gemm_kc);
         for (CBLAS_INDEX row = 0; row < m; row += cblas_gemm_mc) 
         {
             ib = MIN(m - row, cblas_gemm_mc);
-            InnerKernel(ib, n, pb, &A(p, row), lda, &B(0, p), ldb, &C(0, row), ldc);
+#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+            if (fma_available) {
+                InnerKernel_fma(ib, n, pb, &A(p, row), lda, &B(0, p), ldb, &C(0, row), ldc);
+            } else
+#endif
+            {
+                InnerKernel(ib, n, pb, &A(p, row), lda, &B(0, p), ldb, &C(0, row), ldc);
+            }
         }
     }
 #endif
