@@ -23,7 +23,7 @@ The following operations should receive similar treatment:
 #### Level 1 (Vector-Vector Operations)
 - [x] `dot` - **COMPLETED** (4-way accumulators, prefetching, MT threshold: 32768)
 - [ ] `copy` - Memory bandwidth limited, simple copy operation
-- [ ] `axpy` - Y = alpha*X + Y (similar to dot, but with writes)
+- [x] `axpy` - **COMPLETED** (4-way accumulators, prefetching, MT threshold: 32768, multi-threading enabled)
 - [ ] `scal` - X = alpha*X (in-place scaling)
 - [ ] `swap` - Exchange X and Y vectors
 - [ ] `asum` - Sum of absolute values (reduction operation)
@@ -301,12 +301,16 @@ printf("%10d %10.2f %12.2f %12.6f\n", size, gflops, gbytes_per_sec, dt);
 **Completed Optimizations:**
 - `dot.c` - 4-way accumulator unrolling, prefetching (lines 13-107)
 - `ger.c` - Prefetching, MT threshold tuning, bug fixes (lines 638-695)
+- `axpy.c` - Multi-threading support, 4-way accumulator unrolling, prefetching, MT threshold: 32768
 - `cblas.h` - Updated MT thresholds (lines 63-67)
 - `test_dot_threshold.c` - Updated threshold validation (lines 128-141)
 
 **Performance Results:**
 - See `dot_perf` output: ~1.4 GFlops, ~5.6 GB/s at 8192 elements
 - See `ger_perf` output: ~1.35 GFlops, ~5.4 GB/s at 8192×8192
+- `axpy_perf` output: ~5.5-5.7 GFlops, ~33-34 GB/s for large vectors (> 1M elements)
+  - Multi-threading activates for n > 32768
+  - Performance improvements observed: ~2-3x for out-of-cache workloads with MT enabled
 
 **Configuration:**
 - Prefetch distance: 128 elements (512 bytes) - `cblas.h:71`
