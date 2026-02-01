@@ -6,6 +6,12 @@
 #include "cblas.h"
 #include "cblas_simd.h"
 
+#ifdef _WIN32
+#	include <malloc.h>
+#else
+#	include <alloca.h>
+#endif
+
 #if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 
 //------------------------------------------------------
@@ -420,6 +426,130 @@ static void cblas_daxpy_k_noinc_neon(double alpha, double *x, double *y, CBLAS_I
 #endif
 
 //------------------------------------------------------
+// single-precision axpy kernel for MT with arbitrary increments
+//------------------------------------------------------
+static void cblas_saxpy_k(cblas_args_t* args)
+{
+    float* x = args->x;
+    float* y = args->y;
+    float alpha = *(float*)args->alpha;
+    register CBLAS_INDEX incx = args->incx, incy = args->incy, n = args->n;
+
+    for (CBLAS_INDEX i = 0; i < n; i++)
+    {
+        *y = alpha * *x + *y;
+        x += incx;
+        y += incy;
+    }
+}
+
+//------------------------------------------------------
+// single-precision axpy kernel wrapper for MT with incx == 1 && incy == 1
+//------------------------------------------------------
+static void cblas_saxpy_k_noinc(cblas_args_t* args)
+{
+    float* x = args->x;
+    float* y = args->y;
+    float alpha = *(float*)args->alpha;
+    register CBLAS_INDEX n = args->n;
+
+#if defined(USE_SSE) && defined(USE_SIMD)
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
+    // Runtime dispatch: Check if CPU supports FMA3
+    static int fma_available = -1;
+    if (fma_available == -1) {
+        unsigned int features = cpu_get_features();
+        fma_available = (features & CPU_x64_FMA3) ? 1 : 0;
+    }
+    
+    if (fma_available) {
+        cblas_saxpy_k_noinc_fma(alpha, x, y, n);
+    } else {
+        cblas_saxpy_k_noinc_sse(alpha, x, y, n);
+    }
+    return;
+#elif defined(__aarch64__) && defined(__ARM_NEON)
+    cblas_saxpy_k_noinc_neon(alpha, x, y, n);
+    return;
+#endif
+#endif
+
+    // Fallback scalar implementation
+    int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
+    
+    for (CBLAS_INDEX i = 0; i < n; i++)
+    {
+        if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+            CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+            CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
+        }
+        y[i] = alpha * x[i] + y[i];
+    }
+}
+
+//------------------------------------------------------
+// double-precision axpy kernel for MT with arbitrary increments
+//------------------------------------------------------
+static void cblas_daxpy_k(cblas_args_t* args)
+{
+    double* x = args->x;
+    double* y = args->y;
+    double alpha = *(double*)args->alpha;
+    register CBLAS_INDEX incx = args->incx, incy = args->incy, n = args->n;
+
+    for (CBLAS_INDEX i = 0; i < n; i++)
+    {
+        *y = alpha * *x + *y;
+        x += incx;
+        y += incy;
+    }
+}
+
+//------------------------------------------------------
+// double-precision axpy kernel wrapper for MT with incx == 1 && incy == 1
+//------------------------------------------------------
+static void cblas_daxpy_k_noinc(cblas_args_t* args)
+{
+    double* x = args->x;
+    double* y = args->y;
+    double alpha = *(double*)args->alpha;
+    register CBLAS_INDEX n = args->n;
+
+#if defined(USE_SSE) && defined(USE_SIMD)
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
+    // Runtime dispatch: Check if CPU supports FMA3
+    static int fma_available = -1;
+    if (fma_available == -1) {
+        unsigned int features = cpu_get_features();
+        fma_available = (features & CPU_x64_FMA3) ? 1 : 0;
+    }
+    
+    if (fma_available) {
+        cblas_daxpy_k_noinc_fma(alpha, x, y, n);
+    } else {
+        cblas_daxpy_k_noinc_sse(alpha, x, y, n);
+    }
+    return;
+#elif defined(__aarch64__) && defined(__ARM_NEON)
+    cblas_daxpy_k_noinc_neon(alpha, x, y, n);
+    return;
+#endif
+#endif
+
+    // Fallback scalar implementation
+    int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
+    
+    for (CBLAS_INDEX i = 0; i < n; i++)
+    {
+        if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+            CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+            CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
+        }
+        y[i] = alpha * x[i] + y[i];
+    }
+}
+
+//------------------------------------------------------
 // Level-1 single-precision y = a * x + y
 //------------------------------------------------------
 void cblas_saxpy(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy)
@@ -428,8 +558,111 @@ void cblas_saxpy(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *
 
     CBLAS_STATS_START();
 
+#ifdef MT_ENABLED
+    int mt_used = (n > CBLAS_MT_AXPY) ? 1 : 0;
+    
+    if (mt_used)
+    {
+        CBLAS_INDEX thread_count = CLAMP(cblas_get_num_threads(), 1, MAX_THREADS);
+        
+        #if defined(_MSC_VER)
+            work_queue_t *queue = _malloca(thread_count * sizeof(work_queue_t));
+            cblas_args_t *args = _malloca(thread_count * sizeof(cblas_args_t));
+        #else
+            work_queue_t *queue = alloca(thread_count * sizeof(work_queue_t));
+            cblas_args_t *args = alloca(thread_count * sizeof(cblas_args_t));
+        #endif
+        
+        CBLAS_INDEX elements_remaining = n;
+        CBLAS_INDEX offset = 0;
+        
+        kernel_function kernel = cblas_saxpy_k;
+        
+        // Use optimized kernel for contiguous arrays
+        if (incx == 1 && incy == 1)
+            kernel = cblas_saxpy_k_noinc;
+        
+        for (CBLAS_INDEX i = 0; i < thread_count; i++)
+        {
+            // Compute partition size: distribute elements evenly
+            CBLAS_INDEX elements_per_thread = (elements_remaining + thread_count - i - 1) / (thread_count - i);
+            
+            args[i].n = elements_per_thread;
+            args[i].incx = incx;
+            args[i].incy = incy;
+            args[i].x = x + offset * incx;
+            args[i].y = y + offset * incy;
+            args[i].alpha = &alpha;
+            
+            queue[i].finished = 0;
+            queue[i].args = &args[i];
+            queue[i].kernel = kernel;
+            queue[i].next = &queue[i + 1];
+#ifdef MT_DEBUG
+            queue[i].operation = "SAXPY";
+#endif
+            
+            offset += elements_per_thread;
+            elements_remaining -= elements_per_thread;
+        }
+        
+        // mark end of task queue
+        queue[thread_count - 1].next = NULL;
+        
+        // synchronously execute task queue
+        cblas_execute(thread_count, queue);
+    }
+    else
+    {
+        if (incx == 1 && incy == 1)
+        {
+#if defined(USE_SSE) && defined(USE_SIMD)
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
+            // Runtime dispatch: Check if CPU supports FMA3
+            static int fma_available = -1; // -1 = not checked, 0 = no, 1 = yes
+            if (fma_available == -1) {
+                unsigned int features = cpu_get_features();
+                fma_available = (features & CPU_x64_FMA3) ? 1 : 0;
+            }
+            
+            if (fma_available) {
+                cblas_saxpy_k_noinc_fma(alpha, x, y, n);
+            } else {
+                cblas_saxpy_k_noinc_sse(alpha, x, y, n);
+            }
+            CBLAS_STATS_END("saxpy", n, mt_used);
+            return;
+#elif defined(__aarch64__) && defined(__ARM_NEON)
+            cblas_saxpy_k_noinc_neon(alpha, x, y, n);
+            CBLAS_STATS_END("saxpy", n, mt_used);
+            return;
+#endif
+#endif
+            // Fallback scalar implementation
+            int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
+            
+            for (CBLAS_INDEX i = 0; i < n; i++)
+            {
+                if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+                    CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                    CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
+                }
+                y[i] = alpha * x[i] + y[i];
+            }
+        }
+        else
+        {
+            // incx and/or incy are not 1
+            for (CBLAS_INDEX i = 0; i < n; i++)
+            {
+                *y = alpha * *x + *y;
+                x += incx;
+                y += incy;
+            }
+        }
+    }
+#else
     int mt_used = 0;
-
     if (incx == 1 && incy == 1)
     {
 #if defined(USE_SSE) && defined(USE_SIMD)
@@ -455,55 +688,28 @@ void cblas_saxpy(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *
 #endif
 #endif
         // Fallback scalar implementation
-        if (alpha == 1.0f)
+        int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
+        
+        for (CBLAS_INDEX i = 0; i < n; i++)
         {
-            int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
-            
-            for (CBLAS_INDEX i = 0; i < n; i++)
-            {
-                if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-                    CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                    CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
-                }
-                y[i] = x[i] + y[i];
+            if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+                CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
             }
-        }
-        else
-        {
-            int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
-            
-            for (CBLAS_INDEX i = 0; i < n; i++)
-            {
-                if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-                    CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                    CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
-                }
-                y[i] = alpha * x[i] + y[i];
-            }
+            y[i] = alpha * x[i] + y[i];
         }
     }
     else
     {
         // incx and/or incy are not 1
-        if (alpha == 1.0f)
+        for (CBLAS_INDEX i = 0; i < n; i++)
         {
-            for (CBLAS_INDEX i = 0; i < n; i++)
-            {
-                *y = *x + *y;
-                x += incx;
-                y += incy;
-            }
-        }
-        else
-        {
-            for (CBLAS_INDEX i = 0; i < n; i++)
-            {
-                *y = alpha * *x + *y;
-                x += incx;
-                y += incy;
-            }
+            *y = alpha * *x + *y;
+            x += incx;
+            y += incy;
         }
     }
+#endif
 
     CBLAS_STATS_END("saxpy", n, mt_used);
 }
@@ -517,8 +723,111 @@ void cblas_daxpy(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, doubl
 
     CBLAS_STATS_START();
 
+#ifdef MT_ENABLED
+    int mt_used = (n > CBLAS_MT_AXPY) ? 1 : 0;
+    
+    if (mt_used)
+    {
+        CBLAS_INDEX thread_count = CLAMP(cblas_get_num_threads(), 1, MAX_THREADS);
+        
+        #if defined(_MSC_VER)
+            work_queue_t *queue = _malloca(thread_count * sizeof(work_queue_t));
+            cblas_args_t *args = _malloca(thread_count * sizeof(cblas_args_t));
+        #else
+            work_queue_t *queue = alloca(thread_count * sizeof(work_queue_t));
+            cblas_args_t *args = alloca(thread_count * sizeof(cblas_args_t));
+        #endif
+        
+        CBLAS_INDEX elements_remaining = n;
+        CBLAS_INDEX offset = 0;
+        
+        kernel_function kernel = cblas_daxpy_k;
+        
+        // Use optimized kernel for contiguous arrays
+        if (incx == 1 && incy == 1)
+            kernel = cblas_daxpy_k_noinc;
+        
+        for (CBLAS_INDEX i = 0; i < thread_count; i++)
+        {
+            // Compute partition size: distribute elements evenly
+            CBLAS_INDEX elements_per_thread = (elements_remaining + thread_count - i - 1) / (thread_count - i);
+            
+            args[i].n = elements_per_thread;
+            args[i].incx = incx;
+            args[i].incy = incy;
+            args[i].x = x + offset * incx;
+            args[i].y = y + offset * incy;
+            args[i].alpha = &alpha;
+            
+            queue[i].finished = 0;
+            queue[i].args = &args[i];
+            queue[i].kernel = kernel;
+            queue[i].next = &queue[i + 1];
+#ifdef MT_DEBUG
+            queue[i].operation = "DAXPY";
+#endif
+            
+            offset += elements_per_thread;
+            elements_remaining -= elements_per_thread;
+        }
+        
+        // mark end of task queue
+        queue[thread_count - 1].next = NULL;
+        
+        // synchronously execute task queue
+        cblas_execute(thread_count, queue);
+    }
+    else
+    {
+        if (incx == 1 && incy == 1)
+        {
+#if defined(USE_SSE) && defined(USE_SIMD)
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
+            // Runtime dispatch: Check if CPU supports FMA3
+            static int fma_available = -1;
+            if (fma_available == -1) {
+                unsigned int features = cpu_get_features();
+                fma_available = (features & CPU_x64_FMA3) ? 1 : 0;
+            }
+            
+            if (fma_available) {
+                cblas_daxpy_k_noinc_fma(alpha, x, y, n);
+            } else {
+                cblas_daxpy_k_noinc_sse(alpha, x, y, n);
+            }
+            CBLAS_STATS_END("daxpy", n, mt_used);
+            return;
+#elif defined(__aarch64__) && defined(__ARM_NEON)
+            cblas_daxpy_k_noinc_neon(alpha, x, y, n);
+            CBLAS_STATS_END("daxpy", n, mt_used);
+            return;
+#endif
+#endif
+            // Fallback scalar implementation
+            int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
+            
+            for (CBLAS_INDEX i = 0; i < n; i++)
+            {
+                if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+                    CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                    CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
+                }
+                y[i] = alpha * x[i] + y[i];
+            }
+        }
+        else
+        {
+            // incx and/or incy are not 1
+            for (CBLAS_INDEX i = 0; i < n; i++)
+            {
+                *y = alpha * *x + *y;
+                x += incx;
+                y += incy;
+            }
+        }
+    }
+#else
     int mt_used = 0;
-
     if (incx == 1 && incy == 1)
     {
 #if defined(USE_SSE) && defined(USE_SIMD)
@@ -544,55 +853,28 @@ void cblas_daxpy(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, doubl
 #endif
 #endif
         // Fallback scalar implementation
-        if (alpha == 1.0)
+        int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
+        
+        for (CBLAS_INDEX i = 0; i < n; i++)
         {
-            int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
-            
-            for (CBLAS_INDEX i = 0; i < n; i++)
-            {
-                if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-                    CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                    CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
-                }
-                y[i] = x[i] + y[i];
+            if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+                CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
+                CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
             }
-        }
-        else
-        {
-            int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
-            
-            for (CBLAS_INDEX i = 0; i < n; i++)
-            {
-                if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
-                    CBLAS_PREFETCH(&x[i + CBLAS_PREFETCH_DISTANCE], 0, 0);
-                    CBLAS_PREFETCH(&y[i + CBLAS_PREFETCH_DISTANCE], 1, 0);
-                }
-                y[i] = alpha * x[i] + y[i];
-            }
+            y[i] = alpha * x[i] + y[i];
         }
     }
     else
     {
         // incx and/or incy are not 1
-        if (alpha == 1.0)
+        for (CBLAS_INDEX i = 0; i < n; i++)
         {
-            for (CBLAS_INDEX i = 0; i < n; i++)
-            {
-                *y = *x + *y;
-                x += incx;
-                y += incy;
-            }
-        }
-        else
-        {
-            for (CBLAS_INDEX i = 0; i < n; i++)
-            {
-                *y = alpha * *x + *y;
-                x += incx;
-                y += incy;
-            }
+            *y = alpha * *x + *y;
+            x += incx;
+            y += incy;
         }
     }
+#endif
 
     CBLAS_STATS_END("daxpy", n, mt_used);
 }
