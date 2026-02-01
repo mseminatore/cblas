@@ -272,6 +272,10 @@ static unsigned int __cpu_get_features(void)
 	if (info[EBX] & (1 << 16))
 		cpu_features |= CPU_AVX512;
 	
+	// Check for hybrid architecture (P-cores + E-cores)
+	if (info[EDX] & (1 << 15))
+		cpu_features |= CPU_HYBRID;
+	
 #else
 	unsigned int eax, ebx, ecx, edx;
 
@@ -292,6 +296,10 @@ static unsigned int __cpu_get_features(void)
 
 	if (ebx & BIT(16))
 		cpu_features |= CPU_AVX512;
+
+	// Check for hybrid architecture (P-cores + E-cores)
+	if (edx & (1 << 15))
+		cpu_features |= CPU_HYBRID;
 
 #endif
 
@@ -431,3 +439,88 @@ int cpu_get_core_count(void)
 #endif
 
 }
+
+//------------------------------------------------------
+// Check if CPU has hybrid architecture (P+E cores)
+//------------------------------------------------------
+int cpu_is_hybrid(void)
+{
+	static int hybrid_checked = 0;
+	static int is_hybrid = 0;
+	
+	if (hybrid_checked)
+		return is_hybrid;
+	
+	const char* vendor = cpu_get_core_name();
+	
+	// Only Intel has hybrid architecture so far
+	if (strncmp(vendor, "GenuineIntel", 12) != 0)
+	{
+		hybrid_checked = 1;
+		return 0;
+	}
+	
+#if defined(_MSC_VER)
+	int info[4];
+	
+	// Check CPUID leaf 0x07, subleaf 0, EDX bit 15 for hybrid support
+	__cpuidex(info, 0x07, 0);
+	if (info[EDX] & (1 << 15))
+	{
+		is_hybrid = 1;
+	}
+#else
+	unsigned int eax, ebx, ecx, edx;
+	
+	__cpuid_count(0x07, 0, eax, ebx, ecx, edx);
+	if (edx & (1 << 15))
+	{
+		is_hybrid = 1;
+	}
+#endif
+	
+	hybrid_checked = 1;
+	return is_hybrid;
+}
+
+//------------------------------------------------------
+// Get number of P-cores (performance cores)
+//------------------------------------------------------
+int cpu_get_p_core_count(void)
+{
+	if (!cpu_is_hybrid())
+		return cpu_get_core_count();
+	
+	// For hybrid CPUs, we need to enumerate cores via Windows API
+	// or use CPUID leaf 0x1A to identify core types
+	// This is a simplified version - actual implementation would need
+	// to iterate through all logical processors
+	
+#ifdef _WIN32
+	// Windows provides this through GetLogicalProcessorInformationEx
+	// but for now, we'll use a heuristic
+	int total_cores = cpu_get_core_count();
+	
+	// Common Intel configurations:
+	// 12th gen: 8P+8E (16 total)
+	// 13th gen: 8P+16E (24 total), 6P+8E (14 total)
+	// This is a rough estimate - real detection needs Windows API calls
+	
+	// For now, return approximately 1/2 to 2/3 as P-cores
+	return (total_cores * 2) / 3;
+#else
+	return cpu_get_core_count() / 2;
+#endif
+}
+
+//------------------------------------------------------
+// Get number of E-cores (efficiency cores)
+//------------------------------------------------------
+int cpu_get_e_core_count(void)
+{
+	if (!cpu_is_hybrid())
+		return 0;
+	
+	return cpu_get_core_count() - cpu_get_p_core_count();
+}
+

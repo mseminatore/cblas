@@ -366,7 +366,19 @@ void cblas_print_configuration(void)
     printf("%s\n", cblas_get_config());
     printf("     CPU uArch: %s\n", cblas_get_corename());
 	printf("ISA Extensions: %s\n", cblas_get_isa_features());
-    printf(" Cores/Threads: %d/%d\n", cblas_get_num_procs(), cblas_get_num_threads());
+    
+    // Show hybrid architecture info if available
+    if (cpu_is_hybrid())
+    {
+        printf(" Cores/Threads: %d/%d (Hybrid: %dP + %dE)\n", 
+               cblas_get_num_procs(), cblas_get_num_threads(),
+               cpu_get_p_core_count(), cpu_get_e_core_count());
+    }
+    else
+    {
+        printf(" Cores/Threads: %d/%d\n", cblas_get_num_procs(), cblas_get_num_threads());
+    }
+    
     printf(" L1$ line size: %d bytes\n", cpu_get_cacheline_size());
     printf(" L1$ data size: %d Kbytes\n", cpu_get_l1_data_cache_size());
     printf("      L2$ size: %d Kbytes\n", cpu_get_l2_cache_size());

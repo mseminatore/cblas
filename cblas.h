@@ -468,6 +468,7 @@ enum {
 #define CPU_x64_FMA3    0x10
 #define CPU_NEON        0x20
 #define CPU_NEON_FMA    0x40
+#define CPU_HYBRID      0x80    // Hybrid architecture (P-cores + E-cores)
 
 //------------------------------------------------------
 // arguments passed to kernel functions
@@ -483,6 +484,16 @@ typedef void (*kernel_function)(cblas_args_t* args);
 
 typedef struct
 {
+    kernel_function scopy_k;
+    kernel_function dcopy_k;
+    kernel_function sscal_k;
+    kernel_function dscal_k;
+    kernel_function saxpy_k;
+    kernel_function daxpy_k;
+    kernel_function saxpby_k;
+    kernel_function daxpby_k;
+    kernel_function sdot_k;
+    kernel_function ddot_k;
     kernel_function sgemm_k;
     kernel_function dgemm_k;
     kernel_function sger_k;
@@ -1093,6 +1104,24 @@ void cblas_print_kernels(void);
  * @note Thread-safe. Used for cache blocking tuning.
  */
 int cpu_get_l2_cache_size(void);
+
+/**
+ * @brief Check if CPU has hybrid architecture (P-cores and E-cores)
+ * @return 1 if hybrid, 0 otherwise
+ */
+int cpu_is_hybrid(void);
+
+/**
+ * @brief Get the number of performance cores (P-cores)
+ * @return Number of P-cores, or total cores if not hybrid
+ */
+int cpu_get_p_core_count(void);
+
+/**
+ * @brief Get the number of efficiency cores (E-cores)
+ * @return Number of E-cores, or 0 if not hybrid
+ */
+int cpu_get_e_core_count(void);
 
 /**
  * @brief Get L1 data cache size
