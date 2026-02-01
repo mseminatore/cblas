@@ -30,7 +30,7 @@ int main(void)
         y[i] = 2.0f;
     }
     
-    printf("Testing DOT product with %zu elements (MT threshold: %d)...\n", n, CBLAS_MT_DOT);
+    printf("Testing DOT product with %zu elements (MT threshold: %lu)...\n", n, (unsigned long)CBLAS_MT_DOT);
     
     // Perform dot product - should trigger multi-threading
     float result = cblas_sdot(n, x, 1, y, 1);
@@ -40,7 +40,7 @@ int main(void)
     // Test COPY as well
     float *z = malloc(n * sizeof(float));
     if (z) {
-        printf("\nTesting COPY with %zu elements (MT threshold: %d)...\n", n, CBLAS_MT_COPY);
+        printf("\nTesting COPY with %zu elements (MT threshold: %lu)...\n", n, (unsigned long)CBLAS_MT_COPY);
         cblas_scopy(n, x, 1, z, 1);
         free(z);
     }

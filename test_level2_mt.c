@@ -72,8 +72,8 @@ static int test_sger_mt(void)
     // Check stats to see if MT was used
     const cblas_stats_t* stats = cblas_get_stats("sger");
     if (stats) {
-        printf("  sger: %lu calls, %lu MT uses (m*n=%zu > CBLAS_MT_GER=%d)\n", 
-               (unsigned long)stats->total_calls, (unsigned long)stats->mt_activations, m * n, CBLAS_MT_GER);
+        printf("  sger: %lu calls, %lu MT uses (m*n=%zu > CBLAS_MT_GER=%lu)\n", 
+               (unsigned long)stats->total_calls, (unsigned long)stats->mt_activations, m * n, (unsigned long)CBLAS_MT_GER);
     }
     
     free(x);
@@ -199,8 +199,8 @@ static int test_sgemv_mt(void)
     // Check stats to see if MT was used
     const cblas_stats_t* stats = cblas_get_stats("sgemv");
     if (stats) {
-        printf("  sgemv: %lu calls, %lu MT uses (m*n=%zu > CBLAS_MT_GEMV=%d)\n", 
-               (unsigned long)stats->total_calls, (unsigned long)stats->mt_activations, m * n, CBLAS_MT_GEMV);
+        printf("  sgemv: %lu calls, %lu MT uses (m*n=%zu > CBLAS_MT_GEMV=%lu)\n", 
+               (unsigned long)stats->total_calls, (unsigned long)stats->mt_activations, m * n, (unsigned long)CBLAS_MT_GEMV);
     }
     
     free(a);
@@ -308,8 +308,8 @@ static int test_small_no_mt(void)
     
     const cblas_stats_t* stats_ger = cblas_get_stats("sger");
     if (stats_ger) {
-        printf("  sger (small): %lu calls, %lu MT uses (m*n=%zu < CBLAS_MT_GER=%d)\n", 
-               (unsigned long)stats_ger->total_calls, (unsigned long)stats_ger->mt_activations, m * n, CBLAS_MT_GER);
+        printf("  sger (small): %lu calls, %lu MT uses (m*n=%zu < CBLAS_MT_GER=%lu)\n", 
+               (unsigned long)stats_ger->total_calls, (unsigned long)stats_ger->mt_activations, m * n, (unsigned long)CBLAS_MT_GER);
     }
     
     cblas_reset_stats();
@@ -328,8 +328,8 @@ static int test_small_no_mt(void)
     
     const cblas_stats_t* stats_gemv = cblas_get_stats("sgemv");
     if (stats_gemv) {
-        printf("  sgemv (small): %lu calls, %lu MT uses (m*n=%zu < CBLAS_MT_GEMV=%d)\n", 
-               (unsigned long)stats_gemv->total_calls, (unsigned long)stats_gemv->mt_activations, m * n, CBLAS_MT_GEMV);
+        printf("  sgemv (small): %lu calls, %lu MT uses (m*n=%zu < CBLAS_MT_GEMV=%lu)\n", 
+               (unsigned long)stats_gemv->total_calls, (unsigned long)stats_gemv->mt_activations, m * n, (unsigned long)CBLAS_MT_GEMV);
     }
     
     free(x);
