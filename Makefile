@@ -32,7 +32,7 @@ else
 	endif
 endif
 
-all: cblas_config.h $(LIBNAME) axpy_perf blas_stress blas_test test_strided test_stats test_threshold test_dot_threshold test_concurrent test_mt_debug test_level2_mt gemm_perf dgemm_perf ger_perf dger_perf gemv_perf dot_perf dot_threshold_tuning nrm2_asum_rot_perf copy_perf
+all: cblas_config.h $(LIBNAME) axpy_perf blas_stress blas_test test_strided test_stats test_threshold test_dot_threshold test_concurrent test_mt_debug test_level2_mt test_autotune gemm_perf dgemm_perf ger_perf dger_perf gemv_perf dot_perf dot_threshold_tuning nrm2_asum_rot_perf copy_perf
 
 # Generate cblas_config.h from configuration variables
 cblas_config.h: cblas_config.h.in Makefile
@@ -75,6 +75,9 @@ test_mt_debug: $(LIBNAME) test_mt_debug.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 test_level2_mt: $(LIBNAME) test_main.o test_level2_mt.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
+test_autotune: $(LIBNAME) test_main.o test_autotune.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 gemm_perf: $(LIBNAME) gemm_perf.o
@@ -120,7 +123,7 @@ test: all
 	./blas_test
 
 clean:
-	rm -f $(TARGET) $(OBJS) $(LIBNAME) test_main.o test.o test_stress.o blas_stress blas_test.o blas_test test_threshold.o test_threshold test_dot_threshold.o test_dot_threshold test_concurrent.o test_concurrent gemm_perf.o gemm_perf dgemm_perf.o dgemm_perf ger_perf.o ger_perf dger_perf.o dger_perf dot_perf.o dot_perf axpy_perf.o axpy_perf copy_perf.o copy_perf dot_threshold_tuning.o dot_threshold_tuning dot_threshold_tuning_large.o dot_threshold_tuning_large nrm2_asum_rot_perf.o nrm2_asum_rot_perf cblas_config.h test_strided.o test_strided test_stats.o test_stats
+	rm -f $(TARGET) $(OBJS) $(LIBNAME) test_main.o test.o test_stress.o blas_stress blas_test.o blas_test test_threshold.o test_threshold test_dot_threshold.o test_dot_threshold test_concurrent.o test_concurrent gemm_perf.o gemm_perf dgemm_perf.o dgemm_perf ger_perf.o ger_perf dger_perf.o dger_perf dot_perf.o dot_perf axpy_perf.o axpy_perf copy_perf.o copy_perf dot_threshold_tuning.o dot_threshold_tuning dot_threshold_tuning_large.o dot_threshold_tuning_large nrm2_asum_rot_perf.o nrm2_asum_rot_perf cblas_config.h test_strided.o test_strided test_stats.o test_stats test_autotune.o test_autotune
 
 
 gemv_perf: $(LIBNAME) gemv_perf.o

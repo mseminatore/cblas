@@ -113,7 +113,7 @@ void tune_threshold(void)
     
     // Analysis section
     printf("=== Analysis ===\n\n");
-    printf("Current CBLAS_MT_DOT threshold: %d elements\n\n", CBLAS_MT_DOT);
+    printf("Current CBLAS_MT_DOT threshold: %lu elements\n\n", (unsigned long)CBLAS_MT_DOT);
     
     printf("Recommendations:\n");
     printf("1. Look for the size where MT activation starts providing benefit\n");
@@ -141,7 +141,7 @@ void compare_thread_counts(void)
 {
     printf("\n=== Thread Count Comparison ===\n\n");
     printf("Testing how different thread counts affect performance\n");
-    printf("at sizes near current threshold (%d)\n\n", CBLAS_MT_DOT);
+    printf("at sizes near current threshold (%lu)\n\n", (unsigned long)CBLAS_MT_DOT);
     
     // Test sizes around the threshold
     CBLAS_INDEX test_n[] = {

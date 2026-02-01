@@ -59,13 +59,16 @@
 // uncomment to enable performance counter tracking
 #define CBLAS_ENABLE_STATS
 
-// multi-threading threshold limits
-#define CBLAS_MT_DOT    32768   // Lower threshold for better MT performance on memory-bound operations
-#define CBLAS_MT_AXPY   32768   // Lower threshold for AXPY - memory-bound write operation
-#define CBLAS_MT_COPY   16384   // Lower threshold for COPY - pure memory bandwidth operation
-#define CBLAS_MT_GER    2048    // Lower threshold for GER - matrix operations benefit from earlier MT
-#define CBLAS_MT_GEMM   4096    // Lower threshold for GEMM - compute-intensive operation benefits from MT
-#define CBLAS_MT_GEMV   4096    // Lower threshold for GEMV - matrix-vector benefits from earlier MT
+// Default multi-threading threshold limits (used as fallback when auto-tuning is disabled)
+#define CBLAS_MT_DOT_DEFAULT    32768   // Lower threshold for better MT performance on memory-bound operations
+#define CBLAS_MT_AXPY_DEFAULT   32768   // Lower threshold for AXPY - memory-bound write operation
+#define CBLAS_MT_COPY_DEFAULT   16384   // Lower threshold for COPY - pure memory bandwidth operation
+#define CBLAS_MT_GER_DEFAULT    2048    // Lower threshold for GER - matrix operations benefit from earlier MT
+#define CBLAS_MT_GEMM_DEFAULT   4096    // Lower threshold for GEMM - compute-intensive operation benefits from MT
+#define CBLAS_MT_GEMV_DEFAULT   4096    // Lower threshold for GEMV - matrix-vector benefits from earlier MT
+
+// Note: Runtime threshold variables are declared after CBLAS_INDEX is defined (see below)
+// Legacy macros for backward compatibility will be defined there as well
 
 // prefetching configuration
 #define CBLAS_PREFETCH_THRESHOLD 100000  // Enable prefetching for vectors >100K elements
@@ -99,6 +102,24 @@
 // size type for indices
 //------------------------------------------------------
 typedef size_t CBLAS_INDEX;
+
+//------------------------------------------------------
+// Runtime MT threshold variables (declared after CBLAS_INDEX is defined)
+//------------------------------------------------------
+extern CBLAS_INDEX cblas_mt_dot_threshold;
+extern CBLAS_INDEX cblas_mt_axpy_threshold;
+extern CBLAS_INDEX cblas_mt_copy_threshold;
+extern CBLAS_INDEX cblas_mt_ger_threshold;
+extern CBLAS_INDEX cblas_mt_gemm_threshold;
+extern CBLAS_INDEX cblas_mt_gemv_threshold;
+
+// Legacy macros for backward compatibility (now use runtime thresholds)
+#define CBLAS_MT_DOT    cblas_mt_dot_threshold
+#define CBLAS_MT_AXPY   cblas_mt_axpy_threshold
+#define CBLAS_MT_COPY   cblas_mt_copy_threshold
+#define CBLAS_MT_GER    cblas_mt_ger_threshold
+#define CBLAS_MT_GEMM   cblas_mt_gemm_threshold
+#define CBLAS_MT_GEMV   cblas_mt_gemv_threshold
 
 #ifdef MT_DEBUG
 #   ifdef MT_DEBUG_JSON
@@ -955,6 +976,20 @@ void cblas_set_num_threads(int threads);
  * @note Thread-safe.
  */
 int cblas_get_num_threads(void);
+
+/**
+ * @brief Auto-tune multi-threading thresholds based on runtime benchmarks
+ * @note Runs micro-benchmarks to determine optimal MT thresholds for current hardware
+ * @note Called automatically by cblas_init() if CBLAS_AUTO_TUNE env var is set
+ * @note Can be called manually to re-calibrate thresholds
+ */
+void cblas_autotune_thresholds(void);
+
+/**
+ * @brief Reset all MT thresholds to default compile-time values
+ * @note Useful to disable auto-tuning and revert to known defaults
+ */
+void cblas_reset_thresholds(void);
 
 /**
  * @brief Initialize thread server (internal use)

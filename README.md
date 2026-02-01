@@ -145,6 +145,95 @@ Combine multiple options:
 make CBLAS_ENABLE_MT=1 CBLAS_MAX_THREADS=32 CBLAS_USE_SIMD=1
 ```
 
+# Auto-Tuning Multi-Threading Thresholds
+
+CBLAS includes an auto-tuning infrastructure that can optimize multi-threading thresholds based on your specific hardware configuration. By default, the library uses hardcoded thresholds that work well across a range of systems, but auto-tuning can provide 5-10% performance improvements by adapting to your CPU's characteristics.
+
+## What is Auto-Tuning?
+
+Auto-tuning runs micro-benchmarks at initialization to determine the optimal problem size at which multi-threading becomes beneficial. This crossover point depends on:
+- Number of CPU cores
+- Memory bandwidth
+- Cache sizes
+- Thread overhead on your system
+
+## Enabling Auto-Tuning
+
+Auto-tuning is controlled via the `CBLAS_AUTO_TUNE` environment variable:
+
+```bash
+# Enable auto-tuning
+export CBLAS_AUTO_TUNE=1
+./your_program
+
+# Or for a single run
+CBLAS_AUTO_TUNE=1 ./your_program
+```
+
+When enabled, you'll see output like:
+```
+CBLAS: Auto-tuning MT thresholds for 4 threads...
+  Calibrating DOT threshold... 65536
+  Calibrating COPY threshold... 32768
+  Calibrating AXPY threshold... 65536
+  GER/GEMV/GEMM thresholds (heuristic): 8192
+CBLAS: Auto-tuning complete.
+```
+
+## Default vs Auto-Tuned Thresholds
+
+The library includes the following default thresholds (in number of elements):
+
+Operation | Default Threshold | Description
+--------- | ----------------- | -----------
+DOT | 32768 | Dot product (vector-vector)
+AXPY | 32768 | Vector addition with scaling
+COPY | 16384 | Vector copy
+GER | 2048 | General rank-1 update (matrix)
+GEMV | 4096 | Matrix-vector multiplication
+GEMM | 4096 | Matrix-matrix multiplication
+
+Auto-tuning will adjust these values based on your hardware. On systems with:
+- **Few cores (1-2)**: Thresholds typically increase (more work needed to benefit from MT)
+- **Many cores (8+)**: Thresholds typically decrease (MT beneficial earlier)
+- **High memory bandwidth**: Thresholds for memory-bound operations (COPY, DOT) may increase
+- **Low memory bandwidth**: Thresholds may decrease to better utilize multiple cores
+
+## Programmatic Control
+
+You can also control thresholds from your code:
+
+```c
+#include "cblas.h"
+
+int main() {
+    // Initialize with 4 threads
+    cblas_init(4);
+    
+    // Option 1: Use default thresholds
+    cblas_reset_thresholds();
+    
+    // Option 2: Auto-tune for this system
+    cblas_autotune_thresholds();
+    
+    // Your BLAS operations...
+    
+    cblas_shutdown();
+    return 0;
+}
+```
+
+## Performance Considerations
+
+- **Initialization Time**: Auto-tuning adds 2-5 seconds to initialization as it runs benchmarks
+- **When to Use**: Best for long-running applications where initialization cost is amortized
+- **When to Skip**: For short-lived programs, the default thresholds are likely sufficient
+- **Thread Count**: Auto-tuning results are specific to the thread count used during calibration
+
+## Viewing Current Thresholds
+
+The current thresholds are always visible in the library configuration output.
+
 # Which BLAS functions are supported
 
 The following BLAS library functions are currently supported by the library.
