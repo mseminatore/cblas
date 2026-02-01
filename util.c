@@ -944,7 +944,11 @@ static double benchmark_operation(void (*operation_func)(CBLAS_INDEX, void*, voi
     
     // Allocate test vectors
     float *x = malloc(n * sizeof(float));
-    float *y = malloc(n * sizeof(float));
+    float *y = NULL;  // Initialize to NULL for safe error handling
+    
+    if (x) {
+        y = malloc(n * sizeof(float));
+    }
     
     if (!x || !y) {
         free(x);
@@ -1113,10 +1117,14 @@ void cblas_autotune_thresholds(void)
     printf("%lu\n", (unsigned long)cblas_mt_axpy_threshold);
     
     // For Level-2 and Level-3, use heuristics based on Level-1 results
-    // GER is matrix-level, use lower threshold
+    // GER is matrix-level, use lower threshold (1/8 of COPY threshold, but not too small)
     cblas_mt_ger_threshold = cblas_mt_copy_threshold / 8;
     if (cblas_mt_ger_threshold < CBLAS_MT_GER_DEFAULT / 2) {
         cblas_mt_ger_threshold = CBLAS_MT_GER_DEFAULT / 2;
+    }
+    // Ensure minimum threshold to prevent premature MT activation
+    if (cblas_mt_ger_threshold < 1024) {
+        cblas_mt_ger_threshold = 1024;
     }
     
     // GEMV and GEMM are compute-intensive, use lower thresholds
