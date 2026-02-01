@@ -213,7 +213,7 @@ static inline double mt_get_time_us(void) {
 #define CBLAS_VALIDATE_VEC1(n, x, incx, ret) \
     do { \
         int info = 0; \
-        if ((n) <= 0) \
+        if ((n) == 0) \
             info = 1; \
         else if (!(x)) \
             info = 2; \

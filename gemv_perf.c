@@ -49,9 +49,9 @@ void test_gemv(void)
         dt = cbu_timer_get_delta(&t1, &t2);
         
         // GEMV does 2*m*n FLOPs (multiply-add for each matrix element)
-        float gflops = (float)(2.0 * m * n) / dt / 1e9;
+        float gflops = (float)(2.0f * m * n) / dt / 1e9f;
         // Memory: read m*n from A, n from x, m from y, write m to y
-        float gbytes_per_sec = (float)((m*n + n + 2*m) * sizeof(float)) / dt / 1e9;
+        float gbytes_per_sec = (float)((m*n + n + 2*m) * sizeof(float)) / dt / 1e9f;
 
         printf("%10d %10.2f %12.2f %12.6f\n", i, gflops, gbytes_per_sec, dt);
     }

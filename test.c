@@ -472,70 +472,68 @@ static void test_ger(void)
 		{
 			float sx[3] = {1,1,1};
 			float sy[3] = {1,1,1};
-			float sa[9] = {0,0,0,0,0,0,0,0,0};
+			float sa1[9] = {0,0,0,0,0,0,0,0,0};
 			float sr[9] = {1,1,1,1,1,1,1,1,1};
 
-			cblas_sger(CblasRowMajor, 3, 3, 1.0f, sx, 1, sy, 1, sa, 3);
-			TEST(EQUAL_ARRAY(sa, sr));
-
+			cblas_sger(CblasRowMajor, 3, 3, 1.0f, sx, 1, sy, 1, sa1, 3);
+			TEST(EQUAL_ARRAY(sa1, sr));
 			cblas_sscal(9, 3.0f, sr, 1);
-			cblas_sger(CblasColMajor, 3, 3, 2.0f, sx, 1, sy, 1, sa, 3);
-			TEST(EQUAL_ARRAY(sa, sr));
+			cblas_sger(CblasColMajor, 3, 3, 2.0f, sx, 1, sy, 1, sa1, 3);
+			TEST(EQUAL_ARRAY(sa1, sr));
 		}
 
 		{
 			float sx[4] = {1,1,1,1};
 			float sy[4] = {1,1,1,1};
-			float sa[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+			float sa1[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 			float sr[16] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
 
-			cblas_sger(CblasRowMajor, 4, 4, 1.0f, sx, 1, sy, 1, sa, 4);
-			TEST(EQUAL_ARRAY(sa, sr));
+			cblas_sger(CblasRowMajor, 4, 4, 1.0f, sx, 1, sy, 1, sa1, 4);
+			TEST(EQUAL_ARRAY(sa1, sr));
 		}
 
 		{
 			float sx[5] = {1,1,1,1,1};
 			float sy[5] = {1,1,1,1,1};
-			float sa[25];
+			float sa1[25];
 			float sr[25];
 
-			cblas_ssetv(25, sa, 0.0f);
+			cblas_ssetv(25, sa1, 0.0f);
 			cblas_ssetv(25, sr, 1.0f);
 
-			cblas_sger(CblasRowMajor, 5, 5, 1.0f, sx, 1, sy, 1, sa, 5);
-//print_sarray(25, sa);
+			cblas_sger(CblasRowMajor, 5, 5, 1.0f, sx, 1, sy, 1, sa1, 5);
+//print_sarray(25, sa1);
 //print_sarray(25, sr);
-			TEST(EQUAL_ARRAY(sa, sr));
+			TEST(EQUAL_ARRAY(sa1, sr));
 		}
 
 		{
 			float sx[8] = { 1,1,1,1,1,1,1,1 };
 			float sy[8] = { 1,1,1,1,1,1,1,1 };
-			float sa[64];
+			float sa1[64];
 			float sr[64];
 
-			cblas_ssetv(64, sa, 0.0f);
+			cblas_ssetv(64, sa1, 0.0f);
 			cblas_ssetv(64, sr, 1.0f);
 
-			cblas_sger(CblasRowMajor, 8, 8, 1.0f, sx, 1, sy, 1, sa, 8);
-			//print_sarray(25, sa);
+			cblas_sger(CblasRowMajor, 8, 8, 1.0f, sx, 1, sy, 1, sa1, 8);
+			//print_sarray(25, sa1);
 			//print_sarray(25, sr);
-			TEST(EQUAL_ARRAY(sa, sr));
+			TEST(EQUAL_ARRAY(sa1, sr));
 		}
 
 	SUITE("cblas_dger");
 
 		double dx[3] = {1,1,1};
 		double dy[3] = {1,1,1};
-		double da[9] = {0,0,0,0,0,0,0,0,0};
+		double da1[9] = {0,0,0,0,0,0,0,0,0};
 		double dr[9] = {1,1,1,1,1,1,1,1,1};
 
-		cblas_dger(CblasRowMajor, 3, 3, 1.0, dx, 1, dy, 1, da, 3);
-		TEST(EQUAL_ARRAY(da, dr));
-
+		cblas_dger(CblasRowMajor, 3, 3, 1.0, dx, 1, dy, 1, da1, 3);
+		TEST(EQUAL_ARRAY(da1, dr));
 		cblas_dscal(9, 3.0f, dr, 1);
-		cblas_dger(CblasColMajor, 3, 3, 2.0, dx, 1, dy, 1, da, 3);
-		TEST(EQUAL_ARRAY(da, dr));
+		cblas_dger(CblasColMajor, 3, 3, 2.0, dx, 1, dy, 1, da1, 3);
+		TEST(EQUAL_ARRAY(da1, dr));
 }
 
 //------------------------------------------------------

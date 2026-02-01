@@ -45,9 +45,9 @@ void test_axpy(void)
         dt = cbu_timer_get_delta(&t1, &t2);
         
         // AXPY does 2n FLOPs (n multiplies + n adds)
-        float gflops = (float)(2.0 * n) / dt / 1e9;
+        float gflops = (float)(2.0f * n) / dt / 1e9f;
         // Memory: read n from x, read n from y, write n to y = 3n floats = 12n bytes
-        float gbytes_per_sec = (float)(3.0 * n * sizeof(float)) / dt / 1e9;
+        float gbytes_per_sec = (float)(3.0f * n * sizeof(float)) / dt / 1e9f;
 
         printf("%10d %10.2f %12.2f %12.6f\n", i, gflops, gbytes_per_sec, dt);
     }

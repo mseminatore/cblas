@@ -89,8 +89,7 @@ void test_mem_read(void)
 void test_mem_write(void)
 {
     struct timer t1, t2;
-    float dt, v CBLAS_UNUSED = 0.0f;
-    float* px CBLAS_UNUSED = x;
+    float dt;
 
     printf("Testing performance of memory writes\n\n");
 

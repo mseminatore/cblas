@@ -78,7 +78,7 @@ int cpu_get_cacheline_size(void)
 #else
 
 #if defined(_MSC_VER)
-	uint32_t regs[4];
+	int regs[4];
 	__cpuid(regs, 0x80000006);
 	line_size = regs[ECX] & 0xff;
 #else
@@ -106,7 +106,7 @@ int cpu_get_l2_cache_size(void)
     return l2_cache_size/1024;
 #else
 	#if defined(_MSC_VER)
-		uint32_t regs[4];
+		int regs[4];
 		__cpuid(regs, 0x80000006);
 		l2_cache_size = (regs[ECX] >> 16) & 0xFFFF; // Extract L2 cache size in KB
 	#else
@@ -135,7 +135,7 @@ int cpu_get_l1_data_cache_size(void)
     return l1_cache_size/1024;
 #else
 	#if defined(_MSC_VER)
-		uint32_t regs[4];
+		int regs[4];
 		__cpuid(regs, 0x80000005);
 		l1_cache_size = (regs[ECX] >> 24) & 0xFF; // Extract L1 data cache size in KB
 	#else
@@ -155,7 +155,7 @@ int cpu_get_l1_data_cache_size(void)
 const char* cpu_get_brand_string(void)
 {
 #if defined(_MSC_VER)
-	unsigned int regs[12];
+	int regs[12];
 	static char str[sizeof(regs)];
 
 	__cpuid(regs, 0x80000000);

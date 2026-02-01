@@ -634,7 +634,7 @@ static void cblas_compute_gemm_block_sizes(void)
     // Total: (mc × kc + kc × nb) × 4 bytes should fit in L2
     
     // Conservative approach: use 75% of L2 cache
-    int target_kb = (l2_cache_kb * 3) / 4;
+    size_t target_kb = (l2_cache_kb * 3) / 4;
     
     // Adjust block sizes based on L1 cache size
     if (l1_cache_kb >= 128) {
@@ -655,7 +655,7 @@ static void cblas_compute_gemm_block_sizes(void)
     }
     
     // Verify total size fits in L2 cache
-    int total_kb = ((cblas_gemm_mc * cblas_gemm_kc + 
+    size_t total_kb = ((cblas_gemm_mc * cblas_gemm_kc +
                      cblas_gemm_kc * cblas_gemm_nb) * 4) / 1024;
     
     // If too large, scale down linearly

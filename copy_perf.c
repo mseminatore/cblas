@@ -9,15 +9,6 @@
 #include "cblas.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-
-// Timer helper
-static double get_time(void)
-{
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (double)ts.tv_sec + (double)ts.tv_nsec * 1e-9;
-}
 
 #define ITERATIONS 100
 
@@ -50,13 +41,13 @@ int main(void)
         int n = sizes[s];
         
         // Allocate and initialize vectors
-        // aligned_alloc requires size to be multiple of alignment
-        size_t alloc_size = ((n * sizeof(float) + 63) / 64) * 64;
-        float *x = (float *)aligned_alloc(64, alloc_size);
-        float *y = (float *)aligned_alloc(64, alloc_size);
+        float *x = (float *)malloc(n * sizeof(float));
+        float *y = (float *)malloc(n * sizeof(float));
         
         if (!x || !y) {
             fprintf(stderr, "Allocation failed for size %d\n", n);
+            free(x);
+            free(y);
             continue;
         }
 
@@ -71,13 +62,14 @@ int main(void)
         }
 
         // Benchmark
-        double start = get_time();
+        struct cblas_timer t1, t2;
+        cbu_timer_get_time(&t1);
         for (int i = 0; i < ITERATIONS; i++) {
             cblas_scopy(n, x, 1, y, 1);
         }
-        double end = get_time();
+        cbu_timer_get_time(&t2);
         
-        double elapsed = end - start;
+        float elapsed = cbu_timer_get_delta(&t1, &t2);
         double ops_per_iter = n;  // 1 load + 1 store per element
         double total_ops = ops_per_iter * ITERATIONS;
         double gflops = (total_ops / elapsed) / 1e9;

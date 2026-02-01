@@ -70,9 +70,9 @@ void test_ger(void)
         dt = cbu_timer_get_delta(&t1, &t2);
         
         // GER does m*n FMA operations (multiply-add)
-        float gflops = (float)(2.0 * m * n) / dt / 1e9;
+        float gflops = (float)(2.0f * m * n) / dt / 1e9f;
         // Memory: read m elements from x, n from y, m*n from A, write m*n to A
-        float gbytes_per_sec = (float)((m + n + 2*m*n) * sizeof(float)) / dt / 1e9;
+        float gbytes_per_sec = (float)((m + n + 2*m*n) * sizeof(float)) / dt / 1e9f;
 
         printf("%10d %10.2f %12.2f %12.6f\n", i, gflops, gbytes_per_sec, dt);
     }
