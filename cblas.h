@@ -47,8 +47,8 @@
 #define GEMV_BLOCK_SIZE 256  // Fits in L1 cache
 #define GER_BLOCK_SIZE 256   // Fits in L1 cache
 
-// uncomment to enable FMA3 instruction usage
-//#define USE_INTEL_FMA
+// NOTE: USE_INTEL_FMA is now defined via compiler flags in CMakeLists.txt and Makefile
+// Do not define it here to avoid conflicts
 
 // uncomment to enable multi-threading debug messages
 //#define MT_DEBUG

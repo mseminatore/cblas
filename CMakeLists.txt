@@ -66,11 +66,11 @@ endif()
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
     if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "AppleClang" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx2 -mfma")
-        add_definitions(-DUSE_INTEL_FMA)
+        add_compile_definitions(USE_INTEL_FMA)
     elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
         # MSVC on x86_64: /arch:AVX2 enables AVX2 and FMA
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /arch:AVX2")
-        add_definitions(-DUSE_INTEL_FMA)
+        add_compile_definitions(USE_INTEL_FMA)
     endif()
 endif()
 
