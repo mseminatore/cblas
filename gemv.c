@@ -4,12 +4,178 @@
 //------------------------------------------------------
 
 #include "cblas.h"
+#include "cblas_simd.h"
 
 #ifdef _WIN32
 #	include <malloc.h>
 #else
 #	include <alloca.h>
 #endif
+
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
+
+//------------------------------------------------------
+// Optimized single-precision row-wise dot product kernel (incx==1)
+// Computes one row of matrix-vector product using SIMD and multi-accumulator unrolling
+//------------------------------------------------------
+static void sgemv_row_dot_noinc(float* a_row, float* x, CBLAS_INDEX n, float* result)
+{
+    CBLAS_INDEX i = 0;
+    float sum = 0.0f;
+    
+#if defined(__AVX2__) && defined(USE_SIMD)
+    // AVX2 path: Use 4 independent accumulators to hide latency
+    __m256 sum0 = _mm256_setzero_ps();
+    __m256 sum1 = _mm256_setzero_ps();
+    __m256 sum2 = _mm256_setzero_ps();
+    __m256 sum3 = _mm256_setzero_ps();
+    
+    // Process 32 floats per iteration (4 accumulators × 8 floats)
+    CBLAS_INDEX unroll_end = (n / 32) * 32;
+    const CBLAS_INDEX prefetch_distance = CBLAS_PREFETCH_DISTANCE;
+    
+    for (; i < unroll_end; i += 32)
+    {
+        // Prefetch data ahead to hide memory latency
+        if (i + prefetch_distance < n) {
+            CBLAS_PREFETCH(a_row + i + prefetch_distance, 0, 3);
+            CBLAS_PREFETCH(x + i + prefetch_distance, 0, 3);
+        }
+        
+        __m256 a0 = _mm256_loadu_ps(a_row + i);
+        __m256 x0 = _mm256_loadu_ps(x + i);
+        __m256 a1 = _mm256_loadu_ps(a_row + i + 8);
+        __m256 x1 = _mm256_loadu_ps(x + i + 8);
+        __m256 a2 = _mm256_loadu_ps(a_row + i + 16);
+        __m256 x2 = _mm256_loadu_ps(x + i + 16);
+        __m256 a3 = _mm256_loadu_ps(a_row + i + 24);
+        __m256 x3 = _mm256_loadu_ps(x + i + 24);
+        
+#if defined(USE_INTEL_FMA)
+        sum0 = _mm256_fmadd_ps(a0, x0, sum0);
+        sum1 = _mm256_fmadd_ps(a1, x1, sum1);
+        sum2 = _mm256_fmadd_ps(a2, x2, sum2);
+        sum3 = _mm256_fmadd_ps(a3, x3, sum3);
+#else
+        sum0 = _mm256_add_ps(sum0, _mm256_mul_ps(a0, x0));
+        sum1 = _mm256_add_ps(sum1, _mm256_mul_ps(a1, x1));
+        sum2 = _mm256_add_ps(sum2, _mm256_mul_ps(a2, x2));
+        sum3 = _mm256_add_ps(sum3, _mm256_mul_ps(a3, x3));
+#endif
+    }
+    
+    // Combine the 4 accumulators
+    __m256 sum_avx = _mm256_add_ps(_mm256_add_ps(sum0, sum1), _mm256_add_ps(sum2, sum3));
+    
+    // Handle remaining blocks of 8
+    for (; i + 8 <= n; i += 8)
+    {
+        __m256 a_vec = _mm256_loadu_ps(a_row + i);
+        __m256 x_vec = _mm256_loadu_ps(x + i);
+        
+#if defined(USE_INTEL_FMA)
+        sum_avx = _mm256_fmadd_ps(a_vec, x_vec, sum_avx);
+#else
+        sum_avx = _mm256_add_ps(sum_avx, _mm256_mul_ps(a_vec, x_vec));
+#endif
+    }
+    
+    // Horizontal sum of AVX vector
+    float sum_array[8];
+    _mm256_storeu_ps(sum_array, sum_avx);
+    sum = sum_array[0] + sum_array[1] + sum_array[2] + sum_array[3] +
+          sum_array[4] + sum_array[5] + sum_array[6] + sum_array[7];
+#endif
+    
+    // Handle remaining elements
+    for (; i < n; i++)
+    {
+        sum += a_row[i] * x[i];
+    }
+    
+    *result = sum;
+}
+
+//------------------------------------------------------
+// Optimized double-precision row-wise dot product kernel (incx==1)
+//------------------------------------------------------
+static void dgemv_row_dot_noinc(double* a_row, double* x, CBLAS_INDEX n, double* result)
+{
+    CBLAS_INDEX i = 0;
+    double sum = 0.0;
+    
+#if defined(__AVX2__) && defined(USE_SIMD)
+    // AVX2 path: Use 4 independent accumulators
+    __m256d sum0 = _mm256_setzero_pd();
+    __m256d sum1 = _mm256_setzero_pd();
+    __m256d sum2 = _mm256_setzero_pd();
+    __m256d sum3 = _mm256_setzero_pd();
+    
+    // Process 16 doubles per iteration (4 accumulators × 4 doubles)
+    CBLAS_INDEX unroll_end = (n / 16) * 16;
+    const CBLAS_INDEX prefetch_distance = CBLAS_PREFETCH_DISTANCE;
+    
+    for (; i < unroll_end; i += 16)
+    {
+        if (i + prefetch_distance < n) {
+            CBLAS_PREFETCH(a_row + i + prefetch_distance, 0, 3);
+            CBLAS_PREFETCH(x + i + prefetch_distance, 0, 3);
+        }
+        
+        __m256d a0 = _mm256_loadu_pd(a_row + i);
+        __m256d x0 = _mm256_loadu_pd(x + i);
+        __m256d a1 = _mm256_loadu_pd(a_row + i + 4);
+        __m256d x1 = _mm256_loadu_pd(x + i + 4);
+        __m256d a2 = _mm256_loadu_pd(a_row + i + 8);
+        __m256d x2 = _mm256_loadu_pd(x + i + 8);
+        __m256d a3 = _mm256_loadu_pd(a_row + i + 12);
+        __m256d x3 = _mm256_loadu_pd(x + i + 12);
+        
+#if defined(USE_INTEL_FMA)
+        sum0 = _mm256_fmadd_pd(a0, x0, sum0);
+        sum1 = _mm256_fmadd_pd(a1, x1, sum1);
+        sum2 = _mm256_fmadd_pd(a2, x2, sum2);
+        sum3 = _mm256_fmadd_pd(a3, x3, sum3);
+#else
+        sum0 = _mm256_add_pd(sum0, _mm256_mul_pd(a0, x0));
+        sum1 = _mm256_add_pd(sum1, _mm256_mul_pd(a1, x1));
+        sum2 = _mm256_add_pd(sum2, _mm256_mul_pd(a2, x2));
+        sum3 = _mm256_add_pd(sum3, _mm256_mul_pd(a3, x3));
+#endif
+    }
+    
+    // Combine the 4 accumulators
+    __m256d sum_avx = _mm256_add_pd(_mm256_add_pd(sum0, sum1), _mm256_add_pd(sum2, sum3));
+    
+    // Handle remaining blocks of 4
+    for (; i + 4 <= n; i += 4)
+    {
+        __m256d a_vec = _mm256_loadu_pd(a_row + i);
+        __m256d x_vec = _mm256_loadu_pd(x + i);
+        
+#if defined(USE_INTEL_FMA)
+        sum_avx = _mm256_fmadd_pd(a_vec, x_vec, sum_avx);
+#else
+        sum_avx = _mm256_add_pd(sum_avx, _mm256_mul_pd(a_vec, x_vec));
+#endif
+    }
+    
+    // Horizontal sum
+    double sum_array[4];
+    _mm256_storeu_pd(sum_array, sum_avx);
+    sum = sum_array[0] + sum_array[1] + sum_array[2] + sum_array[3];
+#endif
+    
+    // Handle remaining elements
+    for (; i < n; i++)
+    {
+        sum += a_row[i] * x[i];
+    }
+    
+    *result = sum;
+}
+
+#endif // x86_64
 
 //------------------------------------------------------
 // GEMV kernel for multi-threading - single precision (NoTrans case)
@@ -29,37 +195,34 @@ void sgemv_k(cblas_args_t* args)
 
 	float sum;
 	
-	// Use cache blocking only for matrices large enough to benefit (>2x block size)
-	if (m > 2 * GEMV_BLOCK_SIZE)
+	// Optimized path for unit strides
+	if (incx == 1 && incy == 1)
 	{
-		// Process rows in cache-friendly blocks
-		for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
+		for (CBLAS_INDEX row = 0; row < m; row++)
 		{
-			CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
-			
-			// Process ib rows at a time
-			for (CBLAS_INDEX row = i; row < i + ib; row++)
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
+			sgemv_row_dot_noinc(&a[row * lda], x, n, &sum);
+#else
+			sum = 0.0f;
+			for (CBLAS_INDEX col = 0; col < n; col++)
 			{
-				sum = 0.0f;
-				for (CBLAS_INDEX col = 0; col < n; col++)
-				{
-					sum += alpha * a[row * lda + col] * x[col * incx];
-				}
-				y[row * incy] = beta * y[row * incy] + sum;
+				sum += a[row * lda + col] * x[col];
 			}
+#endif
+			y[row] = beta * y[row] + alpha * sum;
 		}
 	}
 	else
 	{
-		// Direct processing for small matrices
+		// General case with strides
 		for (CBLAS_INDEX row = 0; row < m; row++)
 		{
 			sum = 0.0f;
 			for (CBLAS_INDEX col = 0; col < n; col++)
 			{
-				sum += alpha * a[row * lda + col] * x[col * incx];
+				sum += a[row * lda + col] * x[col * incx];
 			}
-			y[row * incy] = beta * y[row * incy] + sum;
+			y[row * incy] = beta * y[row * incy] + alpha * sum;
 		}
 	}
 }
@@ -82,37 +245,34 @@ void dgemv_k(cblas_args_t* args)
 
 	double sum;
 	
-	// Use cache blocking only for matrices large enough to benefit (>2x block size)
-	if (m > 2 * GEMV_BLOCK_SIZE)
+	// Optimized path for unit strides
+	if (incx == 1 && incy == 1)
 	{
-		// Process rows in cache-friendly blocks
-		for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
+		for (CBLAS_INDEX row = 0; row < m; row++)
 		{
-			CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
-			
-			// Process ib rows at a time
-			for (CBLAS_INDEX row = i; row < i + ib; row++)
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
+			dgemv_row_dot_noinc(&a[row * lda], x, n, &sum);
+#else
+			sum = 0.0;
+			for (CBLAS_INDEX col = 0; col < n; col++)
 			{
-				sum = 0.0;
-				for (CBLAS_INDEX col = 0; col < n; col++)
-				{
-					sum += alpha * a[row * lda + col] * x[col * incx];
-				}
-				y[row * incy] = beta * y[row * incy] + sum;
+				sum += a[row * lda + col] * x[col];
 			}
+#endif
+			y[row] = beta * y[row] + alpha * sum;
 		}
 	}
 	else
 	{
-		// Direct processing for small matrices
+		// General case with strides
 		for (CBLAS_INDEX row = 0; row < m; row++)
 		{
 			sum = 0.0;
 			for (CBLAS_INDEX col = 0; col < n; col++)
 			{
-				sum += alpha * a[row * lda + col] * x[col * incx];
+				sum += a[row * lda + col] * x[col * incx];
 			}
-			y[row * incy] = beta * y[row * incy] + sum;
+			y[row * incy] = beta * y[row * incy] + alpha * sum;
 		}
 	}
 }
@@ -219,97 +379,50 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 
 	if ((trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor))
 	{
-		if (alpha == 1.0f && beta == 1.0f)
+		// Optimized path for unit strides (common case)
+		if (incx == 1 && incy == 1)
 		{
-			// Use cache blocking only for large matrices
-			if (m > 2 * GEMV_BLOCK_SIZE)
+			for (CBLAS_INDEX row = 0; row < m; row++)
 			{
-				// Process rows in cache-friendly blocks
-				for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
+				sgemv_row_dot_noinc(&a[row * lda], x, n, &sum);
+#else
+				sum = 0.0f;
+				for (CBLAS_INDEX col = 0; col < n; col++)
 				{
-					CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
-					
-					// for each row in the block
-					for (CBLAS_INDEX row = i; row < i + ib; row++)
-					{
-						sum = 0.0f;
-
-						for (CBLAS_INDEX col = 0; col < n; col++)
-						{
-							sum += a[row * n + col] * x[col];
-						}
-
-						y[row] = y[row] + sum;
-					}
+					sum += a[row * lda + col] * x[col];
 				}
-			}
-			else
-			{
-				// Direct processing for small matrices
-				for (CBLAS_INDEX row = 0; row < m; row++)
-				{
-					sum = 0.0f;
-					for (CBLAS_INDEX col = 0; col < n; col++)
-					{
-						sum += a[row * n + col] * x[col];
-					}
-					y[row] = y[row] + sum;
-				}
+#endif
+				y[row] = beta * y[row] + alpha * sum;
 			}
 		}
 		else
 		{
-			// Use cache blocking only for large matrices
-			if (m > 2 * GEMV_BLOCK_SIZE)
+			// General case with strides
+			for (CBLAS_INDEX row = 0; row < m; row++)
 			{
-				// Process rows in cache-friendly blocks
-				for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
+				sum = 0.0f;
+				for (CBLAS_INDEX col = 0; col < n; col++)
 				{
-					CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
-					
-					// for each row in the block
-					for (CBLAS_INDEX row = i; row < i + ib; row++)
-					{
-						sum = 0.0f;
-
-						for (CBLAS_INDEX col = 0; col < n; col++)
-						{
-							sum += alpha * a[row * n + col] * x[col];
-						}
-
-						y[row] = beta * y[row] + sum;
-					}
+					sum += a[row * lda + col] * x[col * incx];
 				}
-			}
-			else
-			{
-				// Direct processing for small matrices
-				for (CBLAS_INDEX row = 0; row < m; row++)
-				{
-					sum = 0.0f;
-					for (CBLAS_INDEX col = 0; col < n; col++)
-					{
-						sum += alpha * a[row * n + col] * x[col];
-					}
-					y[row] = beta * y[row] + sum;
-				}
+				y[row * incy] = beta * y[row * incy] + alpha * sum;
 			}
 		}
 	}
 	else
 	{
-		if (alpha == 1.0f && beta == 1.0f)
+		// Transpose case: column-wise access
+		if (incx == 1 && incy == 1)
 		{
 			for (CBLAS_INDEX col = 0; col < n; col++)
 			{
 				sum = 0.0f;
-
 				for (CBLAS_INDEX row = 0; row < m; row++)
 				{
-					sum += a[row * n + col] * x[row];
+					sum += a[row * lda + col] * x[row];
 				}
-
-				y[col] = y[col] + sum;
+				y[col] = beta * y[col] + alpha * sum;
 			}
 		}
 		else
@@ -317,13 +430,11 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 			for (CBLAS_INDEX col = 0; col < n; col++)
 			{
 				sum = 0.0f;
-
 				for (CBLAS_INDEX row = 0; row < m; row++)
 				{
-					sum += alpha * a[row * n + col] * x[row];
+					sum += a[row * lda + col] * x[row * incx];
 				}
-
-				y[col] = beta * y[col] + sum;
+				y[col * incy] = beta * y[col * incy] + alpha * sum;
 			}
 		}
 	}
@@ -433,97 +544,50 @@ void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
         double sum;
 	if ((trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor))
 	{
-		if (alpha == 1.0 && beta == 1.0)
+		// Optimized path for unit strides (common case)
+		if (incx == 1 && incy == 1)
 		{
-			// Use cache blocking only for large matrices
-			if (m > 2 * GEMV_BLOCK_SIZE)
+			for (CBLAS_INDEX row = 0; row < m; row++)
 			{
-				// Process rows in cache-friendly blocks
-				for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
+				dgemv_row_dot_noinc(&a[row * lda], x, n, &sum);
+#else
+				sum = 0.0;
+				for (CBLAS_INDEX col = 0; col < n; col++)
 				{
-					CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
-					
-					// for each row in the block
-					for (CBLAS_INDEX row = i; row < i + ib; row++)
-					{
-						sum = 0.0;
-
-						for (CBLAS_INDEX col = 0; col < n; col++)
-						{
-							sum += a[row * n + col] * x[col];
-						}
-
-						y[row] = y[row] + sum;
-					}
+					sum += a[row * lda + col] * x[col];
 				}
-			}
-			else
-			{
-				// Direct processing for small matrices
-				for (CBLAS_INDEX row = 0; row < m; row++)
-				{
-					sum = 0.0;
-					for (CBLAS_INDEX col = 0; col < n; col++)
-					{
-						sum += a[row * n + col] * x[col];
-					}
-					y[row] = y[row] + sum;
-				}
+#endif
+				y[row] = beta * y[row] + alpha * sum;
 			}
 		}
 		else
 		{
-			// Use cache blocking only for large matrices
-			if (m > 2 * GEMV_BLOCK_SIZE)
+			// General case with strides
+			for (CBLAS_INDEX row = 0; row < m; row++)
 			{
-				// Process rows in cache-friendly blocks
-				for (CBLAS_INDEX i = 0; i < m; i += GEMV_BLOCK_SIZE)
+				sum = 0.0;
+				for (CBLAS_INDEX col = 0; col < n; col++)
 				{
-					CBLAS_INDEX ib = (i + GEMV_BLOCK_SIZE < m) ? GEMV_BLOCK_SIZE : (m - i);
-					
-					// for each row in the block
-					for (CBLAS_INDEX row = i; row < i + ib; row++)
-					{
-						sum = 0.0;
-
-						for (CBLAS_INDEX col = 0; col < n; col++)
-						{
-							sum += alpha * a[row * n + col] * x[col];
-						}
-
-						y[row] = beta * y[row] + sum;
-					}
+					sum += a[row * lda + col] * x[col * incx];
 				}
-			}
-			else
-			{
-				// Direct processing for small matrices
-				for (CBLAS_INDEX row = 0; row < m; row++)
-				{
-					sum = 0.0;
-					for (CBLAS_INDEX col = 0; col < n; col++)
-					{
-						sum += alpha * a[row * n + col] * x[col];
-					}
-					y[row] = beta * y[row] + sum;
-				}
+				y[row * incy] = beta * y[row * incy] + alpha * sum;
 			}
 		}
 	}
 	else
 	{
-		if (alpha == 1.0 && beta == 1.0)
+		// Transpose case: column-wise access
+		if (incx == 1 && incy == 1)
 		{
 			for (CBLAS_INDEX col = 0; col < n; col++)
 			{
 				sum = 0.0;
-
 				for (CBLAS_INDEX row = 0; row < m; row++)
 				{
-					sum += a[row * n + col] * x[row];
+					sum += a[row * lda + col] * x[row];
 				}
-
-				y[col] = y[col] + sum;
+				y[col] = beta * y[col] + alpha * sum;
 			}
 		}
 		else
@@ -531,13 +595,11 @@ void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 			for (CBLAS_INDEX col = 0; col < n; col++)
 			{
 				sum = 0.0;
-
 				for (CBLAS_INDEX row = 0; row < m; row++)
 				{
-					sum += alpha * a[row * n + col] * x[row];
+					sum += a[row * lda + col] * x[row * incx];
 				}
-
-				y[col] = beta * y[col] + sum;
+				y[col * incy] = beta * y[col * incy] + alpha * sum;
 			}
 		}
 	}

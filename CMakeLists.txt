@@ -58,14 +58,21 @@ elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
     # Note: /WX (warnings as errors) is not used due to pre-existing warnings in the codebase
     # (C4996: deprecated functions, C4127: constant conditionals, C4702: unreachable code,
     #  C4312/C4311: pointer/int type casting in server_win32.c)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /arch:AVX /std:c11")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /std:c11")
 #    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /STACK:0x800000")
 endif()
 
 # Add Intel specific compiler flags for x86_64 architecture
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
     if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "AppleClang" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx2 -mfma -DUSE_INTEL_FMA")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx2 -mfma")
+        add_compile_definitions(USE_INTEL_FMA)
+    elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
+        # MSVC on x86_64: /arch:AVX2 enables AVX2 and FMA
+        # Note: MSVC doesn't define __AVX2__ automatically, so we define it ourselves
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /arch:AVX2")
+        add_compile_definitions(USE_INTEL_FMA)
+        add_compile_definitions(__AVX2__)
     endif()
 endif()
 
@@ -113,8 +120,17 @@ target_link_libraries(ger_perf cblas ${MATH_LIB})
 add_executable(dger_perf dger_perf.c)
 target_link_libraries(dger_perf cblas ${MATH_LIB})
 
+add_executable(gemv_perf gemv_perf.c)
+target_link_libraries(gemv_perf cblas ${MATH_LIB})
+
 add_executable(dot_perf dot_perf.c)
 target_link_libraries(dot_perf cblas ${MATH_LIB})
+
+add_executable(axpy_perf axpy_perf.c)
+target_link_libraries(axpy_perf cblas ${MATH_LIB})
+
+add_executable(copy_perf copy_perf.c)
+target_link_libraries(copy_perf cblas ${MATH_LIB})
 
 add_executable(dot_threshold_tuning dot_threshold_tuning.c)
 target_link_libraries(dot_threshold_tuning cblas ${MATH_LIB})

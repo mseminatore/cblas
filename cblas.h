@@ -65,7 +65,7 @@
 #define CBLAS_MT_COPY   16384   // Lower threshold for COPY - pure memory bandwidth operation
 #define CBLAS_MT_GER    2048    // Lower threshold for GER - matrix operations benefit from earlier MT
 #define CBLAS_MT_GEMM   10000
-#define CBLAS_MT_GEMV   10000
+#define CBLAS_MT_GEMV   4096    // Lower threshold for GEMV - matrix-vector benefits from earlier MT
 
 // prefetching configuration
 #define CBLAS_PREFETCH_THRESHOLD 100000  // Enable prefetching for vectors >100K elements
