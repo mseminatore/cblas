@@ -504,7 +504,11 @@ typedef struct work_queue_t
     int type;                   // type of call
 
 #if 1
+#ifdef _WIN32
+    volatile LONG finished;     // this work item is finished (LONG for InterlockedIncrement)
+#else
     volatile int finished;      // this work item is finished
+#endif
 #else
     atomic_int finished;
 #endif

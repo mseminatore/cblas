@@ -248,13 +248,10 @@ static void *cblas_worker_thread(void *pvArg)
 
         assert(work_item->finished == 0);
 #ifdef _WIN32
-        LONG r = InterlockedIncrement(&work_item->finished);
+        InterlockedIncrement(&work_item->finished);
 #else
         work_item->finished = 1;
-        LONG r = 1;
 #endif
-
-        assert(r == 1);
 
 #ifdef MT_DEBUG
         // Calculate and log execution time
