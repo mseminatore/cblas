@@ -64,7 +64,7 @@
 #define CBLAS_MT_AXPY   32768   // Lower threshold for AXPY - memory-bound write operation
 #define CBLAS_MT_COPY   16384   // Lower threshold for COPY - pure memory bandwidth operation
 #define CBLAS_MT_GER    2048    // Lower threshold for GER - matrix operations benefit from earlier MT
-#define CBLAS_MT_GEMM   10000
+#define CBLAS_MT_GEMM   4096    // Lower threshold for GEMM - compute-intensive operation benefits from MT
 #define CBLAS_MT_GEMV   4096    // Lower threshold for GEMV - matrix-vector benefits from earlier MT
 
 // prefetching configuration

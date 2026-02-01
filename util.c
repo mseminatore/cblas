@@ -645,9 +645,6 @@ static void cblas_compute_gemm_block_sizes(void)
     // Packed B: kc × nb × 4 bytes
     // Total: (mc × kc + kc × nb) × 4 bytes should fit in L2
     
-    // Conservative approach: use 75% of L2 cache
-    size_t target_kb = (l2_cache_kb * 3) / 4;
-    
     // Adjust block sizes based on L1 cache size
     if (l1_cache_kb >= 128) {
         // Apple M-series (128KB L1d): larger blocks
@@ -659,23 +656,49 @@ static void cblas_compute_gemm_block_sizes(void)
         cblas_gemm_mc = 256;
         cblas_gemm_kc = 256;
         cblas_gemm_nb = 512;
+    } else if (l2_cache_kb >= 512) {
+        // Intel/AMD with 512KB+ L2: optimize for L2 cache
+        // mc=192, kc=256, nb=384: Total = (192*256 + 256*384)*4 = 590 KB
+        cblas_gemm_mc = 192;
+        cblas_gemm_kc = 256;
+        cblas_gemm_nb = 384;
+    } else if (l2_cache_kb >= 256) {
+        // Smaller L2 cache (256KB)
+        cblas_gemm_mc = 128;
+        cblas_gemm_kc = 192;
+        cblas_gemm_nb = 256;
     } else {
-        // Intel/AMD (32KB L1d): smaller blocks
+        // Very small L2 cache: conservative defaults
         cblas_gemm_mc = 128;
         cblas_gemm_kc = 256;
         cblas_gemm_nb = 256;
     }
     
-    // Verify total size fits in L2 cache
+    // Verify total size fits in L2 cache (use 85% of L2 for better utilization)
+    size_t target_kb = (l2_cache_kb * 85) / 100;
     size_t total_kb = ((cblas_gemm_mc * cblas_gemm_kc +
                      cblas_gemm_kc * cblas_gemm_nb) * 4) / 1024;
     
-    // If too large, scale down linearly
+    // If too large, scale down proportionally while maintaining ratios
     if (total_kb > target_kb) {
-        float scale = (float)target_kb / (float)total_kb;
-        cblas_gemm_mc = (CBLAS_INDEX)(cblas_gemm_mc * scale);
-        cblas_gemm_kc = (CBLAS_INDEX)(cblas_gemm_kc * scale);
-        cblas_gemm_nb = (CBLAS_INDEX)(cblas_gemm_nb * scale);
+        // Scale down by reducing kc first (inner dimension)
+        // This maintains mc and nb which affect outer loop efficiency
+        while (total_kb > target_kb && cblas_gemm_kc > 64) {
+            cblas_gemm_kc -= 16;  // Reduce by cache line increments
+            total_kb = ((cblas_gemm_mc * cblas_gemm_kc +
+                        cblas_gemm_kc * cblas_gemm_nb) * 4) / 1024;
+        }
+        
+        // If still too large, reduce mc and nb proportionally
+        if (total_kb > target_kb) {
+            float scale = (float)target_kb / (float)total_kb;
+            cblas_gemm_mc = (CBLAS_INDEX)(cblas_gemm_mc * scale);
+            cblas_gemm_nb = (CBLAS_INDEX)(cblas_gemm_nb * scale);
+            
+            // Round down to multiples of 16 for cache alignment
+            cblas_gemm_mc = (cblas_gemm_mc / 16) * 16;
+            cblas_gemm_nb = (cblas_gemm_nb / 16) * 16;
+        }
         
         // Ensure minimum sizes (must be at least 64)
         cblas_gemm_mc = MAX(cblas_gemm_mc, 64);

@@ -17,7 +17,7 @@
 #define MAX_NB 1024
 
 // Prefetch distance tuning - prefetch this many iterations ahead
-#define PREFETCH_DISTANCE 8
+#define PREFETCH_DISTANCE 16
 
 // macros to simpify matrix element access
 #define A(col, row) a[((row) * lda + (col))]
@@ -370,10 +370,15 @@ CBLAS_UNUSED static void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, flo
 //------------------------------------------------------
 static void PackMatrixB(CBLAS_INDEX k, float *b, CBLAS_INDEX ldb, float *b_to)
 {
-    // loop over rows of B
+    // loop over rows of B with prefetching
     for (CBLAS_INDEX j = 0; j < k; j++)
     {
         float *b_ij_pntr = &B(0, j);
+
+        // Prefetch ahead for next iterations
+        if (j + 8 < k) {
+            CBLAS_PREFETCH(&B(0, j + 8), 0, 3);
+        }
 
         *b_to       = *b_ij_pntr;
         *(b_to + 1) = *(b_ij_pntr + 1);
@@ -393,9 +398,17 @@ static void PackMatrixA(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
     float   *a_0i_pntr = &A(0,0), *a_1i_pntr = &A(0,1),
             *a_2i_pntr = &A(0,2), *a_3i_pntr = &A(0,3);
 
-    // loop over cols of A
+    // loop over cols of A with prefetching
     for (i = 0; i < k; i++)
     {
+        // Prefetch ahead for next iterations
+        if (i + 8 < k) {
+            CBLAS_PREFETCH(a_0i_pntr + 8, 0, 3);
+            CBLAS_PREFETCH(a_1i_pntr + 8, 0, 3);
+            CBLAS_PREFETCH(a_2i_pntr + 8, 0, 3);
+            CBLAS_PREFETCH(a_3i_pntr + 8, 0, 3);
+        }
+
         *a_to       = *a_0i_pntr++;
         *(a_to + 1) = *a_1i_pntr++;
         *(a_to + 2) = *a_2i_pntr++;
