@@ -74,6 +74,7 @@ int main(int argc, char *argv[])
 	
     test_dgemm();
 
+    cblas_print_stats();
 	cblas_shutdown();
 
 	return 0;

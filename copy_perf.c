@@ -87,8 +87,9 @@ int main(void)
     }
 
     printf("\n");
-    cblas_print_stats();
-    
+
+    cblas_print_stats();    
     cblas_shutdown();
+    
     return 0;
 }

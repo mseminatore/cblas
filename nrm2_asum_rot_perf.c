@@ -140,6 +140,7 @@ int main(int argc, char *argv[])
     test_asum();
     test_rot();
 
+    cblas_print_stats();
 	cblas_shutdown();
 
 	return 0;

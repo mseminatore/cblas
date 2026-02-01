@@ -69,6 +69,7 @@ int main(int argc, char *argv[])
 	
     test_gemv();
 
+    cblas_print_stats();
 	cblas_shutdown();
 
 	return 0;
