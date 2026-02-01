@@ -208,10 +208,6 @@ static inline double mt_get_time_us(void) {
 #   define CBLAS_STATS_END(op, n, mt)
 #endif
 
-#define CBLAS_LEVEL_1_THREADING
-#define CBLAS_LEVEL_2_THREADING
-#define CBLAS_LEVEL_3_THREADING
-
 #ifndef XERBLA
 #   define XERBLA(param) xerbla(__func__, (param), strlen(__func__))
 #endif

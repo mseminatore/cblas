@@ -597,54 +597,6 @@ void cblas_level1_exec_result(CBLAS_INDEX byte_stride, kernel_function kernel, C
 }
 
 //------------------------------------------------------
-// level 2 dispatch
-//------------------------------------------------------
-void cblas_level2_exec(void)
-{
-    //work_queue_t queue[MAX_THREADS];
-    //cblas_args_t args[MAX_THREADS];
-
-    // CBLAS_INDEX thread_count = CLAMP(cblas_get_num_threads(), 1, MAX_THREADS);
-
-    //for (int i = 0; i < thread_count; i++)
-    //{
-    //    args[i].incx = incx;
-    //    args[i].incy = incy;
-
-    //    // compute partition starts based on remaining task size and remaining threads
-    //    CBLAS_INDEX partition_size = (n + thread_count - i - 1) / (thread_count - i);
-
-    //    args[i].n = partition_size;
-    //    args[i].x = x;
-    //    args[i].y = y;
-
-    //    n -= partition_size;
-
-    //    x = (char*)x + partition_size * incx * stride);
-    //    y = (char*)y + partition_size * incy * stride);
-
-    //    queue[i].finished = 0;
-    //    queue[i].args = &args[i];
-    //    queue[i].kernel = kernel;
-    //    queue[i].next = &queue[i + 1];
-    //}
-
-    //// mark end of task queue
-    //queue[thread_count - 1].next = NULL;
-
-    //// synchronously execute task queue
-    //cblas_execute(thread_count, queue);
-}
-
-//------------------------------------------------------
-// level 3 dispatch
-//------------------------------------------------------
-void cblas_level3_exec(void)
-{
-
-}
-
-//------------------------------------------------------
 // Calculate optimal GEMM block sizes based on cache
 //------------------------------------------------------
 static void cblas_compute_gemm_block_sizes(void)
