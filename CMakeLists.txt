@@ -69,8 +69,10 @@ if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "A
         add_compile_definitions(USE_INTEL_FMA)
     elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
         # MSVC on x86_64: /arch:AVX2 enables AVX2 and FMA
+        # Note: MSVC doesn't define __AVX2__ automatically, so we define it ourselves
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /arch:AVX2")
         add_compile_definitions(USE_INTEL_FMA)
+        add_compile_definitions(__AVX2__)
     endif()
 endif()
 
