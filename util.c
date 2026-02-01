@@ -432,12 +432,16 @@ void cblas_print_kernels(void)
     printf("No\n");
 #endif
     
-    printf("  - FMA instructions:           ");
-#if defined(USE_INTEL_FMA) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
-    printf("Yes (Intel FMA3)\n");
+    printf("  - FMA instructions (runtime):  ");
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
+    if (cpu & CPU_x64_FMA3) {
+        printf("Yes (Intel FMA3 detected, using _fma kernels)\n");
+    } else {
+        printf("No (CPU lacks FMA3, using mul+add)\n");
+    }
 #elif defined(__aarch64__) && defined(__ARM_NEON)
     if (cpu & CPU_NEON_FMA) {
-        printf("Yes (ARM NEON)\n");
+        printf("Yes (ARM NEON FMA)\n");
     } else {
         printf("No (separate mul+add)\n");
     }

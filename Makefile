@@ -32,7 +32,7 @@ else
 	endif
 endif
 
-all: cblas_config.h $(LIBNAME) blas_stress blas_test test_strided test_stats test_threshold test_dot_threshold test_concurrent test_mt_debug test_level2_mt gemm_perf dgemm_perf ger_perf dger_perf dot_perf dot_threshold_tuning nrm2_asum_rot_perf copy_perf
+all: cblas_config.h $(LIBNAME) axpy_perf blas_stress blas_test test_strided test_stats test_threshold test_dot_threshold test_concurrent test_mt_debug test_level2_mt gemm_perf dgemm_perf ger_perf dger_perf dot_perf dot_threshold_tuning nrm2_asum_rot_perf copy_perf
 
 # Generate cblas_config.h from configuration variables
 cblas_config.h: cblas_config.h.in Makefile

@@ -948,8 +948,14 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
             if (alpha == 1.0f)
             {
 #if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
-                // Use FMA version if CPU supports it
-                if (cpu_get_features() & CPU_x64_FMA3)
+                // Runtime dispatch: check for FMA support once and cache result
+                static int fma_available = -1;
+                if (fma_available == -1) {
+                    unsigned int features = cpu_get_features();
+                    fma_available = (features & CPU_x64_FMA3) ? 1 : 0;
+                }
+                
+                if (fma_available)
                 {
                     sger_row_noalpha4x4_fma(m, n, x, incx, y, incy, a, lda);
                 }
@@ -1133,8 +1139,14 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
             if (alpha == 1.0)
             {
 #if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
-                // Use FMA version if CPU supports it
-                if (cpu_get_features() & CPU_x64_FMA3)
+                // Runtime dispatch: check for FMA support once and cache result
+                static int fma_available = -1;
+                if (fma_available == -1) {
+                    unsigned int features = cpu_get_features();
+                    fma_available = (features & CPU_x64_FMA3) ? 1 : 0;
+                }
+                
+                if (fma_available)
                 {
                     dger_row_noalpha2x2_fma(m, n, x, incx, y, incy, a, lda);
                 }
