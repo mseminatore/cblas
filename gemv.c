@@ -32,20 +32,15 @@ static void sgemv_row_dot_noinc(float* a_row, float* x, CBLAS_INDEX n, float* re
     
     // Process 32 floats per iteration (4 accumulators × 8 floats)
     CBLAS_INDEX unroll_end = (n / 32) * 32;
-    
-#if defined(CBLAS_PREFETCH)
     const CBLAS_INDEX prefetch_distance = CBLAS_PREFETCH_DISTANCE;
-#endif
     
     for (; i < unroll_end; i += 32)
     {
-#if defined(CBLAS_PREFETCH)
         // Prefetch data ahead to hide memory latency
         if (i + prefetch_distance < n) {
             CBLAS_PREFETCH(a_row + i + prefetch_distance, 0, 3);
             CBLAS_PREFETCH(x + i + prefetch_distance, 0, 3);
         }
-#endif
         
         __m256 a0 = _mm256_loadu_ps(a_row + i);
         __m256 x0 = _mm256_loadu_ps(x + i);
@@ -118,19 +113,14 @@ static void dgemv_row_dot_noinc(double* a_row, double* x, CBLAS_INDEX n, double*
     
     // Process 16 doubles per iteration (4 accumulators × 4 doubles)
     CBLAS_INDEX unroll_end = (n / 16) * 16;
-    
-#if defined(CBLAS_PREFETCH)
     const CBLAS_INDEX prefetch_distance = CBLAS_PREFETCH_DISTANCE;
-#endif
     
     for (; i < unroll_end; i += 16)
     {
-#if defined(CBLAS_PREFETCH)
         if (i + prefetch_distance < n) {
             CBLAS_PREFETCH(a_row + i + prefetch_distance, 0, 3);
             CBLAS_PREFETCH(x + i + prefetch_distance, 0, 3);
         }
-#endif
         
         __m256d a0 = _mm256_loadu_pd(a_row + i);
         __m256d x0 = _mm256_loadu_pd(x + i);
