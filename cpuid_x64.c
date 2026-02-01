@@ -134,16 +134,88 @@ int cpu_get_l1_data_cache_size(void)
         return 0;  // Return 0 on failure to trigger fallback
     return l1_cache_size/1024;
 #else
-	#if defined(_MSC_VER)
-		int regs[4];
-		__cpuid(regs, 0x80000005);
-		l1_cache_size = (regs[ECX] >> 24) & 0xFF; // Extract L1 data cache size in KB
-	#else
-		unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
-
-		__cpuid(0x80000005, eax, ebx, ecx, edx);
-		l1_cache_size = (ecx >> 24) & 0xFF; // Extract L1 data cache size in KB
-	#endif
+	// Get vendor string to determine Intel vs AMD
+	const char* vendor = cpu_get_core_name();
+	
+	// Intel uses CPUID leaf 0x04 (Deterministic Cache Parameters)
+	if (strncmp(vendor, "GenuineIntel", 12) == 0)
+	{
+		#if defined(_MSC_VER)
+			// Iterate through cache levels to find L1 data cache
+			for (int i = 0; i < 32; i++)
+			{
+				int regs[4];
+				__cpuidex(regs, 0x04, i);
+				
+				int cache_type = regs[EAX] & 0x1F;
+				if (cache_type == 0) break; // No more caches
+				
+				int cache_level = (regs[EAX] >> 5) & 0x7;
+				
+				// cache_type: 1=Data, 2=Instruction, 3=Unified
+				// We want L1 (level 1) Data cache (type 1)
+				if (cache_level == 1 && cache_type == 1)
+				{
+					int line_size = (regs[EBX] & 0xFFF) + 1;
+					int partitions = ((regs[EBX] >> 12) & 0x3FF) + 1;
+					int associativity = ((regs[EBX] >> 22) & 0x3FF) + 1;
+					int sets = regs[ECX] + 1;
+					
+					l1_cache_size = (line_size * partitions * associativity * sets) / 1024;
+					break;
+				}
+			}
+		#else
+			// GCC/Clang version
+			for (int i = 0; i < 32; i++)
+			{
+				unsigned int eax, ebx, ecx, edx;
+				__cpuid_count(0x04, i, eax, ebx, ecx, edx);
+				
+				int cache_type = eax & 0x1F;
+				if (cache_type == 0) break;
+				
+				int cache_level = (eax >> 5) & 0x7;
+				
+				if (cache_level == 1 && cache_type == 1)
+				{
+					int line_size = (ebx & 0xFFF) + 1;
+					int partitions = ((ebx >> 12) & 0x3FF) + 1;
+					int associativity = ((ebx >> 22) & 0x3FF) + 1;
+					int sets = ecx + 1;
+					
+					l1_cache_size = (line_size * partitions * associativity * sets) / 1024;
+					break;
+				}
+			}
+		#endif
+	}
+	// AMD uses CPUID leaf 0x80000005
+	else if (strncmp(vendor, "AuthenticAMD", 12) == 0)
+	{
+		#if defined(_MSC_VER)
+			int regs[4];
+			__cpuid(regs, 0x80000005);
+			l1_cache_size = (regs[ECX] >> 24) & 0xFF; // Extract L1 data cache size in KB
+		#else
+			unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
+			__cpuid(0x80000005, eax, ebx, ecx, edx);
+			l1_cache_size = (ecx >> 24) & 0xFF; // Extract L1 data cache size in KB
+		#endif
+	}
+	else
+	{
+		// Unknown vendor, try AMD method as fallback
+		#if defined(_MSC_VER)
+			int regs[4];
+			__cpuid(regs, 0x80000005);
+			l1_cache_size = (regs[ECX] >> 24) & 0xFF;
+		#else
+			unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
+			__cpuid(0x80000005, eax, ebx, ecx, edx);
+			l1_cache_size = (ecx >> 24) & 0xFF;
+		#endif
+	}
 #endif
 
 	return l1_cache_size;
