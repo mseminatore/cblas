@@ -47,4 +47,23 @@ int cpu_get_l1_data_cache_size(void);
  */
 unsigned int cpu_get_features(void);
 
+/**
+ * @brief Check if CPU has hybrid architecture (P-cores + E-cores)
+ * @return 1 if hybrid, 0 otherwise
+ * @note Only x86_64 Intel Alder Lake and newer support hybrid architectures
+ */
+int cpu_is_hybrid(void);
+
+/**
+ * @brief Get number of P-cores (performance cores)
+ * @return Number of P-cores, or 0 if not a hybrid CPU or not supported
+ */
+int cpu_get_p_core_count(void);
+
+/**
+ * @brief Get number of E-cores (efficiency cores)
+ * @return Number of E-cores, or 0 if not a hybrid CPU or not supported
+ */
+int cpu_get_e_core_count(void);
+
 #endif // __PLATFORM_CPUID_H

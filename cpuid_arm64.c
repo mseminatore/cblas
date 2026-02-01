@@ -197,3 +197,30 @@ int cpu_get_l1_data_cache_size(void)
     return l1_cache_size/1024;
 #endif
 }
+
+//------------------------------------------------------
+// Check if CPU has hybrid architecture (P-cores + E-cores)
+// ARM64 doesn't have hybrid architectures like x86
+//------------------------------------------------------
+int cpu_is_hybrid(void)
+{
+    return 0;  // ARM64 systems don't have hybrid P/E core architectures
+}
+
+//------------------------------------------------------
+// Get number of P-cores (performance cores)
+// Not applicable for ARM64
+//------------------------------------------------------
+int cpu_get_p_core_count(void)
+{
+    return 0;  // Not applicable for ARM64
+}
+
+//------------------------------------------------------
+// Get number of E-cores (efficiency cores)
+// Not applicable for ARM64
+//------------------------------------------------------
+int cpu_get_e_core_count(void)
+{
+    return 0;  // Not applicable for ARM64
+}
