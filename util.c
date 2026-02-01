@@ -15,6 +15,16 @@ static int cblas_server_alive   = CBLAS_FALSE;  // has thread server been initia
 kernels_t blas_kernels;
 
 //------------------------------------------------------
+// Runtime MT threshold variables (initialized to defaults)
+//------------------------------------------------------
+CBLAS_INDEX cblas_mt_dot_threshold = CBLAS_MT_DOT_DEFAULT;
+CBLAS_INDEX cblas_mt_axpy_threshold = CBLAS_MT_AXPY_DEFAULT;
+CBLAS_INDEX cblas_mt_copy_threshold = CBLAS_MT_COPY_DEFAULT;
+CBLAS_INDEX cblas_mt_ger_threshold = CBLAS_MT_GER_DEFAULT;
+CBLAS_INDEX cblas_mt_gemm_threshold = CBLAS_MT_GEMM_DEFAULT;
+CBLAS_INDEX cblas_mt_gemv_threshold = CBLAS_MT_GEMV_DEFAULT;
+
+//------------------------------------------------------
 // GEMM cache-aware block sizes (initialized at runtime)
 // Default values match 32KB L1d configuration (Intel/AMD)
 //------------------------------------------------------
@@ -481,8 +491,14 @@ void cblas_print_kernels(void)
 #endif
 
     printf("\nMT Thresholds:\n");
-    printf("  DOT:  %d   AXPY: %d   COPY: %d\n", CBLAS_MT_DOT, CBLAS_MT_AXPY, CBLAS_MT_COPY);
-    printf("  GER:  %d   GEMM: %d   GEMV: %d\n\n", CBLAS_MT_GER, CBLAS_MT_GEMM, CBLAS_MT_GEMV);
+    printf("  DOT:  %lu   AXPY: %lu   COPY: %lu\n", 
+           (unsigned long)cblas_mt_dot_threshold, 
+           (unsigned long)cblas_mt_axpy_threshold, 
+           (unsigned long)cblas_mt_copy_threshold);
+    printf("  GER:  %lu   GEMM: %lu   GEMV: %lu\n\n", 
+           (unsigned long)cblas_mt_ger_threshold, 
+           (unsigned long)cblas_mt_gemm_threshold, 
+           (unsigned long)cblas_mt_gemv_threshold);
 }
 
 //------------------------------------------------------
@@ -750,6 +766,15 @@ void cblas_init(int threads)
     if (!cblas_server_alive && cblas_init_server())
         cblas_server_alive = 1;
 #endif
+
+    // Auto-tune thresholds if requested via environment variable
+    char *s_autotune = getenv("CBLAS_AUTO_TUNE");
+    if (s_autotune && atoi(s_autotune) != 0) {
+        cblas_autotune_thresholds();
+    } else {
+        // Use default thresholds
+        cblas_reset_thresholds();
+    }
 }
 
 //------------------------------------------------------
@@ -891,4 +916,218 @@ double* cbu_dge_make_identity(int cols, int rows)
             mtx[row * cols + col] = (row == col) ? 1.0 : 0.0;
 
     return mtx;
+}
+
+//------------------------------------------------------
+// Auto-tuning infrastructure
+//------------------------------------------------------
+
+// Calibration constants
+#define AUTOTUNE_MIN_SIZE 1000
+#define AUTOTUNE_MAX_SIZE 1000000
+#define AUTOTUNE_NUM_WARMUP 2
+#define AUTOTUNE_NUM_ITERATIONS 5
+#define AUTOTUNE_SPEEDUP_THRESHOLD 1.10f  // 10% speedup to enable MT
+
+/**
+ * @brief Benchmark an operation at a given size
+ * @param operation_func Function pointer to the operation to benchmark
+ * @param n Problem size
+ * @param use_mt Whether to enable multi-threading for this benchmark
+ * @return Execution time in seconds
+ */
+static double benchmark_operation(void (*operation_func)(CBLAS_INDEX, void*, void*), 
+                                  CBLAS_INDEX n, int use_mt)
+{
+    struct cblas_timer t1, t2;
+    double min_time = 1e9;
+    
+    // Allocate test vectors
+    float *x = malloc(n * sizeof(float));
+    float *y = malloc(n * sizeof(float));
+    
+    if (!x || !y) {
+        free(x);
+        free(y);
+        return -1.0;
+    }
+    
+    // Initialize vectors
+    for (CBLAS_INDEX i = 0; i < n; i++) {
+        x[i] = (float)(i % 100) / 100.0f;
+        y[i] = (float)((i + 1) % 100) / 100.0f;
+    }
+    
+    // Save original thread count
+    int orig_threads = cblas_get_num_threads();
+    
+    // Set threads for this benchmark
+    if (use_mt) {
+        cblas_set_num_threads(orig_threads);
+    } else {
+        cblas_set_num_threads(1);
+    }
+    
+    // Warmup
+    for (int i = 0; i < AUTOTUNE_NUM_WARMUP; i++) {
+        operation_func(n, x, y);
+    }
+    
+    // Measure
+    for (int i = 0; i < AUTOTUNE_NUM_ITERATIONS; i++) {
+        cbu_timer_get_time(&t1);
+        operation_func(n, x, y);
+        cbu_timer_get_time(&t2);
+        
+        double dt = cbu_timer_get_delta(&t1, &t2);
+        if (dt < min_time) {
+            min_time = dt;
+        }
+    }
+    
+    // Restore thread count
+    cblas_set_num_threads(orig_threads);
+    
+    free(x);
+    free(y);
+    
+    return min_time;
+}
+
+// Wrapper functions for benchmarking different operations
+static void bench_sdot(CBLAS_INDEX n, void *x, void *y)
+{
+    cblas_sdot(n, (float*)x, 1, (float*)y, 1);
+}
+
+static void bench_scopy(CBLAS_INDEX n, void *x, void *y)
+{
+    cblas_scopy(n, (float*)x, 1, (float*)y, 1);
+}
+
+static void bench_saxpy(CBLAS_INDEX n, void *x, void *y)
+{
+    cblas_saxpy(n, 2.0f, (float*)x, 1, (float*)y, 1);
+}
+
+/**
+ * @brief Find optimal MT threshold for a single operation
+ * @param operation_func Function pointer to the operation
+ * @param min_size Minimum problem size to test
+ * @param max_size Maximum problem size to test
+ * @return Optimal threshold (or max_size if MT never provides speedup)
+ */
+static CBLAS_INDEX find_mt_threshold(void (*operation_func)(CBLAS_INDEX, void*, void*),
+                                     CBLAS_INDEX min_size,
+                                     CBLAS_INDEX max_size)
+{
+    CBLAS_INDEX optimal_threshold = max_size;
+    
+    // Binary search for crossover point
+    CBLAS_INDEX low = min_size;
+    CBLAS_INDEX high = max_size;
+    
+    while (low < high) {
+        CBLAS_INDEX mid = low + (high - low) / 2;
+        
+        // Round to nearest power of 2 for cleaner thresholds
+        CBLAS_INDEX test_size = 1;
+        while (test_size < mid) {
+            test_size *= 2;
+        }
+        
+        if (test_size > max_size) {
+            test_size = max_size;
+        }
+        
+        // Benchmark single-threaded
+        double time_st = benchmark_operation(operation_func, test_size, 0);
+        
+        // Benchmark multi-threaded
+        double time_mt = benchmark_operation(operation_func, test_size, 1);
+        
+        if (time_st < 0 || time_mt < 0) {
+            // Benchmark failed, use default
+            break;
+        }
+        
+        // Calculate speedup
+        float speedup = (float)time_st / (float)time_mt;
+        
+        if (speedup >= AUTOTUNE_SPEEDUP_THRESHOLD) {
+            // MT is beneficial at this size, try smaller
+            optimal_threshold = test_size;
+            high = mid - 1;
+        } else {
+            // MT not beneficial yet, try larger
+            low = mid + 1;
+        }
+    }
+    
+    return optimal_threshold;
+}
+
+/**
+ * @brief Reset all MT thresholds to default compile-time values
+ */
+void cblas_reset_thresholds(void)
+{
+    cblas_mt_dot_threshold = CBLAS_MT_DOT_DEFAULT;
+    cblas_mt_axpy_threshold = CBLAS_MT_AXPY_DEFAULT;
+    cblas_mt_copy_threshold = CBLAS_MT_COPY_DEFAULT;
+    cblas_mt_ger_threshold = CBLAS_MT_GER_DEFAULT;
+    cblas_mt_gemm_threshold = CBLAS_MT_GEMM_DEFAULT;
+    cblas_mt_gemv_threshold = CBLAS_MT_GEMV_DEFAULT;
+}
+
+/**
+ * @brief Auto-tune multi-threading thresholds based on runtime benchmarks
+ */
+void cblas_autotune_thresholds(void)
+{
+#ifdef MT_ENABLED
+    int num_threads = cblas_get_num_threads();
+    
+    // Only tune if we have more than 1 thread
+    if (num_threads <= 1) {
+        cblas_reset_thresholds();
+        return;
+    }
+    
+    printf("CBLAS: Auto-tuning MT thresholds for %d threads...\n", num_threads);
+    
+    // Tune Level-1 operations (vector-vector)
+    printf("  Calibrating DOT threshold... ");
+    fflush(stdout);
+    cblas_mt_dot_threshold = find_mt_threshold(bench_sdot, AUTOTUNE_MIN_SIZE, AUTOTUNE_MAX_SIZE);
+    printf("%lu\n", (unsigned long)cblas_mt_dot_threshold);
+    
+    printf("  Calibrating COPY threshold... ");
+    fflush(stdout);
+    cblas_mt_copy_threshold = find_mt_threshold(bench_scopy, AUTOTUNE_MIN_SIZE, AUTOTUNE_MAX_SIZE);
+    printf("%lu\n", (unsigned long)cblas_mt_copy_threshold);
+    
+    printf("  Calibrating AXPY threshold... ");
+    fflush(stdout);
+    cblas_mt_axpy_threshold = find_mt_threshold(bench_saxpy, AUTOTUNE_MIN_SIZE, AUTOTUNE_MAX_SIZE);
+    printf("%lu\n", (unsigned long)cblas_mt_axpy_threshold);
+    
+    // For Level-2 and Level-3, use heuristics based on Level-1 results
+    // GER is matrix-level, use lower threshold
+    cblas_mt_ger_threshold = cblas_mt_copy_threshold / 8;
+    if (cblas_mt_ger_threshold < CBLAS_MT_GER_DEFAULT / 2) {
+        cblas_mt_ger_threshold = CBLAS_MT_GER_DEFAULT / 2;
+    }
+    
+    // GEMV and GEMM are compute-intensive, use lower thresholds
+    cblas_mt_gemv_threshold = cblas_mt_ger_threshold;
+    cblas_mt_gemm_threshold = cblas_mt_ger_threshold;
+    
+    printf("  GER/GEMV/GEMM thresholds (heuristic): %lu\n", 
+           (unsigned long)cblas_mt_ger_threshold);
+    
+    printf("CBLAS: Auto-tuning complete.\n");
+#else
+    cblas_reset_thresholds();
+#endif
 }
