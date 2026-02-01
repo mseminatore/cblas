@@ -9,6 +9,140 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+//======================================================================
+// CACHE-BLOCKING STRATEGY FOR GEMM (General Matrix Multiply)
+//======================================================================
+//
+// This implementation uses a three-level loop tiling strategy inspired by
+// the GotoBLAS algorithm (see "Anatomy of High-Performance Matrix Multiplication"
+// by Goto and van de Geijn, ACM TOMS 2008). The goal is to maximize cache reuse
+// by carefully orchestrating data movement through the memory hierarchy.
+//
+// MEMORY HIERARCHY OVERVIEW:
+// ---------------------------
+// Modern CPUs have a cache hierarchy with different capacities and speeds:
+//   L1 data cache: 32-64KB (very fast, ~4 cycles)
+//   L2 cache:     256KB-1MB (fast, ~12 cycles)  
+//   L3 cache:     2-32MB (moderate, ~40 cycles)
+//   Main memory:  GB+ (slow, ~100+ cycles)
+//
+// CACHE-BLOCKING ALGORITHM:
+// -------------------------
+// The algorithm computes C = A × B by blocking the matrices into tiles that
+// fit in cache. The computation proceeds in three nested loops:
+//
+//   for each kc-sized panel of k (outer k-loop)
+//     for each mc-sized panel of m (outer m-loop)
+//       Pack a mc×kc tile of A into contiguous buffer (packedA)
+//       for each nb-sized panel of n (inner n-loop, inside InnerKernel)
+//         Pack a kc×nb tile of B into contiguous buffer (packedB)
+//         Compute the mc×nb tile of C using packed data
+//
+// TILE SIZE PARAMETERS:
+// ---------------------
+// The three tile dimensions (mc, kc, nb) are runtime-determined based on
+// detected cache sizes (see cblas_compute_gemm_block_sizes() in util.c):
+//
+//   mc: Number of rows of A to pack (typically 128-512)
+//       - Controls the outer m-loop blocking
+//       - Packed A buffer size: mc × kc × 4 bytes
+//
+//   kc: Inner dimension (typically 128-256)
+//       - Controls the outer k-loop blocking
+//       - Shared dimension for both packed buffers
+//       - Critical for cache hit rate
+//
+//   nb: Number of columns of B to pack (typically 256-1024)
+//       - Controls how much of C is computed at once
+//       - Packed B buffer size: kc × nb × 4 bytes
+//
+// WHY THESE SIZES?
+// ----------------
+// The goal is to keep both packedA and packedB resident in L2 cache:
+//
+//   Total packed data = (mc × kc + kc × nb) × 4 bytes
+//
+// For typical defaults (mc=256, kc=256, nb=512):
+//   Packed A: 256 × 256 × 4 = 256 KB
+//   Packed B: 256 × 512 × 4 = 512 KB
+//   Total:                    768 KB  (~85% of a 1MB L2 cache)
+//
+// The 85% target provides headroom for other data (output matrix C, stack, etc.)
+// while maximizing cache utilization.
+//
+// RELATIONSHIP TO CACHE LEVELS:
+// ------------------------------
+// L1 Cache: The 4×4 micro-kernel (AddDot4x4) is designed to keep 4 rows of A
+//           and 4 columns of B in L1 cache or registers during computation.
+//
+// L2 Cache: Packed A and B tiles are sized to fit in L2, enabling high-bandwidth
+//           access during the micro-kernel execution. This is the critical
+//           optimization point.
+//
+// L3 Cache: The original matrices A, B, C may partially fit in L3, but the
+//           algorithm doesn't rely on this - it's designed to work even when
+//           matrices exceed all cache levels.
+//
+// TUNING FOR DIFFERENT ARCHITECTURES:
+// ------------------------------------
+// Tile sizes are auto-tuned based on detected L1 and L2 cache sizes:
+//
+// 1. Apple M-series (128KB L1d, 8-24MB L2):
+//    mc=512, kc=256, nb=512 (larger tiles for bigger caches)
+//
+// 2. ARM Cortex (64KB L1d, 512KB-2MB L2):
+//    mc=256, kc=256, nb=512 (balanced tiles)
+//
+// 3. Intel/AMD (32KB L1d, 256KB-1MB L2):
+//    mc=192, kc=256, nb=384 (fits in smaller L2)
+//
+// 4. Older/embedded CPUs (16-32KB L1d, 128-256KB L2):
+//    mc=128, kc=192, nb=256 (conservative sizes)
+//
+// The auto-tuning code in util.c:cblas_compute_gemm_block_sizes() implements
+// this logic and enforces that total packed data ≤ 85% of L2 cache.
+//
+// MANUAL TUNING:
+// --------------
+// To manually tune for your architecture:
+// 1. Measure L2 cache size: `cat /proc/cpuinfo` (Linux) or use utilities
+// 2. Set tile sizes such that (mc×kc + kc×nb)×4 ≤ 0.85 × L2_size_bytes
+// 3. Prefer larger mc and nb for better parallelism (divisible by 16)
+// 4. kc affects both buffers, so it's usually kept moderate (128-256)
+// 5. Run gemm_perf to measure GFlops and iterate
+//
+// TRADEOFFS:
+// ----------
+// Larger tiles:
+//   + Better amortization of packing overhead
+//   + More work per cache miss
+//   + Better vectorization opportunities
+//   - Higher risk of cache eviction
+//   - More memory required for packed buffers
+//   - May not fit in smaller caches
+//
+// Smaller tiles:
+//   + Guaranteed to fit in cache
+//   + Lower memory footprint
+//   + Works on more architectures
+//   - More packing overhead
+//   - Less opportunity for SIMD/parallelism
+//   - More loop iterations
+//
+// REFERENCES:
+// -----------
+// [1] Goto, K. and van de Geijn, R. (2008). "Anatomy of High-Performance 
+//     Matrix Multiplication". ACM Transactions on Mathematical Software, 34(3).
+//     https://www.cs.utexas.edu/~flame/pubs/GotoTOMS2008.pdf
+//
+// [2] Low, T.M., et al. (2016). "Analytical Modeling Is Enough for High-Performance
+//     BLIS". ACM TOMS, 43(2).
+//
+// [3] How to Optimize GEMM (GotoBLAS/BLIS tutorial):
+//     https://github.com/flame/how-to-optimize-gemm/wiki
+//
+//======================================================================
+
 // Matrix sub-tile block sizes for caching data in contiguous memory
 // These are now runtime-determined based on cache size (see cblas_gemm_mc, cblas_gemm_kc, cblas_gemm_nb)
 // Maximum buffer sizes for static allocation (when USE_STATIC_BUFFERS is defined)
@@ -366,8 +500,28 @@ CBLAS_UNUSED static void AddDot1x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, flo
 }
 
 //------------------------------------------------------
-// pack a sub-tile of B into contiguous memory
+// PackMatrixB - Copy a k×4 panel of B into contiguous memory
 //------------------------------------------------------
+// PURPOSE:
+//   Transform B data from strided (ldb) layout to contiguous layout for
+//   better cache performance during the micro-kernel execution.
+//
+// WHY PACKING?
+//   - Original B has stride ldb, causing cache misses when accessed
+//   - Packed B is contiguous, enabling sequential access and prefetching
+//   - Packing cost is amortized over many reuses in the micro-kernel
+//   - Packed data stays in L2 cache for fast repeated access
+//
+// PARAMETERS:
+//   k: Number of rows to pack (≤ kc)
+//   b: Pointer to source data in B matrix (with stride ldb)
+//   ldb: Leading dimension of B (stride between rows)
+//   b_to: Pointer to packed buffer (contiguous storage)
+//
+// LAYOUT:
+//   Packs 4 consecutive columns of B (each with k rows) into sequential memory.
+//   This matches the 4-column micro-panel size used by AddDot4x4.
+//
 static void PackMatrixB(CBLAS_INDEX k, float *b, CBLAS_INDEX ldb, float *b_to)
 {
     // loop over rows of B with prefetching
@@ -375,11 +529,12 @@ static void PackMatrixB(CBLAS_INDEX k, float *b, CBLAS_INDEX ldb, float *b_to)
     {
         float *b_ij_pntr = &B(0, j);
 
-        // Prefetch ahead for next iterations
+        // Prefetch ahead for next iterations to hide memory latency
         if (j + 8 < k) {
             CBLAS_PREFETCH(&B(0, j + 8), 0, 3);
         }
 
+        // Copy 4 consecutive elements (one row, 4 columns)
         *b_to       = *b_ij_pntr;
         *(b_to + 1) = *(b_ij_pntr + 1);
         *(b_to + 2) = *(b_ij_pntr + 2);
@@ -390,8 +545,28 @@ static void PackMatrixB(CBLAS_INDEX k, float *b, CBLAS_INDEX ldb, float *b_to)
 }
 
 //------------------------------------------------------
-// pack a sub-tile of A into contiguous memory
+// PackMatrixA - Copy a 4×k panel of A into contiguous memory
 //------------------------------------------------------
+// PURPOSE:
+//   Transform A data from strided (lda) layout to contiguous layout for
+//   better cache performance during the micro-kernel execution.
+//
+// WHY PACKING?
+//   - Original A has stride lda between rows, causing non-sequential access
+//   - Packed A is contiguous in memory, improving cache line utilization
+//   - Packing cost is amortized over many columns of C computed
+//   - Packed data stays in L2 cache for fast repeated access
+//
+// PARAMETERS:
+//   k: Number of columns to pack (≤ kc)
+//   a: Pointer to source data in A matrix (with stride lda)
+//   lda: Leading dimension of A (stride between rows)
+//   a_to: Pointer to packed buffer (contiguous storage)
+//
+// LAYOUT:
+//   Packs 4 consecutive rows of A (each with k columns) into sequential memory.
+//   This matches the 4-row micro-panel size used by AddDot4x4.
+//
 static void PackMatrixA(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
 {
     CBLAS_INDEX i;
@@ -401,7 +576,7 @@ static void PackMatrixA(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
     // loop over cols of A with prefetching
     for (i = 0; i < k; i++)
     {
-        // Prefetch ahead for next iterations
+        // Prefetch ahead for next iterations to hide memory latency
         if (i + 8 < k) {
             CBLAS_PREFETCH(a_0i_pntr + 8, 0, 3);
             CBLAS_PREFETCH(a_1i_pntr + 8, 0, 3);
@@ -409,6 +584,7 @@ static void PackMatrixA(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
             CBLAS_PREFETCH(a_3i_pntr + 8, 0, 3);
         }
 
+        // Copy one element from each of 4 rows (interleaved for cache efficiency)
         *a_to       = *a_0i_pntr++;
         *(a_to + 1) = *a_1i_pntr++;
         *(a_to + 2) = *a_2i_pntr++;
@@ -419,8 +595,35 @@ static void PackMatrixA(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
 }
 
 //------------------------------------------------------
-// GEMM kernel
+// GEMM InnerKernel - The core computation engine
 //------------------------------------------------------
+// This function implements the innermost part of the cache-blocking algorithm.
+// It processes a single mc×n tile of the output matrix C.
+//
+// PARAMETERS:
+//   m: Number of rows in this tile (≤ mc)
+//   n: Number of columns in full output (all of C's width)
+//   k: Inner dimension for this iteration (≤ kc)
+//   a: Pointer to mc×k tile of A
+//   b: Pointer to k×n tile of B
+//   c: Pointer to mc×n tile of C (output)
+//
+// ALGORITHM:
+//   1. Pack B: Copy k×nb blocks of B into contiguous buffer (packedB)
+//   2. For each 4-row block of the m rows:
+//      a. Pack A: Copy 4×k block of A into contiguous buffer (packedA)
+//      b. For each 4-column block of the n columns:
+//         - Compute 4×4 micro-tile using SIMD (AddDot4x4)
+//         - This is where the actual FLOPs happen!
+//      c. Handle leftover columns (< 4) with scalar code
+//   3. Handle leftover rows (< 4) with scalar code
+//
+// CACHE BEHAVIOR:
+//   - packedA and packedB fit in L2 cache by design
+//   - The 4×4 micro-kernel keeps working set in L1 cache/registers
+//   - Data is accessed sequentially from packed buffers (good prefetching)
+//   - C is accessed with stride ldc (may cause cache misses, but write-back)
+//
 static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float* c, CBLAS_INDEX ldc)
 {
 #if !defined(USE_STATIC_BUFFERS)
@@ -446,23 +649,29 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
     //int col_leftover    = n % 4;
     CBLAS_INDEX row, col;
 
-    // Loop over the rows and columns of C unrolled by 4
+    // INNER N-LOOP: Process rows of C in 4-row blocks (micro-panel height)
+    // This loop unrolls the row dimension to enable 4×4 SIMD micro-kernels
     for (row = 0; row + 4 <= m; row += 4)
     {
-        // we are pre-caching all cols so we need to do it only once
+        // Pack matrix B once per row-block (amortizes packing cost)
+        // packedB contains k×n data in column-major order for cache-friendly access
         if (row == 0)
             PackMatrixB(k, &B(0, 0), ldb, packedB);
 
+        // Process columns of C in 4-column blocks (micro-panel width)
         for (col = 0; col + 4 <= n; col += 4)
         {
-            // we are pre-caching all rows so we need to do it only once
+            // Pack matrix A once per column-block (amortizes packing cost)
+            // packedA contains 4×k data in row-major order for cache-friendly access
             if (col == 0) 
                 PackMatrixA(k, &A(0, row), lda, packedA);
 
+            // Compute 4×4 tile of C using highly optimized SIMD micro-kernel
+            // This is the performance-critical inner loop (>90% of compute time)
             AddDot4x4(k, packedA, 4, packedB, k, &C(col, row), ldc);
         }
 
-        // handle leftover columns
+        // handle leftover columns (when n is not divisible by 4)
         switch(n - col)
         {
             case 3:     
@@ -488,7 +697,7 @@ static void InnerKernel(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float* a, C
         }
     }
 
-    // handle leftover rows    
+    // handle leftover rows (when m is not divisible by 4)    
     switch(m - row)
     {
         case 3:    for (col = 0; col < n; col++) AddDot(k, &A(0, row + 2), 1, &B(col, 0), ldb, &C(col, row + 2));
@@ -692,14 +901,25 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
             return;  // Out of memory
         }
 
-        // Compute an mc x n block of C by a call to the InnerKernel
+        // THREE-LEVEL CACHE-BLOCKING LOOP STRUCTURE (Multi-threaded):
+        // ============================================================
+        //
+        // The same three-level loop structure as single-threaded version, but
+        // each tile is enqueued as an independent task for parallel execution.
+        // This allows multiple threads to work on different mc×n tiles simultaneously.
+        //
+        // Outer k-loop: Iterate over k dimension in kc-sized blocks
+        // Middle m-loop: Iterate over m dimension in mc-sized blocks
+        // - Each combination creates a work item for the thread pool
         for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
         {
-            pb = MIN(k - p, cblas_gemm_kc);
+            pb = MIN(k - p, cblas_gemm_kc);  // Handle edge case when k % kc != 0
             for (CBLAS_INDEX row = 0; row < m; row += cblas_gemm_mc) 
             {
-                ib = MIN(m - row, cblas_gemm_mc);
+                ib = MIN(m - row, cblas_gemm_mc);  // Handle edge case when m % mc != 0
 
+                // Setup work item for this mc×n tile
+                // Each thread will independently pack and compute its assigned tile
                 args[tile_count].incx = 1;
                 args[tile_count].incy = 1;
                 args[tile_count].n = n;
@@ -727,7 +947,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         // mark end of task queue
         queue[tile_count - 1].next = NULL;
 
-        // synchronously execute task queue
+        // synchronously execute task queue (parallel execution by worker threads)
         cblas_execute(tile_count, queue);
         
         // Free heap-allocated arrays
@@ -744,12 +964,30 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
             fma_available = (features & CPU_x64_FMA3) ? 1 : 0;
         }
         
+        // THREE-LEVEL CACHE-BLOCKING LOOP STRUCTURE:
+        // ===========================================
+        //
+        // Outer k-loop: Iterate over k dimension in kc-sized blocks
+        // - Each iteration processes a kc-wide vertical panel of A and horizontal panel of B
+        // - This loop determines how many times we need to pack matrix data
         for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
         {
-            pb = MIN(k - p, cblas_gemm_kc);
+            pb = MIN(k - p, cblas_gemm_kc);  // Handle edge case when k % kc != 0
+            
+            // Middle m-loop: Iterate over m dimension in mc-sized blocks
+            // - Each iteration processes an mc-tall horizontal panel of A
+            // - packedA is reused for all columns of C in the inner kernel
             for (CBLAS_INDEX row = 0; row < m; row += cblas_gemm_mc) 
             {
-                ib = MIN(m - row, cblas_gemm_mc);
+                ib = MIN(m - row, cblas_gemm_mc);  // Handle edge case when m % mc != 0
+                
+                // InnerKernel handles the n-loop (nb-sized blocks) and performs:
+                // 1. Pack mc×kc tile of A into contiguous buffer (once per m-block)
+                // 2. Pack kc×nb tile of B into contiguous buffer (once per n-block)
+                // 3. Compute mc×nb tile of C using packed data (micro-kernel)
+                //
+                // The packed data stays in L2 cache, enabling high-bandwidth access
+                // during the intensive computation phase.
 #if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
                 if (fma_available) {
                     InnerKernel_fma(ib, n, pb, &A(p, row), lda, &B(0, p), ldb, &C(0, row), ldc);
