@@ -137,6 +137,7 @@
 //
 // [2] Low, T.M., et al. (2016). "Analytical Modeling Is Enough for High-Performance
 //     BLIS". ACM TOMS, 43(2).
+//     https://doi.org/10.1145/2870650
 //
 // [3] How to Optimize GEMM (GotoBLAS/BLIS tutorial):
 //     https://github.com/flame/how-to-optimize-gemm/wiki
@@ -534,7 +535,8 @@ static void PackMatrixB(CBLAS_INDEX k, float *b, CBLAS_INDEX ldb, float *b_to)
             CBLAS_PREFETCH(&B(0, j + 8), 0, 3);
         }
 
-        // Copy 4 consecutive elements (one row, 4 columns)
+        // Copy 4 elements from one row position across 4 consecutive columns of B
+        // This extracts a horizontal slice across the 4-column micro-panel
         *b_to       = *b_ij_pntr;
         *(b_to + 1) = *(b_ij_pntr + 1);
         *(b_to + 2) = *(b_ij_pntr + 2);
@@ -584,7 +586,8 @@ static void PackMatrixA(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
             CBLAS_PREFETCH(a_3i_pntr + 8, 0, 3);
         }
 
-        // Copy one element from each of 4 rows (interleaved for cache efficiency)
+        // Copy one element from each of 4 rows (strided access in source)
+        // This produces a contiguous output layout optimized for cache efficiency
         *a_to       = *a_0i_pntr++;
         *(a_to + 1) = *a_1i_pntr++;
         *(a_to + 2) = *a_2i_pntr++;
