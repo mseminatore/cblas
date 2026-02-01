@@ -88,20 +88,20 @@ static int test_autotune_modifies_thresholds(void)
     
     if (cblas_mt_dot_threshold != default_dot) {
         modified = 1;
-        printf("  DOT threshold changed: %d -> %lu\n", 
-               default_dot, (unsigned long)cblas_mt_dot_threshold);
+        printf("  DOT threshold changed: %lu -> %lu\n", 
+               (unsigned long)default_dot, (unsigned long)cblas_mt_dot_threshold);
     }
     
     if (cblas_mt_axpy_threshold != default_axpy) {
         modified = 1;
-        printf("  AXPY threshold changed: %d -> %lu\n", 
-               default_axpy, (unsigned long)cblas_mt_axpy_threshold);
+        printf("  AXPY threshold changed: %lu -> %lu\n", 
+               (unsigned long)default_axpy, (unsigned long)cblas_mt_axpy_threshold);
     }
     
     if (cblas_mt_copy_threshold != default_copy) {
         modified = 1;
-        printf("  COPY threshold changed: %d -> %lu\n", 
-               default_copy, (unsigned long)cblas_mt_copy_threshold);
+        printf("  COPY threshold changed: %lu -> %lu\n", 
+               (unsigned long)default_copy, (unsigned long)cblas_mt_copy_threshold);
     }
     
     // Always modified by design (heuristic calculation)
