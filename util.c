@@ -405,7 +405,12 @@ void cblas_print_kernels(void)
             printf("Architecture: x86_64 (scalar fallback)\n");
             printf("SIMD Width:   None\n");
         }
-        printf("Kernel Variant: SSE/AVX optimized (_k_noinc_sse)\n");
+        // Report correct kernel variant based on FMA support
+        if (cpu & CPU_x64_FMA3) {
+            printf("Kernel Variant: SSE/AVX optimized with FMA (_k_noinc_fma)\n");
+        } else {
+            printf("Kernel Variant: SSE/AVX optimized (_k_noinc_sse)\n");
+        }
     #elif defined(__aarch64__) && defined(__ARM_NEON)
         printf("Architecture: ARM64 with NEON\n");
         printf("SIMD Width:   128-bit (4 floats, 2 doubles)\n");

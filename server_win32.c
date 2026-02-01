@@ -89,6 +89,12 @@ void cblas_set_num_threads(int threads)
 
         platform_mutex_unlock(&server_lock);
     }
+    
+    // Always update cblas_max_threads for initial setup when server not yet alive
+    if (!cblas_is_server_alive())
+    {
+        cblas_max_threads = threads;
+    }
 }
 
 //------------------------------------------------------
