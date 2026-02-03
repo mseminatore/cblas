@@ -6,6 +6,8 @@
 #include "cblas.h"
 #include "cblas_simd.h"
 
+void cblas_sdot_k(cblas_args_t* args);
+
 #if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 
 //------------------------------------------------------
@@ -461,24 +463,24 @@ static void cblas_ddot_k_noinc_neon(double *x, double *y, CBLAS_INDEX n, double 
 //------------------------------------------------------
 // single-precision vector dot product kernel
 //------------------------------------------------------
-static void cblas_sdot_k(cblas_args_t* args)
-{
-    float sum = 0.0f;
-    float* x = args->x;
-    float* y = args->y;
-    float* result = args->c;
-    register CBLAS_INDEX incx = args->incx, incy = args->incy, n = args->n;
-
-    for (CBLAS_INDEX i = 0; i < n; i++)
-    {
-        sum += *x * *y;
-        x += incx;
-        y += incy;
-    }
-
-    // set return value
-    *result = sum;
-}
+//static void cblas_sdot_k(cblas_args_t* args)
+//{
+//    float sum = 0.0f;
+//    float* x = args->x;
+//    float* y = args->y;
+//    float* result = args->c;
+//    register CBLAS_INDEX incx = args->incx, incy = args->incy, n = args->n;
+//
+//    for (CBLAS_INDEX i = 0; i < n; i++)
+//    {
+//        sum += *x * *y;
+//        x += incx;
+//        y += incy;
+//    }
+//
+//    // set return value
+//    *result = sum;
+//}
 
 //------------------------------------------------------
 // single-precision vector dot product kernel inc=1

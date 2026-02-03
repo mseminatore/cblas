@@ -2,7 +2,7 @@
 ARCH = $(shell uname -m)
 TARGET = blas_test
 OBJS = swap.o dot.o copy.o axpy.o scal.o axpby.o asum.o nrm2.o rot.o ger.o \
-	gemv.o gemm.o rotg.o util.o server.o setv.o
+	gemv.o gemm.o rotg.o util.o server.o setv.o kernels/sdot_k.o
 DEPS = cblas.h cblas_config.h test.h platform/threading.h platform/simd.h platform/cpuid.h
 CFLAGS += -g -O2 -Wall -Wextra -Wpedantic #-DNDEBUG
 LIBNAME = libcblas.a
