@@ -224,10 +224,9 @@ static void *cblas_worker_thread(void *pvoid)
         // execute the task
         work_item->kernel(work_item->args);
 
-        assert(work_item->finished == 0);
+        assert(atomic_load_explicit(&work_item->finished, memory_order_relaxed) == 0);
         
-        work_item->finished = 1;
-        // MB;
+        atomic_store_explicit(&work_item->finished, 1, memory_order_release);
 
 #ifdef MT_DEBUG
         // Calculate and log execution time
@@ -264,8 +263,7 @@ void cblas_execute(CBLAS_INDEX items, work_queue_t* queue)
     // execute the first task on the main thread
     queue->kernel(queue->args);
     
-    queue->finished = 1;
-    // MB;
+    atomic_store_explicit(&queue->finished, 1, memory_order_release);
 
     // wait for the queue of work to finish
     if (items > 1 && queue->next)
@@ -341,7 +339,7 @@ void cblas_execute_async_join(CBLAS_INDEX items, work_queue_t* queue)
 
     while (items)
     {
-        while (!queue->finished)
+        while (!atomic_load_explicit(&queue->finished, memory_order_acquire))
             platform_yield();
 
         queue = queue->next;

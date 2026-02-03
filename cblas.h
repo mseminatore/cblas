@@ -441,13 +441,18 @@ static inline double mt_get_time_us(void) {
     #endif
 #endif
 
-//#if !defined(__STDC_NO_ATOMICS__)
-//#   include <stdatomic.h>
-//#   define MB atomic_thread_fence(memory_order_relaxed)
-//#else
-//#   error C11 is required!
-//#   define MB
-//#endif
+// C11 atomics support
+#if defined(_MSC_VER) && defined(__STDC_NO_ATOMICS__)
+    // MSVC without C11 atomics: use Windows Interlocked functions
+    typedef volatile LONG atomic_int;
+#   define atomic_store_explicit(ptr, val, order) InterlockedExchange((ptr), (val))
+#   define atomic_load_explicit(ptr, order) InterlockedCompareExchange((ptr), 0, 0)
+#   define memory_order_relaxed 0
+#   define memory_order_acquire 0
+#   define memory_order_release 0
+#elif !defined(__STDC_NO_ATOMICS__)
+#   include <stdatomic.h>
+#endif
 
 //------------------------------------------------------
 // enumeration for matrix layouts
@@ -531,15 +536,7 @@ typedef struct work_queue_t
     cblas_args_t* args;         // parameters to kernel function
     int type;                   // type of call
 
-#if 1
-#ifdef _WIN32
-    volatile LONG finished;     // this work item is finished (LONG for InterlockedIncrement)
-#else
-    volatile int finished;      // this work item is finished
-#endif
-#else
-    atomic_int finished;
-#endif
+    atomic_int finished;        // this work item is finished (C11 atomic for proper synchronization)
 
 	int thread_num, tid;        // thread number and thread ID executing this task
 
