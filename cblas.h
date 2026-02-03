@@ -541,9 +541,9 @@ typedef struct work_queue_t
     atomic_int finished;
 #endif
 
-    int thread_num, tid;
+	int thread_num, tid;        // thread number and thread ID executing this task
 
-    kernel_function kernel;
+	kernel_function kernel;     // kernel function to execute
 
 #ifdef MT_DEBUG
     // Timing information for debug/profiling

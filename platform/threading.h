@@ -107,7 +107,7 @@
 
 // Windows doesn't have sched_yield in the same way
 #ifdef _WIN32
-    #define platform_yield()            Sleep(0)
+    #define platform_yield()            YieldProcessor() // was Sleep(0)
 #endif
 
 #endif // __PLATFORM_THREADING_H

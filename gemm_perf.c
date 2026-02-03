@@ -75,12 +75,13 @@ int main(int argc, char *argv[])
 	(void)argc;
 	(void)argv;
 	cblas_init(CBLAS_DEFAULT_THREADS);
-	cblas_print_configuration();
+    cblas_print_configuration();
 	
     test_gemm();
 
     cblas_print_stats();
-	cblas_shutdown();
+    cblas_print_kernels();
+    cblas_shutdown();
 
 	return 0;
 }
