@@ -11,7 +11,7 @@
 //--------------------------------------------------------------------------
 // double-precision dot product kernel incx == 1 && incy == 1 (AVX - no FMA)
 //--------------------------------------------------------------------------
-static void cblas_ddot_k_noinc_avx(cblas_args_t* args)
+void cblas_ddot_k_noinc_avx(cblas_args_t* args)
 {
     double* x = args->x;
     double* y = args->y;
