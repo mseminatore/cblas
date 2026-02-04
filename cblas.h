@@ -500,22 +500,25 @@ typedef void (*kernel_function)(cblas_args_t* args);
 //------------------------------------------------------
 typedef struct
 {
-    kernel_function scopy_k;    // single-precision copy
-    kernel_function dcopy_k;    // double-precision copy
-    kernel_function sscal_k;    // single-precision scale
-    kernel_function dscal_k;    // double-precision scale
-    kernel_function saxpy_k;    // single-precision A*X plus Y
-    kernel_function daxpy_k;    // double-precision A*X plus Y
-    kernel_function saxpby_k;   // single-precision A*X plus B*Y
-    kernel_function daxpby_k;   // double-precision A*X plus B*Y
-    kernel_function sdot_k;     // single-precision dot product
-    kernel_function ddot_k;     // double-precision dot product
-    kernel_function sgemm_k;    // single-precision general matrix multiply
-    kernel_function dgemm_k;    // double-precision general matrix multiply
-    kernel_function sger_k;     // single-precision rank-1 update
-    kernel_function dger_k;     // double-precision rank-1 update
-    kernel_function sgemv_k;    // single-precision general matrix-vector multiply
-    kernel_function dgemv_k;    // double-precision general matrix-vector multiply
+    kernel_function sdot_k;         // single-precision dot product
+    kernel_function sdot_k_noinc;   // single-precision dot product inc=1
+    kernel_function ddot_k;         // double-precision dot product
+    kernel_function ddot_k_noinc;   // double-precision dot product inc=1
+    
+    kernel_function scopy_k;        // single-precision copy
+    kernel_function dcopy_k;        // double-precision copy
+    kernel_function sscal_k;        // single-precision scale
+    kernel_function dscal_k;        // double-precision scale
+    kernel_function saxpy_k;        // single-precision A*X plus Y
+    kernel_function daxpy_k;        // double-precision A*X plus Y
+    kernel_function saxpby_k;       // single-precision A*X plus B*Y
+    kernel_function daxpby_k;       // double-precision A*X plus B*Y
+    kernel_function sgemm_k;        // single-precision general matrix multiply
+    kernel_function dgemm_k;        // double-precision general matrix multiply
+    kernel_function sger_k;         // single-precision rank-1 update
+    kernel_function dger_k;         // double-precision rank-1 update
+    kernel_function sgemv_k;        // single-precision general matrix-vector multiply
+    kernel_function dgemv_k;        // double-precision general matrix-vector multiply
 } kernels_t;
 
 #define CBLAS_DEFAULT_THREADS -1

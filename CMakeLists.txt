@@ -97,7 +97,7 @@ message("SERVER_FILE: " ${SERVER_FILE})
 message("CPUID_FILE: " ${CPUID_FILE})
 
 # add the library
-add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c rot.c asum.c nrm2.c ger.c gemv.c gemm.c rotg.c util.c setv.c kernels/sdot_k.c ${SERVER_FILE} ${CPUID_FILE})
+add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c rot.c asum.c nrm2.c ger.c gemv.c gemm.c rotg.c util.c setv.c kernels/dot_k.c kernels/sdot_k.c kernels/sdot_k_neon.c kernels/sdot_k_avx.c kernels/sdot_k_fma.c kernels/ddot_k_neon.c kernels/ddot_k.c kernels/ddot_k_avx.c kernels/ddot_k_fma.c ${CPUID_FILE})
 #target_sources(cblas PUBLIC FILE_SET HEADERS FILES cblas.h)
 
 #

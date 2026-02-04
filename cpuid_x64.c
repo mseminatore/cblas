@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdint.h>
 #include "cblas.h"
+#include "kernels.h"
 
 #ifdef _WIN32
 #	include <Windows.h>
@@ -247,6 +248,46 @@ const char* cpu_get_brand_string(void)
 }
 
 //------------------------------------------------------
+// initialize BLAS kernel function pointers
+//------------------------------------------------------
+static void init_blas_kernels(unsigned int cpu_features)
+{
+    // Initialize Level-1 kernel function pointers
+    blas_kernels.sdot_k = cblas_sdot_k;
+    blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc;
+    blas_kernels.ddot_k = cblas_ddot_k;
+    blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc;
+
+	// Initialize Level-2 kernel function pointers
+	blas_kernels.sger_k = sger_k;
+	blas_kernels.dger_k = dger_k;
+	blas_kernels.sgemv_k = sgemv_k;
+	blas_kernels.dgemv_k = dgemv_k;
+
+	// Initialize kernel function pointers based on CPU features
+	if (cpu_features & CPU_SSE)
+	{
+			blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc_sse;
+			blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc_sse;
+			// blas_kernels.sgemm_k = sgemm_k; SSE version can be added here if implemented
+
+		if (cpu_features & CPU_AVX)
+		{
+			blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc_avx;
+			blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc_avx;
+
+			// Check for FMA3 support and dispatch accordingly
+			if (cpu_features & CPU_x64_FMA3)
+			{
+				blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc_fma;
+				blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc_fma;
+				// blas_kernels.sgemm_k = sgemm_k_fma; FMA version can be added here if implemented
+			}
+		}
+	}
+}
+
+//------------------------------------------------------
 // query for cpu features
 //------------------------------------------------------
 static unsigned int __cpu_get_features(void)
@@ -303,27 +344,7 @@ static unsigned int __cpu_get_features(void)
 
 #endif
 
-	// Initialize kernel function pointers based on CPU features
-	if (cpu_features & CPU_AVX)
-	{
-#if defined(USE_SSE) && defined(USE_SIMD)
-		// Check for FMA3 support and dispatch accordingly
-		if (cpu_features & CPU_x64_FMA3)
-		{
-			blas_kernels.sgemm_k = sgemm_k_fma;
-		}
-		else
-#endif
-		{
-			blas_kernels.sgemm_k = sgemm_k;
-		}
-	}
-
-	// Initialize Level-2 kernel function pointers
-	blas_kernels.sger_k = sger_k;
-	blas_kernels.dger_k = dger_k;
-	blas_kernels.sgemv_k = sgemv_k;
-	blas_kernels.dgemv_k = dgemv_k;
+	init_blas_kernels(cpu_features);
 
 	return cpu_features;
 }

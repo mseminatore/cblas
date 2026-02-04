@@ -7,18 +7,18 @@
 #include "cblas_simd.h"
 
 //------------------------------------------------------
-// single-precision vector dot product kernel inc=1
+// double-precision vector dot product kernel inc=1
 //------------------------------------------------------
-void cblas_sdot_k_noinc(cblas_args_t* args)
+void cblas_ddot_k_noinc(cblas_args_t* args)
 {
-    float* x = args->x;
-    float* y = args->y;
-    float* result = args->c;
+    double* x = args->x;
+    double* y = args->y;
+    double* result = args->c;
     register CBLAS_INDEX n = args->n;
 
     // Scalar implementation with 4-way unrolling
     CBLAS_INDEX i = 0;
-    register float sum0 = 0.0f, sum1 = 0.0f, sum2 = 0.0f, sum3 = 0.0f;
+    register double sum0 = 0.0, sum1 = 0.0, sum2 = 0.0, sum3 = 0.0;
     int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
 
     for (; i + 4 <= n; i += 4)
@@ -38,7 +38,7 @@ void cblas_sdot_k_noinc(cblas_args_t* args)
         y += 4;
     }
 
-    register float sum = sum0 + sum1 + sum2 + sum3;
+    register double sum = sum0 + sum1 + sum2 + sum3;
 
     for (; i < n; i++)
     {

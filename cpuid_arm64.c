@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "cblas.h"
+#include "kernels.h"
 
 #if !defined(_WIN32)
 #   include <unistd.h>
@@ -66,16 +67,25 @@ static unsigned int __cpu_get_features(void)
     cpu_features |= CPU_NEON_FMA;
 #endif
 
-	if (cpu_features & CPU_NEON)
-	{
-		blas_kernels.sgemm_k = sgemm_k;
-	}
+    // Initialize Level-1 kernel function pointers
+    blas_kernels.sdot_k = cblas_sdot_k;
+    blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc;
+    blas_kernels.ddot_k = cblas_ddot_k;
+    blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc;
 
 	// Initialize Level-2 kernel function pointers
 	blas_kernels.sger_k = sger_k;
 	blas_kernels.dger_k = dger_k;
 	blas_kernels.sgemv_k = sgemv_k;
 	blas_kernels.dgemv_k = dgemv_k;
+
+    // use NEON optimized kernels if available
+	if (cpu_features & CPU_NEON)
+	{
+        blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc_neon;  // NEON optimized version
+        blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc_neon;  // NEON optimized version
+		blas_kernels.sgemm_k = sgemm_k;
+	}
 
     return cpu_features;
 }
