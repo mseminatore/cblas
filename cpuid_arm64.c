@@ -79,12 +79,14 @@ static unsigned int __cpu_get_features(void)
 	blas_kernels.sgemv_k = sgemv_k;
 	blas_kernels.dgemv_k = dgemv_k;
 
+	// Initialize Level-3 kernel function pointers
+	blas_kernels.sgemm_k = sgemm_k;
+
     // use NEON optimized kernels if available
 	if (cpu_features & CPU_NEON)
 	{
         blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc_neon;  // NEON optimized version
         blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc_neon;  // NEON optimized version
-		blas_kernels.sgemm_k = sgemm_k;
 	}
 
     return cpu_features;

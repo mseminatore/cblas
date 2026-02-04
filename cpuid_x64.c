@@ -250,7 +250,7 @@ const char* cpu_get_brand_string(void)
 //------------------------------------------------------
 // initialize BLAS kernel function pointers
 //------------------------------------------------------
-static void init_blas_kernels(unsigned int cpu_features)
+static void init_blas_kernels()
 {
     // Initialize Level-1 kernel function pointers
     blas_kernels.sdot_k = cblas_sdot_k;
@@ -264,12 +264,14 @@ static void init_blas_kernels(unsigned int cpu_features)
 	blas_kernels.sgemv_k = sgemv_k;
 	blas_kernels.dgemv_k = dgemv_k;
 
+	// Initialize Level-3 kernel function pointers
+	blas_kernels.sgemm_k = sgemm_k;
+
 	// Initialize kernel function pointers based on CPU features
 	if (cpu_features & CPU_SSE)
 	{
-			blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc_sse;
-			blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc_sse;
-			// blas_kernels.sgemm_k = sgemm_k; SSE version can be added here if implemented
+		blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc_sse;
+		blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc_sse;
 
 		if (cpu_features & CPU_AVX)
 		{
@@ -281,7 +283,7 @@ static void init_blas_kernels(unsigned int cpu_features)
 			{
 				blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc_fma;
 				blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc_fma;
-				// blas_kernels.sgemm_k = sgemm_k_fma; FMA version can be added here if implemented
+				blas_kernels.sgemm_k = sgemm_k_fma;
 			}
 		}
 	}
@@ -404,26 +406,26 @@ int cpu_get_core_count(void)
 #endif
 
 #if defined(_MSC_VER)
-	int info[4];
-	const char* vendor_string = cpu_get_core_name();
+	//int info[4];
+	//const char* vendor_string = cpu_get_core_name();
 
-	if (!strcmp(vendor_string, "GenuineIntel"))
-	{
-		__cpuid(info, 4);
-		cores = ((info[EAX] >> 26) & 0x3f) + 1; // EAX[31:26] + 1
-	}
-	else if (!strcmp(vendor_string, "AuthenticAMD"))
-	{
-		__cpuid(info, 0x80000008);
-		cores = ((unsigned)(info[ECX] & 0xff)) + 1; // ECX[7:0] + 1
-	}
-	else
-	{
-		puts("Error: Unknown CPU vendor");
-		cores = 1;
-	}
+	//if (!strcmp(vendor_string, "GenuineIntel"))
+	//{
+	//	__cpuid(info, 4);
+	//	cores = ((info[EAX] >> 26) & 0x3f) + 1; // EAX[31:26] + 1
+	//}
+	//else if (!strcmp(vendor_string, "AuthenticAMD"))
+	//{
+	//	__cpuid(info, 0x80000008);
+	//	cores = ((unsigned)(info[ECX] & 0xff)) + 1; // ECX[7:0] + 1
+	//}
+	//else
+	//{
+	//	puts("Error: Unknown CPU vendor");
+	//	cores = 1;
+	//}
 
-	return cores;
+	//return cores;
 #else 
 	#ifdef __APPLE__
 		uint32_t entry;
