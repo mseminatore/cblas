@@ -100,7 +100,7 @@ static unsigned int __cpu_get_features(void)
         blas_kernels.sasum_k_noinc = cblas_sasum_k_noinc_neon;
         blas_kernels.dasum_k_noinc = cblas_dasum_k_noinc_neon;
         blas_kernels.scopy_k_noinc = cblas_scopy_k_noinc_neon;
-		//blas_kernels.dcopy_k_noinc = cblas_dcopy_k_noinc_neon;    // TODO - implement NEON version
+		blas_kernels.dcopy_k_noinc = cblas_dcopy_k_noinc_neon;
     }
 
     return cpu_features;

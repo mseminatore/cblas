@@ -100,7 +100,7 @@ message("CPUID_FILE: " ${CPUID_FILE})
 add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c rot.c asum.c nrm2.c ger.c gemv.c gemm.c rotg.c util.c setv.c kernels/dot_k.c 
     kernels/dot_k_neon.c kernels/dot_k_sse.c kernels/dot_k_avx.c kernels/dot_k_fma.c 
     kernels/asum_k_sse.c kernels/asum_k_neon.c
-    kernels/copy_k_avx.c kernels/copy_k_neon.c
+    kernels/copy_k_sse.c kernels/copy_k_avx.c kernels/copy_k_neon.c
     ${CPUID_FILE} 
     ${SERVER_FILE}
 )

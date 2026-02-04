@@ -33,6 +33,8 @@ void cblas_scopy_k(cblas_args_t* args);
 void cblas_dcopy_k(cblas_args_t* args);
 void cblas_scopy_k_noinc(cblas_args_t* args);
 void cblas_dcopy_k_noinc(cblas_args_t* args);
+void cblas_scopy_k_noinc_sse(cblas_args_t* args);
+void cblas_dcopy_k_noinc_sse(cblas_args_t* args);
 void cblas_scopy_k_noinc_avx(cblas_args_t* args);
 void cblas_dcopy_k_noinc_avx(cblas_args_t* args);
 void cblas_scopy_k_noinc_neon(cblas_args_t* args);

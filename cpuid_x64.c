@@ -290,6 +290,8 @@ static void init_blas_kernels()
 		blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc_sse;
 		blas_kernels.sasum_k_noinc = cblas_sasum_k_noinc_sse;
 		blas_kernels.dasum_k_noinc = cblas_dasum_k_noinc_sse;
+		blas_kernels.scopy_k_noinc = cblas_scopy_k_noinc_sse;
+		blas_kernels.dcopy_k_noinc = cblas_dcopy_k_noinc_sse;
 
 		if (cpu_features & CPU_AVX)
 		{

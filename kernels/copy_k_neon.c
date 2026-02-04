@@ -38,4 +38,35 @@ void cblas_scopy_k_noinc_neon(cblas_args_t* args)
         y[i] = x[i];
 }
 
+//------------------------------------------------------
+// double-precision copy kernel incx == incy == 1
+//------------------------------------------------------
+void cblas_dcopy_k_noinc_neon(cblas_args_t* args)
+{
+    double* x = args->x;
+    double* y = args->y;
+    register CBLAS_INDEX n = args->n;
+
+    float64x2_t a, b, c, d;
+
+    register CBLAS_INDEX i = 0;
+
+    // Process 8 doubles at a time (4 x float64x2_t)
+    for (; i + 8 <= n; i += 8)
+    {
+        a = vld1q_f64(x + i);
+        b = vld1q_f64(x + i + 2);
+        c = vld1q_f64(x + i + 4);
+        d = vld1q_f64(x + i + 6);
+
+        vst1q_f64(y + i, a);
+        vst1q_f64(y + i + 2, b);
+        vst1q_f64(y + i + 4, c);
+        vst1q_f64(y + i + 6, d);
+    }
+
+    for (; i < n; i++)
+        y[i] = x[i];
+}
+
 #endif
