@@ -508,9 +508,11 @@ typedef struct
     kernel_function sasum_k_noinc;  // single-precision asum inc=1
     kernel_function dasum_k;        // double-precision asum
     kernel_function dasum_k_noinc;  // double-precision asum inc=1
-
     kernel_function scopy_k;        // single-precision copy
+	kernel_function scopy_k_noinc;  // single-precision copy inc=1
     kernel_function dcopy_k;        // double-precision copy
+	kernel_function dcopy_k_noinc;  // double-precision copy inc=1
+
     kernel_function sscal_k;        // single-precision scale
     kernel_function dscal_k;        // double-precision scale
     kernel_function saxpy_k;        // single-precision A*X plus Y

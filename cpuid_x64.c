@@ -262,8 +262,11 @@ static void init_blas_kernels()
 	blas_kernels.sasum_k_noinc = cblas_sasum_k_noinc;
 	blas_kernels.dasum_k_noinc = cblas_dasum_k_noinc;
 
-	//blas_kernels.scopy_k = cblas_scopy_k;
-	//blas_kernels.dcopy_k = cblas_dcopy_k;
+	blas_kernels.scopy_k = cblas_scopy_k;
+	blas_kernels.dcopy_k = cblas_dcopy_k;
+	blas_kernels.scopy_k_noinc = cblas_scopy_k_noinc;
+	blas_kernels.dcopy_k_noinc = cblas_dcopy_k_noinc;
+
 	//blas_kernels.sscal_k = cblas_sscal_k;
 	//blas_kernels.dscal_k = cblas_dscal_k;
 	//blas_kernels.saxpy_k = cblas_saxpy_k;
@@ -292,6 +295,8 @@ static void init_blas_kernels()
 		{
 			blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc_avx;
 			blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc_avx;
+			blas_kernels.scopy_k_noinc = cblas_scopy_k_noinc_avx;
+			blas_kernels.dcopy_k_noinc = cblas_dcopy_k_noinc_avx;
 
 			// Check for FMA3 support and dispatch accordingly
 			if (cpu_features & CPU_x64_FMA3)
