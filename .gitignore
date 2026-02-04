@@ -26,6 +26,7 @@ _codeql_detected_source_root
 test_stats
 test_overhead
 test_threshold
+.vscode/
 
 # Generated configuration
 cblas_config.h
