@@ -257,6 +257,19 @@ static void init_blas_kernels()
     blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc;
     blas_kernels.ddot_k = cblas_ddot_k;
     blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc;
+	blas_kernels.sasum_k = cblas_sasum_k;
+	blas_kernels.dasum_k = cblas_dasum_k;
+	blas_kernels.sasum_k_noinc = cblas_sasum_k_noinc;
+	blas_kernels.dasum_k_noinc = cblas_dasum_k_noinc;
+
+	//blas_kernels.scopy_k = cblas_scopy_k;
+	//blas_kernels.dcopy_k = cblas_dcopy_k;
+	//blas_kernels.sscal_k = cblas_sscal_k;
+	//blas_kernels.dscal_k = cblas_dscal_k;
+	//blas_kernels.saxpy_k = cblas_saxpy_k;
+	//blas_kernels.daxpy_k = cblas_daxpy_k;
+	//blas_kernels.saxpby_k = cblas_saxpby_k;
+	//blas_kernels.daxpby_k = cblas_daxpby_k;
 
 	// Initialize Level-2 kernel function pointers
 	blas_kernels.sger_k = sger_k;
@@ -272,6 +285,8 @@ static void init_blas_kernels()
 	{
 		blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc_sse;
 		blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc_sse;
+		blas_kernels.sasum_k_noinc = cblas_sasum_k_noinc_sse;
+		blas_kernels.dasum_k_noinc = cblas_dasum_k_noinc_sse;
 
 		if (cpu_features & CPU_AVX)
 		{

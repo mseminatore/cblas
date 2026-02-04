@@ -504,7 +504,11 @@ typedef struct
     kernel_function sdot_k_noinc;   // single-precision dot product inc=1
     kernel_function ddot_k;         // double-precision dot product
     kernel_function ddot_k_noinc;   // double-precision dot product inc=1
-    
+	kernel_function sasum_k;        // single-precision asum
+    kernel_function sasum_k_noinc;  // single-precision asum inc=1
+    kernel_function dasum_k;        // double-precision asum
+    kernel_function dasum_k_noinc;  // double-precision asum inc=1
+
     kernel_function scopy_k;        // single-precision copy
     kernel_function dcopy_k;        // double-precision copy
     kernel_function sscal_k;        // single-precision scale

@@ -4,7 +4,8 @@ TARGET = blas_test
 OBJS = swap.o dot.o copy.o axpy.o scal.o axpby.o asum.o nrm2.o rot.o ger.o \
 	gemv.o gemm.o rotg.o util.o server.o setv.o kernels/dot_k.o \
 	kernels/sdot_k.o kernels/sdot_k_neon.o kernels/sdot_k_sse.o kernels/sdot_k_avx.o kernels/sdot_k_fma.o \
-	kernels/ddot_k.o kernels/ddot_k_neon.o kernels/ddot_k_sse.o kernels/ddot_k_avx.o kernels/ddot_k_fma.o
+	kernels/ddot_k.o kernels/ddot_k_neon.o kernels/ddot_k_sse.o kernels/ddot_k_avx.o kernels/ddot_k_fma.o \
+	kernels/asum_k_sse.o kernels/asum_k_neon.o
 DEPS = cblas.h cblas_config.h test.h platform/threading.h platform/simd.h platform/cpuid.h
 CFLAGS += -g -O2 -Wall -Wextra -Wpedantic -I. #-DNDEBUG
 LIBNAME = libcblas.a

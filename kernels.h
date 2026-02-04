@@ -19,5 +19,13 @@ void cblas_ddot_k_noinc_neon(cblas_args_t* args);
 void cblas_ddot_k_noinc_sse(cblas_args_t* args);
 void cblas_ddot_k_noinc_avx(cblas_args_t* args);
 void cblas_ddot_k_noinc_fma(cblas_args_t* args);
+
+void cblas_sasum_k(cblas_args_t* args);
+void cblas_dasum_k(cblas_args_t* args);
+void cblas_sasum_k_noinc(cblas_args_t* args);
+void cblas_dasum_k_noinc(cblas_args_t* args);
+void cblas_sasum_k_noinc_sse(cblas_args_t* args);
+void cblas_dasum_k_noinc_sse(cblas_args_t* args);
+
 #endif // __KERNELS_H
 

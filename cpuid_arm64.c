@@ -69,9 +69,14 @@ static unsigned int __cpu_get_features(void)
 
     // Initialize Level-1 kernel function pointers
     blas_kernels.sdot_k = cblas_sdot_k;
-    blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc;
     blas_kernels.ddot_k = cblas_ddot_k;
+    blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc;
     blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc;
+
+    blas_kernels.sasum_k = cblas_sasum_k;
+    blas_kernels.dasum_k = cblas_dasum_k;
+    blas_kernels.sasum_k_noinc = cblas_sasum_k_noinc;
+    blas_kernels.dasum_k_noinc = cblas_dasum_k_noinc;
 
 	// Initialize Level-2 kernel function pointers
 	blas_kernels.sger_k = sger_k;
@@ -87,7 +92,9 @@ static unsigned int __cpu_get_features(void)
 	{
         blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc_neon;  // NEON optimized version
         blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc_neon;  // NEON optimized version
-	}
+        blas_kernels.sasum_k_noinc = cblas_sasum_k_noinc_neon;
+        blas_kernels.dasum_k_noinc = cblas_dasum_k_noinc_neon;
+    }
 
     return cpu_features;
 }

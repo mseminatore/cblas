@@ -291,6 +291,7 @@ void cblas_execute(CBLAS_INDEX items, work_queue_t *queue)
 //------------------------------------------------------
 void cblas_execute_async(CBLAS_INDEX items, work_queue_t* queue)
 {
+    (void)items; // Suppress unused parameter warning per project standards
     assert(queue);
 
     MT_TRACE("adding %zu items to the queue.\n", items);
