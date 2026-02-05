@@ -405,7 +405,6 @@ void cblas_print_kernels(void)
     printf("=== Active CBLAS Kernels ===\n");
     
     // Determine kernel variant based on CPU features and build config
-#if defined(USE_SSE) && defined(USE_SIMD)
     #if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
         if (cpu & CPU_AVX2) {
             printf("Architecture: x86_64 with AVX2\n");
@@ -443,21 +442,13 @@ void cblas_print_kernels(void)
         }
         printf("Kernel Variant: NEON optimized (_k_noinc_neon)\n");
     #else
-        printf("Architecture: Generic\n");
+        printf("Architecture: Generic (SIMD disabled)\n");
         printf("Kernel Variant: Scalar fallback\n");
     #endif
-#else
-    printf("Architecture: Generic (SIMD disabled)\n");
-    printf("Kernel Variant: Scalar fallback (_k_noinc)\n");
-#endif
 
     printf("\nOptimizations:\n");
     printf("  - 4-way accumulator unrolling: ");
-#if defined(USE_SSE) && defined(USE_SIMD)
     printf("Yes (32 floats/16 doubles per iteration)\n");
-#else
-    printf("No\n");
-#endif
     
     printf("  - FMA instructions (runtime):  ");
 #if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)

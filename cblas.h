@@ -1375,7 +1375,7 @@ extern kernels_t blas_kernels;
  */
 void sgemm_k(cblas_args_t* args);
 
-#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+#if (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
 /**
  * @brief Single-precision GEMM kernel with FMA instructions
  * @param args Kernel arguments structure
