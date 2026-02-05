@@ -504,7 +504,7 @@ void cblas_print_kernels(void)
 //------------------------------------------------------
 // level 1 dispatch
 //------------------------------------------------------
-void cblas_level1_exec(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_INDEX n, void *x, CBLAS_INDEX incx, void *y, CBLAS_INDEX incy, const char* op_name)
+void cblas_level1_exec(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_INDEX n, void *x, CBLAS_INDEX incx, void *y, CBLAS_INDEX incy, void *alpha, void *beta, const char* op_name)
 {
     work_queue_t queue[MAX_THREADS];
     cblas_args_t args[MAX_THREADS];
@@ -515,6 +515,8 @@ void cblas_level1_exec(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_IN
     {
         args[i].incx = incx;
         args[i].incy = incy;
+        args[i].alpha = alpha;
+        args[i].beta = beta;
 
         // compute partition starts based on remaining task size and remaining threads
         CBLAS_INDEX partition_size = (n + thread_count - i - 1) / (thread_count - i);
@@ -527,7 +529,7 @@ void cblas_level1_exec(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_IN
 
         // Advance pointers by partition size accounting for stride
         x = (char*)x + partition_size * incx * byte_stride;
-        y = (char*)y + partition_size * incy * byte_stride;
+        if (y) y = (char*)y + partition_size * incy * byte_stride;
 
         queue[i].finished   = 0;
         queue[i].args       = &args[i];

@@ -89,17 +89,28 @@ void cblas_ssetv(CBLAS_INDEX n, float *x, float v)
     CBLAS_VALIDATE_VEC1(n, x, 1, );
     CBLAS_STATS_START();
 
+#ifdef MT_ENABLED
+    int mt_used = (n > CBLAS_MT_COPY) ? 1 : 0;
+#else
     int mt_used = 0;
+#endif
 
     kernel_function kernel = blas_kernels.ssetv_k_noinc;
 
-    cblas_args_t args;
-    args.n = n;
-    args.x = x;
-    args.incx = 1;
-    args.alpha = &v;
+    if (mt_used)
+    {
+        cblas_level1_exec(sizeof(float), kernel, n, x, 1, NULL, 1, &v, NULL, "SSETV");
+    }
+    else
+    {
+        cblas_args_t args;
+        args.n = n;
+        args.x = x;
+        args.incx = 1;
+        args.alpha = &v;
 
-    kernel(&args);
+        kernel(&args);
+    }
 
     CBLAS_STATS_END("ssetv", n, mt_used);
 }
@@ -112,17 +123,28 @@ void cblas_dsetv(CBLAS_INDEX n, double *x, double v)
     CBLAS_VALIDATE_VEC1(n, x, 1, );
     CBLAS_STATS_START();
 
+#ifdef MT_ENABLED
+    int mt_used = (n > CBLAS_MT_COPY) ? 1 : 0;
+#else
     int mt_used = 0;
+#endif
 
     kernel_function kernel = blas_kernels.dsetv_k_noinc;
 
-    cblas_args_t args;
-    args.n = n;
-    args.x = x;
-    args.incx = 1;
-    args.alpha = &v;
+    if (mt_used)
+    {
+        cblas_level1_exec(sizeof(double), kernel, n, x, 1, NULL, 1, &v, NULL, "DSETV");
+    }
+    else
+    {
+        cblas_args_t args;
+        args.n = n;
+        args.x = x;
+        args.incx = 1;
+        args.alpha = &v;
 
-    kernel(&args);
+        kernel(&args);
+    }
 
     CBLAS_STATS_END("dsetv", n, mt_used);
 }

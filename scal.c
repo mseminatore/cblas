@@ -13,7 +13,11 @@ void cblas_sscal(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx)
     CBLAS_VALIDATE_SCAL(n, alpha, x, incx, );
     CBLAS_STATS_START();
 
+#ifdef MT_ENABLED
+    int mt_used = (n > CBLAS_MT_COPY) ? 1 : 0;
+#else
     int mt_used = 0;
+#endif
 
     if (alpha == 1.0f)
     {
@@ -29,13 +33,20 @@ void cblas_sscal(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx)
         kernel = blas_kernels.sscal_k_noinc;
     }
 
-    cblas_args_t args;
-    args.n = n;
-    args.x = x;
-    args.incx = incx;
-    args.alpha = &alpha;
+    if (mt_used)
+    {
+        cblas_level1_exec(sizeof(float), kernel, n, x, incx, NULL, 1, &alpha, NULL, "SSCAL");
+    }
+    else
+    {
+        cblas_args_t args;
+        args.n = n;
+        args.x = x;
+        args.incx = incx;
+        args.alpha = &alpha;
 
-    kernel(&args);
+        kernel(&args);
+    }
 
     CBLAS_STATS_END("sscal", n, mt_used);
 }
@@ -71,7 +82,11 @@ void cblas_dscal(CBLAS_INDEX n, double alpha, double* x, CBLAS_INDEX incx)
 
     CBLAS_STATS_START();
 
+#ifdef MT_ENABLED
+    int mt_used = (n > CBLAS_MT_COPY) ? 1 : 0;
+#else
     int mt_used = 0;
+#endif
 
     if (alpha == 1.0)
     {
@@ -87,13 +102,20 @@ void cblas_dscal(CBLAS_INDEX n, double alpha, double* x, CBLAS_INDEX incx)
         kernel = blas_kernels.dscal_k_noinc;
     }
 
-    cblas_args_t args;
-    args.n = n;
-    args.x = x;
-    args.incx = incx;
-    args.alpha = &alpha;
+    if (mt_used)
+    {
+        cblas_level1_exec(sizeof(double), kernel, n, x, incx, NULL, 1, &alpha, NULL, "DSCAL");
+    }
+    else
+    {
+        cblas_args_t args;
+        args.n = n;
+        args.x = x;
+        args.incx = incx;
+        args.alpha = &alpha;
 
-    kernel(&args);
+        kernel(&args);
+    }
 
     CBLAS_STATS_END("dscal", n, mt_used);
 }

@@ -1049,12 +1049,14 @@ void cblas_execute_async_join(CBLAS_INDEX items, work_queue_t* queue);
  * @param n Number of elements
  * @param x Pointer to vector X
  * @param incx Stride for X
- * @param y Pointer to vector Y
+ * @param y Pointer to vector Y (can be NULL)
  * @param incy Stride for Y
+ * @param alpha Pointer to scalar alpha (can be NULL)
+ * @param beta Pointer to scalar beta (can be NULL)
  * @param op_name Operation name for debug output (can be NULL)
  * @note For internal use by Level-1 BLAS functions.
  */
-void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy, const char* op_name);
+void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy, void* alpha, void* beta, const char* op_name);
 
 /**
  * @brief Execute Level-1 BLAS operation with result (internal)

@@ -133,7 +133,11 @@ void cblas_srot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX
     CBLAS_VALIDATE_VEC2(n, x, incx, y, incy, );
     CBLAS_STATS_START();
 
+#ifdef MT_ENABLED
+    int mt_used = (n > CBLAS_MT_COPY) ? 1 : 0;
+#else
     int mt_used = 0;
+#endif
 
     kernel_function kernel = blas_kernels.srot_k;
 
@@ -143,16 +147,25 @@ void cblas_srot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX
         kernel = blas_kernels.srot_k_noinc;
     }
 
-    cblas_args_t args;
-    args.n = n;
-    args.x = x;
-    args.incx = incx;
-    args.y = y;
-    args.incy = incy;
-    args.alpha = &c;
-    args.beta = &s;
+    mt_used = 0;    // disable multithreading!
 
-    kernel(&args);
+    if (mt_used)
+    {
+        cblas_level1_exec(sizeof(float), kernel, n, x, incx, y, incy, &c, &s, "SROT");
+    }
+    else
+    {
+        cblas_args_t args;
+        args.n = n;
+        args.x = x;
+        args.incx = incx;
+        args.y = y;
+        args.incy = incy;
+        args.alpha = &c;
+        args.beta = &s;
+
+        kernel(&args);
+    }
 
     CBLAS_STATS_END("srot", n, mt_used);
 }
@@ -165,7 +178,11 @@ void cblas_drot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IND
     CBLAS_VALIDATE_VEC2(n, x, incx, y, incy, );
     CBLAS_STATS_START();
 
+#ifdef MT_ENABLED
+    int mt_used = (n > CBLAS_MT_COPY) ? 1 : 0;
+#else
     int mt_used = 0;
+#endif
 
     kernel_function kernel = blas_kernels.drot_k;
 
@@ -175,16 +192,25 @@ void cblas_drot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IND
         kernel = blas_kernels.drot_k_noinc;
     }
 
-    cblas_args_t args;
-    args.n = n;
-    args.x = x;
-    args.incx = incx;
-    args.y = y;
-    args.incy = incy;
-    args.alpha = &c;
-    args.beta = &s;
+    mt_used = 0;    // disable multithreading!
 
-    kernel(&args);
+    if (mt_used)
+    {
+        cblas_level1_exec(sizeof(double), kernel, n, x, incx, y, incy, &c, &s, "DROT");
+    }
+    else
+    {
+        cblas_args_t args;
+        args.n = n;
+        args.x = x;
+        args.incx = incx;
+        args.y = y;
+        args.incy = incy;
+        args.alpha = &c;
+        args.beta = &s;
+
+        kernel(&args);
+    }
 
     CBLAS_STATS_END("drot", n, mt_used);
 }
