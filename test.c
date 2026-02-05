@@ -300,17 +300,67 @@ static void test_axpby(void)
 
 		float sr[ARRAY_SIZE(sones)];
 
+		// Test: y = 1*x + 1*y where y=0, x=1 => y=1
 		cblas_scopy(ARRAY_SIZE(szeros), szeros, 1, sr, 1);
 		cblas_saxpby(ARRAY_SIZE(sones), 1.0f, sones, 1, 1.0f, sr, 1);
 		TEST(EQUAL_ARRAY(sr, sones));
+
+		// Test: y = 2*x + 3*y where x=1, y=1 => y=5
+		float sfives[] = {5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f};
+		cblas_scopy(ARRAY_SIZE(sones), sones, 1, sr, 1);
+		cblas_saxpby(ARRAY_SIZE(sones), 2.0f, sones, 1, 3.0f, sr, 1);
+		TEST(equal_sarray_epsilon(sr, sfives, ARRAY_SIZE(sr)));
+
+		// Test with non-unit increment (incx=2, incy=2)
+		float sx_strided[] = {1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f};
+		float sy_strided[] = {0.0f, 99.0f, 0.0f, 99.0f, 0.0f, 99.0f, 0.0f, 99.0f, 0.0f, 99.0f};
+		cblas_saxpby(5, 2.0f, sx_strided, 2, 1.0f, sy_strided, 2);
+		TEST(sy_strided[0] == 2.0f && sy_strided[2] == 2.0f && sy_strided[4] == 2.0f);
+		TEST(sy_strided[1] == 99.0f && sy_strided[3] == 99.0f); // Untouched elements
+
+		// Test large array (SIMD path)
+		float *sbig_y = (float*)malloc(BIG_ARRAY * sizeof(float));
+		for (int i = 0; i < BIG_ARRAY; i++) sbig_y[i] = 1.0f;
+		cblas_saxpby(BIG_ARRAY, 2.0f, sbig_ones, 1, 3.0f, sbig_y, 1);
+		int pass = 1;
+		for (int i = 0; i < BIG_ARRAY && pass; i++) {
+			if (!EQUAL_EPSILON(sbig_y[i], 5.0f)) pass = 0;
+		}
+		TEST(pass);
+		free(sbig_y);
 
 	SUITE("cblas_daxpby");
 
 		double dr[ARRAY_SIZE(dones)];
 
+		// Test: y = 1*x + 1*y where y=0, x=1 => y=1
 		cblas_dcopy(ARRAY_SIZE(dzeros), dzeros, 1, dr, 1);
 		cblas_daxpby(ARRAY_SIZE(dones), 1.0, dones, 1, 1.0, dr, 1);
 		TEST(EQUAL_ARRAY(dr, dones));
+
+		// Test: y = 2*x + 3*y where x=1, y=1 => y=5
+		double dfives[] = {5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0};
+		cblas_dcopy(ARRAY_SIZE(dones), dones, 1, dr, 1);
+		cblas_daxpby(ARRAY_SIZE(dones), 2.0, dones, 1, 3.0, dr, 1);
+		TEST(equal_darray_epsilon(dr, dfives, ARRAY_SIZE(dr)));
+
+		// Test with non-unit increment (incx=2, incy=2)
+		double dx_strided[] = {1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0};
+		double dy_strided[] = {0.0, 99.0, 0.0, 99.0, 0.0, 99.0, 0.0, 99.0, 0.0, 99.0};
+		cblas_daxpby(5, 2.0, dx_strided, 2, 1.0, dy_strided, 2);
+		TEST(dy_strided[0] == 2.0 && dy_strided[2] == 2.0 && dy_strided[4] == 2.0);
+		TEST(dy_strided[1] == 99.0 && dy_strided[3] == 99.0); // Untouched elements
+
+		// Test large array (SIMD path)
+		double *dbig_y = (double*)malloc(BIG_ARRAY * sizeof(double));
+		for (int i = 0; i < BIG_ARRAY; i++) dbig_y[i] = 1.0;
+		cblas_daxpby(BIG_ARRAY, 2.0, dbig_ones, 1, 3.0, dbig_y, 1);
+		pass = 1;
+		for (int i = 0; i < BIG_ARRAY && pass; i++) {
+			if (!EQUAL_EPSILON(dbig_y[i], 5.0)) pass = 0;
+		}
+		TEST(pass);
+		free(dbig_y);
 }
 
 //------------------------------------------------------

@@ -544,7 +544,9 @@ typedef struct
     kernel_function daxpy_k;        // double-precision A*X plus Y
     kernel_function daxpy_k_noinc;  // double-precision A*X plus Y inc=1
     kernel_function saxpby_k;       // single-precision A*X plus B*Y
-    kernel_function daxpby_k;       // double-precision A*X plus B*Y
+    kernel_function saxpby_k_noinc;  // single-precision A*X plus B*Y inc=1
+    kernel_function daxpby_k;        // double-precision A*X plus B*Y
+    kernel_function daxpby_k_noinc;  // double-precision A*X plus B*Y inc=1
     kernel_function sgemm_k;        // single-precision general matrix multiply
     kernel_function dgemm_k;        // double-precision general matrix multiply
     kernel_function sger_k;         // single-precision rank-1 update

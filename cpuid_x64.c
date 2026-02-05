@@ -296,8 +296,11 @@ static void init_blas_kernels(void)
 	blas_kernels.daxpy_k = cblas_daxpy_k;
 	blas_kernels.saxpy_k_noinc = cblas_saxpy_k_noinc;
 	blas_kernels.daxpy_k_noinc = cblas_daxpy_k_noinc;
-	//blas_kernels.saxpby_k = cblas_saxpby_k;
-	//blas_kernels.daxpby_k = cblas_daxpby_k;
+
+	blas_kernels.saxpby_k = cblas_saxpby_k;
+	blas_kernels.daxpby_k = cblas_daxpby_k;
+	blas_kernels.saxpby_k_noinc = cblas_saxpby_k_noinc;
+	blas_kernels.daxpby_k_noinc = cblas_daxpby_k_noinc;
 
 	// Initialize Level-2 kernel function pointers
 	blas_kernels.sger_k = sger_k;
@@ -329,6 +332,8 @@ static void init_blas_kernels(void)
 		blas_kernels.dscal_k_noinc = cblas_dscal_k_noinc_sse;
 		blas_kernels.saxpy_k_noinc = cblas_saxpy_k_noinc_sse;
 		blas_kernels.daxpy_k_noinc = cblas_daxpy_k_noinc_sse;
+		blas_kernels.saxpby_k_noinc = cblas_saxpby_k_noinc_sse;
+		blas_kernels.daxpby_k_noinc = cblas_daxpby_k_noinc_sse;
 
 		if (cpu_features & CPU_AVX)
 		{
@@ -350,6 +355,8 @@ static void init_blas_kernels(void)
 			blas_kernels.dscal_k_noinc = cblas_dscal_k_noinc_avx;
 			blas_kernels.saxpy_k_noinc = cblas_saxpy_k_noinc_avx;
 			blas_kernels.daxpy_k_noinc = cblas_daxpy_k_noinc_avx;
+			blas_kernels.saxpby_k_noinc = cblas_saxpby_k_noinc_avx;
+			blas_kernels.daxpby_k_noinc = cblas_daxpby_k_noinc_avx;
 
 			// Check for FMA3 support and dispatch accordingly
 			if (cpu_features & CPU_x64_FMA3)
@@ -360,6 +367,8 @@ static void init_blas_kernels(void)
 				blas_kernels.dnrm2_k_noinc = cblas_dnrm2_k_noinc_fma;
 				blas_kernels.saxpy_k_noinc = cblas_saxpy_k_noinc_fma;
 				blas_kernels.daxpy_k_noinc = cblas_daxpy_k_noinc_fma;
+				blas_kernels.saxpby_k_noinc = cblas_saxpby_k_noinc_fma;
+				blas_kernels.daxpby_k_noinc = cblas_daxpby_k_noinc_fma;
 				blas_kernels.sgemm_k = sgemm_k_fma;
 			}
 		}
