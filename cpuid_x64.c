@@ -302,9 +302,9 @@ static void init_blas_kernels(void)
 	blas_kernels.saxpby_k_noinc = cblas_saxpby_k_noinc;
 	blas_kernels.daxpby_k_noinc = cblas_daxpby_k_noinc;
 
-	// Initialize Level-2 kernel function pointers
-	blas_kernels.sger_k = sger_k;
-	blas_kernels.dger_k = dger_k;
+	// Initialize Level-2 kernel function pointers (base versions)
+	blas_kernels.sger_k = sger_k_base;
+	blas_kernels.dger_k = dger_k_base;
 	blas_kernels.sgemv_k = sgemv_k;
 	blas_kernels.dgemv_k = dgemv_k;
 
@@ -334,6 +334,10 @@ static void init_blas_kernels(void)
 		blas_kernels.daxpy_k_noinc = cblas_daxpy_k_noinc_sse;
 		blas_kernels.saxpby_k_noinc = cblas_saxpby_k_noinc_sse;
 		blas_kernels.daxpby_k_noinc = cblas_daxpby_k_noinc_sse;
+
+		// Level-2 SSE kernels
+		blas_kernels.sger_k = sger_k_sse;
+		blas_kernels.dger_k = dger_k_sse;
 
 		if (cpu_features & CPU_AVX)
 		{
@@ -370,6 +374,10 @@ static void init_blas_kernels(void)
 				blas_kernels.saxpby_k_noinc = cblas_saxpby_k_noinc_fma;
 				blas_kernels.daxpby_k_noinc = cblas_daxpby_k_noinc_fma;
 				blas_kernels.sgemm_k = sgemm_k_fma;
+
+				// Level-2 FMA kernels
+				blas_kernels.sger_k = sger_k_fma;
+				blas_kernels.dger_k = dger_k_fma;
 			}
 		}
 	}

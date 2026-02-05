@@ -128,6 +128,19 @@ void cblas_daxpby_k_noinc_fma(cblas_args_t* args);
 void cblas_daxpby_k_noinc_neon(cblas_args_t* args);
 
 // Level-2 kernel function declarations
+void sger_k(cblas_args_t* args);
+void dger_k(cblas_args_t* args);
+void sger_k_base(cblas_args_t* args);
+void dger_k_base(cblas_args_t* args);
+void sger_k_sse(cblas_args_t* args);
+void dger_k_sse(cblas_args_t* args);
+void sger_k_fma(cblas_args_t* args);
+void dger_k_fma(cblas_args_t* args);
+void sger_k_neon(cblas_args_t* args);
+void dger_k_neon(cblas_args_t* args);
+
+void sgemv_k(cblas_args_t* args);
+void dgemv_k(cblas_args_t* args);
 
 // Level-3 kernel function declarations
 

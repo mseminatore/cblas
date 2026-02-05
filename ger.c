@@ -904,57 +904,15 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
         // Single-threaded fallback path
         if (layout == CblasRowMajor)
         {
-            if (alpha == 1.0f)
-            {
-#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
-                // Runtime dispatch: check for FMA support once and cache result
-                static int fma_available = -1;
-                if (fma_available == -1) {
-                    unsigned int features = cpu_get_features();
-                    fma_available = (features & CPU_x64_FMA3) ? 1 : 0;
-                }
-                
-                if (fma_available)
-                {
-                    sger_row_noalpha4x4_fma(m, n, x, incx, y, incy, a, lda);
-                }
-                else
-#endif
-                {
-                    sger_row_noalpha4x4(m, n,  x, incx, y, incy, a, lda);
-                }
-            }
-            else
-            {
-                // Use cache blocking only for large matrices
-                if (m > 2 * GER_BLOCK_SIZE)
-                {
-                    // Process rows in cache-friendly blocks
-                    for (CBLAS_INDEX i = 0; i < m; i += GER_BLOCK_SIZE)
-                    {
-                        CBLAS_INDEX ib = (i + GER_BLOCK_SIZE < m) ? GER_BLOCK_SIZE : (m - i);
-                        
-                        for (CBLAS_INDEX row = i; row < i + ib; row++)
-                        {
-                            for (CBLAS_INDEX col = 0; col < n; col++)
-                            {
-                                a[row * n + col] += alpha * x[row] * y[col];
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    // Direct processing for small matrices
-                    for (CBLAS_INDEX row = 0; row < m; row++)
-                    {
-                        for (CBLAS_INDEX col = 0; col < n; col++)
-                        {
-                            a[row * n + col] += alpha * x[row] * y[col];
-                        }
-                    }
-                }
-            }
+            // Use dispatched kernel (ISA-specific, selected at init time)
+            cblas_args_t args = {
+                .x = x, .y = y, .a = a,
+                .m = m, .n = n,
+                .incx = incx, .incy = incy,
+                .lda = lda,
+                .alpha = &alpha
+            };
+            blas_kernels.sger_k(&args);
         } else
         {
             if (alpha == 1.0f)
@@ -1054,57 +1012,15 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
         // Single-threaded fallback path
         if (layout == CblasRowMajor)
         {
-            if (alpha == 1.0)
-            {
-#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
-                // Runtime dispatch: check for FMA support once and cache result
-                static int fma_available = -1;
-                if (fma_available == -1) {
-                    unsigned int features = cpu_get_features();
-                    fma_available = (features & CPU_x64_FMA3) ? 1 : 0;
-                }
-                
-                if (fma_available)
-                {
-                    dger_row_noalpha2x2_fma(m, n, x, incx, y, incy, a, lda);
-                }
-                else
-#endif
-                {
-                    dger_row_noalpha2x2(m, n, x, incx, y, incy, a, lda);
-                }
-            }
-            else
-            {
-                // Use cache blocking only for large matrices
-                if (m > 2 * GER_BLOCK_SIZE)
-                {
-                    // Process rows in cache-friendly blocks
-                    for (CBLAS_INDEX i = 0; i < m; i += GER_BLOCK_SIZE)
-                    {
-                        CBLAS_INDEX ib = (i + GER_BLOCK_SIZE < m) ? GER_BLOCK_SIZE : (m - i);
-                        
-                        for (CBLAS_INDEX row = i; row < i + ib; row++)
-                        {
-                            for (CBLAS_INDEX col = 0; col < n; col++)
-                            {
-                                a[row * n + col] += alpha * x[row] * y[col];
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    // Direct processing for small matrices
-                    for (CBLAS_INDEX row = 0; row < m; row++)
-                    {
-                        for (CBLAS_INDEX col = 0; col < n; col++)
-                        {
-                            a[row * n + col] += alpha * x[row] * y[col];
-                        }
-                    }
-                }
-            }
+            // Use dispatched kernel (ISA-specific, selected at init time)
+            cblas_args_t args = {
+                .x = x, .y = y, .a = a,
+                .m = m, .n = n,
+                .incx = incx, .incy = incy,
+                .lda = lda,
+                .alpha = &alpha
+            };
+            blas_kernels.dger_k(&args);
         } else
         {
             if (alpha == 1.0)

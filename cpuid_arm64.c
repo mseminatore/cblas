@@ -118,9 +118,9 @@ static unsigned int __cpu_get_features(void)
 	blas_kernels.saxpby_k_noinc = cblas_saxpby_k_noinc;
 	blas_kernels.daxpby_k_noinc = cblas_daxpby_k_noinc;
 
-	// Initialize Level-2 kernel function pointers
-	blas_kernels.sger_k = sger_k;
-	blas_kernels.dger_k = dger_k;
+	// Initialize Level-2 kernel function pointers (base versions)
+	blas_kernels.sger_k = sger_k_base;
+	blas_kernels.dger_k = dger_k_base;
 	blas_kernels.sgemv_k = sgemv_k;
 	blas_kernels.dgemv_k = dgemv_k;
 
@@ -150,6 +150,10 @@ static unsigned int __cpu_get_features(void)
 		blas_kernels.daxpy_k_noinc = cblas_daxpy_k_noinc_neon;
 		blas_kernels.saxpby_k_noinc = cblas_saxpby_k_noinc_neon;
 		blas_kernels.daxpby_k_noinc = cblas_daxpby_k_noinc_neon;
+
+		// Level-2 NEON optimized kernels
+		blas_kernels.sger_k = sger_k_neon;
+		blas_kernels.dger_k = dger_k_neon;
     }
 
     return cpu_features;
