@@ -893,49 +893,8 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
     
     if (mt_used && layout == CblasRowMajor && blas_kernels.sger_k != NULL)
     {
-        // Multi-threaded path: partition rows across threads
-        CBLAS_INDEX thread_count = CLAMP(cblas_get_num_threads(), 1, MAX_THREADS);
-        
-        #ifdef _WIN32
-            work_queue_t *queue = _malloca(thread_count * sizeof(work_queue_t));
-            cblas_args_t *args = _malloca(thread_count * sizeof(cblas_args_t));
-        #else
-            work_queue_t *queue = alloca(thread_count * sizeof(work_queue_t));
-            cblas_args_t *args = alloca(thread_count * sizeof(cblas_args_t));
-        #endif
-        
-        CBLAS_INDEX rows_remaining = m;
-        CBLAS_INDEX row_offset = 0;
-        
-        for (CBLAS_INDEX i = 0; i < thread_count; i++)
-        {
-            // Compute partition size: distribute rows evenly
-            CBLAS_INDEX rows_per_thread = (rows_remaining + thread_count - i - 1) / (thread_count - i);
-            
-            args[i].m = rows_per_thread;
-            args[i].n = n;
-            args[i].incx = incx;
-            args[i].incy = incy;
-            args[i].lda = lda;
-            args[i].x = &X(row_offset);
-            args[i].y = y;
-            args[i].a = &A(0, row_offset);
-            args[i].alpha = &alpha;
-            
-            queue[i].finished = 0;
-            queue[i].args = &args[i];
-            queue[i].kernel = blas_kernels.sger_k;
-            queue[i].next = &queue[i + 1];
-            
-            row_offset += rows_per_thread;
-            rows_remaining -= rows_per_thread;
-        }
-        
-        // mark end of task queue
-        queue[thread_count - 1].next = NULL;
-        
-        // synchronously execute task queue
-        cblas_execute(thread_count, queue);
+        cblas_level2_exec(sizeof(float), blas_kernels.sger_k, CBLAS_PART_X,
+                          m, n, a, lda, x, incx, y, incy, &alpha, NULL, "SGER");
     }
     else
 #else
@@ -1084,49 +1043,8 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
     
     if (mt_used && layout == CblasRowMajor && blas_kernels.dger_k != NULL)
     {
-        // Multi-threaded path: partition rows across threads
-        CBLAS_INDEX thread_count = CLAMP(cblas_get_num_threads(), 1, MAX_THREADS);
-        
-        #ifdef _WIN32
-            work_queue_t *queue = _malloca(thread_count * sizeof(work_queue_t));
-            cblas_args_t *args = _malloca(thread_count * sizeof(cblas_args_t));
-        #else
-            work_queue_t *queue = alloca(thread_count * sizeof(work_queue_t));
-            cblas_args_t *args = alloca(thread_count * sizeof(cblas_args_t));
-        #endif
-        
-        CBLAS_INDEX rows_remaining = m;
-        CBLAS_INDEX row_offset = 0;
-        
-        for (CBLAS_INDEX i = 0; i < thread_count; i++)
-        {
-            // Compute partition size: distribute rows evenly
-            CBLAS_INDEX rows_per_thread = (rows_remaining + thread_count - i - 1) / (thread_count - i);
-            
-            args[i].m = rows_per_thread;
-            args[i].n = n;
-            args[i].incx = incx;
-            args[i].incy = incy;
-            args[i].lda = lda;
-            args[i].x = &x[row_offset * incx];
-            args[i].y = y;
-            args[i].a = &a[row_offset * lda];
-            args[i].alpha = &alpha;
-            
-            queue[i].finished = 0;
-            queue[i].args = &args[i];
-            queue[i].kernel = blas_kernels.dger_k;
-            queue[i].next = &queue[i + 1];
-            
-            row_offset += rows_per_thread;
-            rows_remaining -= rows_per_thread;
-        }
-        
-        // mark end of task queue
-        queue[thread_count - 1].next = NULL;
-        
-        // synchronously execute task queue
-        cblas_execute(thread_count, queue);
+        cblas_level2_exec(sizeof(double), blas_kernels.dger_k, CBLAS_PART_X,
+                          m, n, a, lda, x, incx, y, incy, &alpha, NULL, "DGER");
     }
     else
 #else

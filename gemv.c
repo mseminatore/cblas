@@ -324,50 +324,8 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
     // Multi-threaded path for NoTrans case with RowMajor or Trans case with ColMajor
     if (mt_used && ((trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor)) && blas_kernels.sgemv_k != NULL)
     {
-        // Partition rows across threads
-        CBLAS_INDEX thread_count = CLAMP(cblas_get_num_threads(), 1, MAX_THREADS);
-        
-        #ifdef _WIN32
-            work_queue_t *queue = _malloca(thread_count * sizeof(work_queue_t));
-            cblas_args_t *args = _malloca(thread_count * sizeof(cblas_args_t));
-        #else
-            work_queue_t *queue = alloca(thread_count * sizeof(work_queue_t));
-            cblas_args_t *args = alloca(thread_count * sizeof(cblas_args_t));
-        #endif
-        
-        CBLAS_INDEX rows_remaining = m;
-        CBLAS_INDEX row_offset = 0;
-        
-        for (CBLAS_INDEX i = 0; i < thread_count; i++)
-        {
-            // Compute partition size: distribute rows evenly
-            CBLAS_INDEX rows_per_thread = (rows_remaining + thread_count - i - 1) / (thread_count - i);
-            
-            args[i].m = rows_per_thread;
-            args[i].n = n;
-            args[i].lda = lda;
-            args[i].incx = incx;
-            args[i].incy = incy;
-            args[i].a = &a[row_offset * lda];
-            args[i].x = x;
-            args[i].y = &y[row_offset * incy];
-            args[i].alpha = &alpha;
-            args[i].beta = &beta;
-            
-            queue[i].finished = 0;
-            queue[i].args = &args[i];
-            queue[i].kernel = blas_kernels.sgemv_k;
-            queue[i].next = &queue[i + 1];
-            
-            row_offset += rows_per_thread;
-            rows_remaining -= rows_per_thread;
-        }
-        
-        // mark end of task queue
-        queue[thread_count - 1].next = NULL;
-        
-        // synchronously execute task queue
-        cblas_execute(thread_count, queue);
+        cblas_level2_exec(sizeof(float), blas_kernels.sgemv_k, CBLAS_PART_Y,
+                          m, n, a, lda, x, incx, y, incy, &alpha, &beta, "SGEMV");
     }
     else
 #else
@@ -490,50 +448,8 @@ void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
     // Multi-threaded path for NoTrans case with RowMajor or Trans case with ColMajor
     if (mt_used && ((trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor)) && blas_kernels.dgemv_k != NULL)
     {
-        // Partition rows across threads
-        CBLAS_INDEX thread_count = CLAMP(cblas_get_num_threads(), 1, MAX_THREADS);
-        
-        #ifdef _WIN32
-            work_queue_t *queue = _malloca(thread_count * sizeof(work_queue_t));
-            cblas_args_t *args = _malloca(thread_count * sizeof(cblas_args_t));
-        #else
-            work_queue_t *queue = alloca(thread_count * sizeof(work_queue_t));
-            cblas_args_t *args = alloca(thread_count * sizeof(cblas_args_t));
-        #endif
-        
-        CBLAS_INDEX rows_remaining = m;
-        CBLAS_INDEX row_offset = 0;
-        
-        for (CBLAS_INDEX i = 0; i < thread_count; i++)
-        {
-            // Compute partition size: distribute rows evenly
-            CBLAS_INDEX rows_per_thread = (rows_remaining + thread_count - i - 1) / (thread_count - i);
-            
-            args[i].m = rows_per_thread;
-            args[i].n = n;
-            args[i].lda = lda;
-            args[i].incx = incx;
-            args[i].incy = incy;
-            args[i].a = &a[row_offset * lda];
-            args[i].x = x;
-            args[i].y = &y[row_offset * incy];
-            args[i].alpha = &alpha;
-            args[i].beta = &beta;
-            
-            queue[i].finished = 0;
-            queue[i].args = &args[i];
-            queue[i].kernel = blas_kernels.dgemv_k;
-            queue[i].next = &queue[i + 1];
-            
-            row_offset += rows_per_thread;
-            rows_remaining -= rows_per_thread;
-        }
-        
-        // mark end of task queue
-        queue[thread_count - 1].next = NULL;
-        
-        // synchronously execute task queue
-        cblas_execute(thread_count, queue);
+        cblas_level2_exec(sizeof(double), blas_kernels.dgemv_k, CBLAS_PART_Y,
+                          m, n, a, lda, x, incx, y, incy, &alpha, &beta, "DGEMV");
     }
     else
 #else

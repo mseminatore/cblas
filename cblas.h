@@ -1078,6 +1078,37 @@ void cblas_level1_exec(CBLAS_INDEX stride, kernel_function kernel, CBLAS_INDEX n
 void cblas_level1_exec_result(CBLAS_INDEX byte_stride, kernel_function kernel, CBLAS_INDEX n, void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy, void* c, const char* op_name);
 
 /**
+ * @brief Partition mode for Level-2 operations
+ */
+typedef enum {
+    CBLAS_PART_X,     // Partition X with rows (GER: x is row-indexed)
+    CBLAS_PART_Y      // Partition Y with rows (GEMV: y is output)
+} cblas_level2_partition_t;
+
+/**
+ * @brief Execute Level-2 BLAS operation (internal)
+ * @param element_size Size of elements in bytes (sizeof(float) or sizeof(double))
+ * @param kernel Kernel function to execute
+ * @param part_mode Which vector to partition with rows (CBLAS_PART_X or CBLAS_PART_Y)
+ * @param m Number of rows (partitioned dimension)
+ * @param n Number of columns
+ * @param a Pointer to matrix A
+ * @param lda Leading dimension of A
+ * @param x Pointer to vector X
+ * @param incx Stride for X
+ * @param y Pointer to vector Y
+ * @param incy Stride for Y
+ * @param alpha Pointer to scalar alpha (can be NULL)
+ * @param beta Pointer to scalar beta (can be NULL)
+ * @param op_name Operation name for debug output (can be NULL)
+ * @note For internal use by Level-2 BLAS functions. Partitions rows across threads.
+ */
+void cblas_level2_exec(CBLAS_INDEX element_size, kernel_function kernel, cblas_level2_partition_t part_mode,
+                       CBLAS_INDEX m, CBLAS_INDEX n, void* a, CBLAS_INDEX lda,
+                       void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy,
+                       void* alpha, void* beta, const char* op_name);
+
+/**
  * @brief Get library configuration string
  * @return Configuration string describing compile-time options
  * @note Thread-safe.

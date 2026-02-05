@@ -590,6 +590,72 @@ void cblas_level1_exec_result(CBLAS_INDEX byte_stride, kernel_function kernel, C
 }
 
 //------------------------------------------------------
+// level 2 dispatch - partitions rows across threads
+//------------------------------------------------------
+void cblas_level2_exec(CBLAS_INDEX element_size, kernel_function kernel, cblas_level2_partition_t part_mode,
+                       CBLAS_INDEX m, CBLAS_INDEX n, void* a, CBLAS_INDEX lda,
+                       void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy,
+                       void* alpha, void* beta, const char* op_name)
+{
+    work_queue_t queue[MAX_THREADS];
+    cblas_args_t args[MAX_THREADS];
+
+    CBLAS_INDEX thread_count = CLAMP(cblas_get_num_threads(), 1, MAX_THREADS);
+    CBLAS_INDEX rows_remaining = m;
+    CBLAS_INDEX row_offset = 0;
+
+    for (CBLAS_INDEX i = 0; i < thread_count; i++)
+    {
+        // Compute partition size: distribute rows evenly
+        CBLAS_INDEX rows_per_thread = (rows_remaining + thread_count - i - 1) / (thread_count - i);
+
+        args[i].m = rows_per_thread;
+        args[i].n = n;
+        args[i].lda = lda;
+        args[i].incx = incx;
+        args[i].incy = incy;
+        args[i].alpha = alpha;
+        args[i].beta = beta;
+
+        // Matrix A is always partitioned by rows
+        args[i].a = (char*)a + row_offset * lda * element_size;
+
+        // Partition either X or Y based on mode
+        if (part_mode == CBLAS_PART_X)
+        {
+            // GER mode: X is partitioned with rows, Y is shared
+            args[i].x = (char*)x + row_offset * incx * element_size;
+            args[i].y = y;
+        }
+        else
+        {
+            // GEMV mode: Y is partitioned with rows, X is shared
+            args[i].x = x;
+            args[i].y = (char*)y + row_offset * incy * element_size;
+        }
+
+        queue[i].finished = 0;
+        queue[i].args = &args[i];
+        queue[i].kernel = kernel;
+        queue[i].next = &queue[i + 1];
+#ifdef MT_DEBUG
+        queue[i].operation = op_name ? op_name : "UNKNOWN";
+#else
+        (void)op_name;  // Suppress unused parameter warning
+#endif
+
+        row_offset += rows_per_thread;
+        rows_remaining -= rows_per_thread;
+    }
+
+    // mark end of task queue
+    queue[thread_count - 1].next = NULL;
+
+    // synchronously execute task queue
+    cblas_execute(thread_count, queue);
+}
+
+//------------------------------------------------------
 // Calculate optimal GEMM block sizes based on cache
 //------------------------------------------------------
 static void cblas_compute_gemm_block_sizes(void)
