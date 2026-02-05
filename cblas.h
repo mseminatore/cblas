@@ -512,6 +512,10 @@ typedef struct
 	kernel_function scopy_k_noinc;  // single-precision copy inc=1
     kernel_function dcopy_k;        // double-precision copy
 	kernel_function dcopy_k_noinc;  // double-precision copy inc=1
+    kernel_function sswap_k;        // single-precision swap
+    kernel_function dswap_k;        // double-precision swap
+    kernel_function sswap_k_noinc;  // single-precision swap inc=1
+    kernel_function dswap_k_noinc;  // double-precision swap inc=1
 
     kernel_function sscal_k;        // single-precision scale
     kernel_function dscal_k;        // double-precision scale
