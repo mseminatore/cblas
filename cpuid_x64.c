@@ -250,7 +250,7 @@ const char* cpu_get_brand_string(void)
 //------------------------------------------------------
 // initialize BLAS kernel function pointers
 //------------------------------------------------------
-static void init_blas_kernels()
+static void init_blas_kernels(void)
 {
     // Initialize Level-1 kernel function pointers
     blas_kernels.sdot_k = cblas_sdot_k;
@@ -370,7 +370,7 @@ static unsigned int __cpu_get_features(void)
 
 #endif
 
-	init_blas_kernels(cpu_features);
+	init_blas_kernels();
 
 	return cpu_features;
 }
