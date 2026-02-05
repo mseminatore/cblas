@@ -267,6 +267,11 @@ static void init_blas_kernels(void)
 	blas_kernels.scopy_k_noinc = cblas_scopy_k_noinc;
 	blas_kernels.dcopy_k_noinc = cblas_dcopy_k_noinc;
 
+	blas_kernels.sswap_k = cblas_sswap_k;
+	blas_kernels.dswap_k = cblas_dswap_k;
+	blas_kernels.sswap_k_noinc = cblas_sswap_k_noinc;
+	blas_kernels.dswap_k_noinc = cblas_dswap_k_noinc;
+
 	//blas_kernels.sscal_k = cblas_sscal_k;
 	//blas_kernels.dscal_k = cblas_dscal_k;
 	//blas_kernels.saxpy_k = cblas_saxpy_k;
@@ -292,6 +297,8 @@ static void init_blas_kernels(void)
 		blas_kernels.dasum_k_noinc = cblas_dasum_k_noinc_sse;
 		blas_kernels.scopy_k_noinc = cblas_scopy_k_noinc_sse;
 		blas_kernels.dcopy_k_noinc = cblas_dcopy_k_noinc_sse;
+		blas_kernels.sswap_k_noinc = cblas_sswap_k_noinc_sse;
+		blas_kernels.dswap_k_noinc = cblas_dswap_k_noinc_sse;
 
 		if (cpu_features & CPU_AVX)
 		{
