@@ -536,7 +536,9 @@ typedef struct
     kernel_function dnrm2_k_noinc;  // double-precision euclidean norm inc=1
 
     kernel_function sscal_k;        // single-precision scale
+    kernel_function sscal_k_noinc;  // single-precision scale inc=1
     kernel_function dscal_k;        // double-precision scale
+    kernel_function dscal_k_noinc;  // double-precision scale inc=1
     kernel_function saxpy_k;        // single-precision A*X plus Y
     kernel_function daxpy_k;        // double-precision A*X plus Y
     kernel_function saxpby_k;       // single-precision A*X plus B*Y

@@ -9,7 +9,8 @@ OBJS = swap.o dot.o copy.o axpy.o scal.o axpby.o asum.o nrm2.o rot.o ger.o \
 	kernels/swap_k_sse.o kernels/swap_k_avx.o kernels/swap_k_neon.o \
 	kernels/setv_k_sse.o kernels/setv_k_avx.o kernels/setv_k_neon.o \
 	kernels/rot_k_sse.o kernels/rot_k_avx.o kernels/rot_k_neon.o \
-	kernels/nrm2_k.o kernels/nrm2_k_sse.o kernels/nrm2_k_avx.o kernels/nrm2_k_fma.o kernels/nrm2_k_neon.o
+	kernels/nrm2_k.o kernels/nrm2_k_sse.o kernels/nrm2_k_avx.o kernels/nrm2_k_fma.o kernels/nrm2_k_neon.o \
+	kernels/scal_k.o kernels/scal_k_sse.o kernels/scal_k_avx.o kernels/scal_k_neon.o
 DEPS = cblas.h cblas_config.h test.h platform/threading.h platform/simd.h platform/cpuid.h
 CFLAGS += -g -O2 -Wall -Wextra -Wpedantic -I. #-DNDEBUG
 LIBNAME = libcblas.a

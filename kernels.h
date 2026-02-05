@@ -90,6 +90,17 @@ void cblas_dnrm2_k_noinc_avx(cblas_args_t* args);
 void cblas_dnrm2_k_noinc_fma(cblas_args_t* args);
 void cblas_dnrm2_k_noinc_neon(cblas_args_t* args);
 
+void cblas_sscal_k(cblas_args_t* args);
+void cblas_sscal_k_noinc(cblas_args_t* args);
+void cblas_sscal_k_noinc_sse(cblas_args_t* args);
+void cblas_sscal_k_noinc_avx(cblas_args_t* args);
+void cblas_sscal_k_noinc_neon(cblas_args_t* args);
+void cblas_dscal_k(cblas_args_t* args);
+void cblas_dscal_k_noinc(cblas_args_t* args);
+void cblas_dscal_k_noinc_sse(cblas_args_t* args);
+void cblas_dscal_k_noinc_avx(cblas_args_t* args);
+void cblas_dscal_k_noinc_neon(cblas_args_t* args);
+
 // Level-2 kernel function declarations
 
 // Level-3 kernel function declarations
