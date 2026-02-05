@@ -540,7 +540,9 @@ typedef struct
     kernel_function dscal_k;        // double-precision scale
     kernel_function dscal_k_noinc;  // double-precision scale inc=1
     kernel_function saxpy_k;        // single-precision A*X plus Y
+    kernel_function saxpy_k_noinc;  // single-precision A*X plus Y inc=1
     kernel_function daxpy_k;        // double-precision A*X plus Y
+    kernel_function daxpy_k_noinc;  // double-precision A*X plus Y inc=1
     kernel_function saxpby_k;       // single-precision A*X plus B*Y
     kernel_function daxpby_k;       // double-precision A*X plus B*Y
     kernel_function sgemm_k;        // single-precision general matrix multiply
