@@ -6,24 +6,10 @@
 #include "cblas.h"
 #include "cblas_simd.h"
 
-#ifdef _WIN32
-#	include <malloc.h>
-#else
-#	include <alloca.h>
-#endif
-
 // helpful macros
 #define X(i) x[(i) * incx]
 #define Y(i) y[(i) * incy]
 #define A(col, row) a[(row) * lda + (col)]
-
-//------------------------------------------------------
-// compute single element product
-//------------------------------------------------------
-static void AddProd(float x, float y, float *a)
-{
-	*a += x * y;
-}
 
 //------------------------------------------------------
 // compute 4 cols by 1 row product
@@ -304,14 +290,6 @@ CBLAS_UNUSED static void AddProd4x4(float* x, float* y, float* a, CBLAS_INDEX ld
 }
 
 //------------------------------------------------------
-// Double-precision helper: compute single element product
-//------------------------------------------------------
-static void AddProdD(double x, double y, double *a)
-{
-	*a += x * y;
-}
-
-//------------------------------------------------------
 // Double-precision SIMD: compute 2 cols x 2 rows product
 //------------------------------------------------------
 static void AddProd2x2_SIMD_d(double* x, double* y, double* a, CBLAS_INDEX lda)
@@ -442,7 +420,7 @@ static void dger_row_noalpha2x2(CBLAS_INDEX m, CBLAS_INDEX n, double* x, CBLAS_I
 		{
 			if (n - col == 1)
 			{
-				AddProdD(*xr, Y(col), &A(col, row + i));
+				AddProd(*xr, Y(col), &A(col, row + i));
 			}
 			xr = &X(row + i + 1);
 		}
@@ -452,7 +430,7 @@ static void dger_row_noalpha2x2(CBLAS_INDEX m, CBLAS_INDEX n, double* x, CBLAS_I
 	if (m - row >= 1)
 	{
 		for (col = 0; col < n; col++)
-			AddProdD(X(row), Y(col), &A(col, row));
+			AddProd(X(row), Y(col), &A(col, row));
 	}
 }
 
@@ -484,7 +462,7 @@ static void dger_row_noalpha2x2_fma(CBLAS_INDEX m, CBLAS_INDEX n, double* x, CBL
 		{
 			if (n - col == 1)
 			{
-				AddProdD(*xr, Y(col), &A(col, row + i));
+				AddProd(*xr, Y(col), &A(col, row + i));
 			}
 			xr = &X(row + i + 1);
 		}
@@ -494,7 +472,7 @@ static void dger_row_noalpha2x2_fma(CBLAS_INDEX m, CBLAS_INDEX n, double* x, CBL
 	if (m - row >= 1)
 	{
 		for (col = 0; col < n; col++)
-			AddProdD(X(row), Y(col), &A(col, row));
+			AddProd(X(row), Y(col), &A(col, row));
 	}
 }
 

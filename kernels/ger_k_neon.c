@@ -14,22 +14,6 @@
 #define A(col, row) a[(row) * lda + (col)]
 
 //------------------------------------------------------
-// compute single element product
-//------------------------------------------------------
-static inline void AddProd(float x, float y, float *a)
-{
-    *a += x * y;
-}
-
-//------------------------------------------------------
-// compute single element product (double)
-//------------------------------------------------------
-static inline void AddProdD(double x, double y, double *a)
-{
-    *a += x * y;
-}
-
-//------------------------------------------------------
 // compute 4 cols x 4 rows product (NEON)
 //------------------------------------------------------
 static void AddProd4x4_NEON(float* x, float* y, float* a, CBLAS_INDEX lda)
@@ -242,7 +226,7 @@ void dger_k_neon(cblas_args_t* args)
             {
                 if (n - col == 1)
                 {
-                    AddProdD(*xr, Y(col), &A(col, row + i));
+                    AddProd(*xr, Y(col), &A(col, row + i));
                 }
                 xr = &X(row + i + 1);
             }
@@ -252,7 +236,7 @@ void dger_k_neon(cblas_args_t* args)
         if (m - row >= 1)
         {
             for (col = 0; col < n; col++)
-                AddProdD(X(row), Y(col), &A(col, row));
+                AddProd(X(row), Y(col), &A(col, row));
         }
     }
     else

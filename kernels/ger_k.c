@@ -199,7 +199,7 @@ void dger_k_sse(cblas_args_t* args)
             {
                 if (n - col == 1)
                 {
-                    AddProdD(*xr, Y(col), &A(col, row + i));
+                    AddProd(*xr, Y(col), &A(col, row + i));
                 }
                 xr = &X(row + i + 1);
             }
@@ -209,7 +209,7 @@ void dger_k_sse(cblas_args_t* args)
         if (m - row >= 1)
         {
             for (col = 0; col < n; col++)
-                AddProdD(X(row), Y(col), &A(col, row));
+                AddProd(X(row), Y(col), &A(col, row));
         }
     }
     else
