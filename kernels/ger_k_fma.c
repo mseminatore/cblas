@@ -6,7 +6,7 @@
 #include "cblas.h"
 #include "cblas_simd.h"
 
-#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 
 // helpful macros
 #define X(i) x[(i) * incx]
@@ -257,4 +257,4 @@ void dger_k_fma(cblas_args_t* args)
     }
 }
 
-#endif // USE_SSE && USE_SIMD
+#endif // x86/x64

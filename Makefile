@@ -22,7 +22,6 @@ LFLAGS += -L. -lcblas -lm
 # Configuration options - can be overridden on command line
 # e.g., make CBLAS_ENABLE_MT=0 to disable multi-threading
 CBLAS_ENABLE_MT ?= 1
-CBLAS_USE_SIMD ?= 1
 CBLAS_CHECK_INPUTS ?= 1
 CBLAS_USE_STATIC_BUFFERS ?= 1
 CBLAS_MAX_THREADS ?= 64
@@ -50,7 +49,6 @@ cblas_config.h: cblas_config.h.in Makefile
 	@echo "Generating cblas_config.h..."
 	@sed -e 's/@CBLAS_MAX_THREADS@/$(CBLAS_MAX_THREADS)/g' \
 	     -e 's/#cmakedefine01 CBLAS_ENABLE_MT/#define CBLAS_ENABLE_MT $(CBLAS_ENABLE_MT)/g' \
-	     -e 's/#cmakedefine01 CBLAS_USE_SIMD/#define CBLAS_USE_SIMD $(CBLAS_USE_SIMD)/g' \
 	     -e 's/#cmakedefine01 CBLAS_CHECK_INPUTS/#define CBLAS_CHECK_INPUTS $(CBLAS_CHECK_INPUTS)/g' \
 	     -e 's/#cmakedefine01 CBLAS_USE_STATIC_BUFFERS/#define CBLAS_USE_STATIC_BUFFERS $(CBLAS_USE_STATIC_BUFFERS)/g' \
 	     cblas_config.h.in > cblas_config.h

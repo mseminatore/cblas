@@ -23,7 +23,7 @@ static void sgemv_row_dot_noinc(float* a_row, float* x, CBLAS_INDEX n, float* re
     CBLAS_INDEX i = 0;
     float sum = 0.0f;
     
-#if defined(__AVX2__) && defined(USE_SIMD)
+#if defined(__AVX2__)
     // AVX2 path: Use 4 independent accumulators to hide latency
     __m256 sum0 = _mm256_setzero_ps();
     __m256 sum1 = _mm256_setzero_ps();
@@ -104,7 +104,7 @@ static void dgemv_row_dot_noinc(double* a_row, double* x, CBLAS_INDEX n, double*
     CBLAS_INDEX i = 0;
     double sum = 0.0;
     
-#if defined(__AVX2__) && defined(USE_SIMD)
+#if defined(__AVX2__)
     // AVX2 path: Use 4 independent accumulators
     __m256d sum0 = _mm256_setzero_pd();
     __m256d sum1 = _mm256_setzero_pd();

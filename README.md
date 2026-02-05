@@ -74,7 +74,6 @@ CBLAS provides several CMake options to customize the build:
 Option | Default | Description
 ------ | ------- | -----------
 `CBLAS_ENABLE_MT` | ON | Enable multi-threading support
-`CBLAS_USE_SIMD` | ON | Enable SIMD optimizations (SSE/AVX)
 `CBLAS_CHECK_INPUTS` | ON | Enable input validation and error checking
 `CBLAS_USE_STATIC_BUFFERS` | ON | Use static buffers instead of stack-based
 `CBLAS_MAX_THREADS` | 64 | Maximum number of threads supported
@@ -84,11 +83,6 @@ Option | Default | Description
 Build with multi-threading disabled:
 ```bash
 cmake .. -DCBLAS_ENABLE_MT=OFF
-```
-
-Build with SIMD optimizations disabled:
-```bash
-cmake .. -DCBLAS_USE_SIMD=OFF
 ```
 
 Build with custom maximum threads:
@@ -103,7 +97,7 @@ cmake .. -DCBLAS_CHECK_INPUTS=OFF
 
 Combine multiple options:
 ```bash
-cmake .. -DCBLAS_ENABLE_MT=ON -DCBLAS_MAX_THREADS=32 -DCBLAS_USE_SIMD=ON
+cmake .. -DCBLAS_ENABLE_MT=ON -DCBLAS_MAX_THREADS=32
 ```
 
 ## Makefile Configuration Options
@@ -113,7 +107,6 @@ The Makefile provides the same configuration options as CMake for consistency:
 Option | Default | Description
 ------ | ------- | -----------
 `CBLAS_ENABLE_MT` | 1 | Enable multi-threading support
-`CBLAS_USE_SIMD` | 1 | Enable SIMD optimizations (SSE/AVX)
 `CBLAS_CHECK_INPUTS` | 1 | Enable input validation and error checking
 `CBLAS_USE_STATIC_BUFFERS` | 1 | Use static buffers instead of stack-based
 `CBLAS_MAX_THREADS` | 64 | Maximum number of threads supported
@@ -123,11 +116,6 @@ Option | Default | Description
 Build with multi-threading disabled:
 ```bash
 make CBLAS_ENABLE_MT=0
-```
-
-Build with SIMD optimizations disabled:
-```bash
-make CBLAS_USE_SIMD=0
 ```
 
 Build with custom maximum threads:
@@ -142,7 +130,7 @@ make CBLAS_CHECK_INPUTS=0
 
 Combine multiple options:
 ```bash
-make CBLAS_ENABLE_MT=1 CBLAS_MAX_THREADS=32 CBLAS_USE_SIMD=1
+make CBLAS_ENABLE_MT=1 CBLAS_MAX_THREADS=32
 ```
 
 # Auto-Tuning Multi-Threading Thresholds

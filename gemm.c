@@ -188,7 +188,7 @@ static void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, CBLAS_IN
 	}
 }
 
-#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 
 //------------------------------------------------------
 // compute 16 dot products at a time, 4 cols x 4 rows (non-FMA version)
@@ -294,7 +294,7 @@ static void AddDot4x4_fma(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CB
     _mm_storeu_ps(&C(0, 3), c_row4);
 }
 
-#elif defined(__aarch64__) && defined(USE_SIMD)
+#elif defined(__aarch64__) && defined(__ARM_NEON)
 
 static void AddDot4x4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc)
 {
@@ -723,7 +723,7 @@ void sgemm_k(cblas_args_t* args)
     InnerKernel(args->ib, args->n, args->pb, args->a, args->lda, args->b, args->ldb, args->c, args->ldc);
 }
 
-#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 
 //------------------------------------------------------
 // GEMM kernel with FMA support (x86-64)
@@ -991,7 +991,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
                 //
                 // The packed data stays in L2 cache, enabling high-bandwidth access
                 // during the intensive computation phase.
-#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
                 if (fma_available) {
                     InnerKernel_fma(ib, n, pb, &A(p, row), lda, &B(0, p), ldb, &C(0, row), ldc);
                 } else
@@ -1019,7 +1019,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         for (CBLAS_INDEX row = 0; row < m; row += cblas_gemm_mc) 
         {
             ib = MIN(m - row, cblas_gemm_mc);
-#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
             if (fma_available) {
                 InnerKernel_fma(ib, n, pb, &A(p, row), lda, &B(0, p), ldb, &C(0, row), ldc);
             } else
@@ -1062,7 +1062,7 @@ void cblas_sgemm_naive(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSP
 // NOTE: Currently unused. Reserved for future packed-matrix SIMD implementation
 // similar to sgemm's AddDot4x4. Requires matrix packing before use.
 //------------------------------------------------------
-#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 
 CBLAS_UNUSED static void AddDot2x2_d(CBLAS_INDEX k, double *a, CBLAS_INDEX lda, double *b, CBLAS_INDEX ldb, double *c, CBLAS_INDEX ldc)
 {
@@ -1104,7 +1104,7 @@ CBLAS_UNUSED static void AddDot2x2_d(CBLAS_INDEX k, double *a, CBLAS_INDEX lda, 
     _mm_storeu_pd(&C(0, 1), c_row2);
 }
 
-#elif defined(__aarch64__) && defined(__ARM_NEON) && defined(USE_SIMD)
+#elif defined(__aarch64__) && defined(__ARM_NEON)
 
 CBLAS_UNUSED static void AddDot2x2_d(CBLAS_INDEX k, double *a, CBLAS_INDEX lda, double *b, CBLAS_INDEX ldb, double *c, CBLAS_INDEX ldc)
 {

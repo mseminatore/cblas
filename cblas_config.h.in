@@ -19,13 +19,6 @@
 #   define MT_ENABLED
 #endif
 
-/* Enable SIMD optimizations */
-#cmakedefine01 CBLAS_USE_SIMD
-#if CBLAS_USE_SIMD
-#   define USE_SIMD
-#   define USE_SSE
-#endif
-
 /* Enable input validation */
 #cmakedefine01 CBLAS_CHECK_INPUTS
 #if CBLAS_CHECK_INPUTS

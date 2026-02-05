@@ -11,7 +11,7 @@
 #define Y(i) y[(i) * incy]
 #define A(col, row) a[(row) * lda + (col)]
 
-#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 
 //------------------------------------------------------
 // compute 4 cols x 4 rows product (SSE, non-FMA)
@@ -242,7 +242,7 @@ void dger_k_sse(cblas_args_t* args)
     }
 }
 
-#endif // USE_SSE && USE_SIMD
+#endif // x86/x64
 
 //------------------------------------------------------
 // Base scalar GER kernel (fallback)

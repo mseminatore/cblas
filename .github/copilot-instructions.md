@@ -20,7 +20,7 @@ This is an experimental, performance-focused subset of the BLAS (Basic Linear Al
 **Performance strategy:**
 - Kernel specialization: Most operations have optimized `_k_noinc` variants when `incx == 1 && incy == 1`
 - Loop unrolling: Inner loops use 4-way unrolling with separate accumulators (e.g., `sum0`, `sum1`, `sum2`, `sum3`) to reduce dependencies
-- SIMD paths conditionally compiled via `USE_SSE`, `USE_SIMD`, `USE_INTEL_FMA` preprocessor flags
+- SIMD paths conditionally compiled via platform detection (e.g., `__x86_64__`, `__aarch64__`) and `USE_INTEL_FMA` preprocessor flags
 - Cache blocking: [gemm.c](gemm.c) uses runtime-determined tile sizes (`mc`, `kc`, `nb`) with packed buffers (`packedA`, `packedB`)
 - Platform detection: [cpuid_x64.c](cpuid_x64.c) and [cpuid_arm64.c](cpuid_arm64.c) detect CPU features at runtime
 - Kernel dispatch: [util.c](util.c) populates `blas_kernels` struct with CPU-specific optimized kernels based on `cpu_get_features()` flags (CPU_SSE, CPU_AVX2, CPU_NEON, etc.)
@@ -37,14 +37,13 @@ make install            # Install to /opt/cblas
 
 # CMake (all platforms)
 mkdir build && cd build
-cmake .. -DCBLAS_ENABLE_MT=ON -DCBLAS_USE_SIMD=ON
+cmake .. -DCBLAS_ENABLE_MT=ON
 cmake --build . --config Release
 ctest                   # Run full test suite
 ```
 
 **Configuration options** (CMake and Makefile):
 - `CBLAS_ENABLE_MT` (default: ON/1) - Enable multi-threading
-- `CBLAS_USE_SIMD` (default: ON/1) - Enable SIMD optimizations (SSE/AVX/NEON)
 - `CBLAS_CHECK_INPUTS` (default: ON/1) - Enable input validation and `XERBLA` error handling
 - `CBLAS_USE_STATIC_BUFFERS` (default: ON/1) - Use static vs stack allocation for packed matrices
 - `CBLAS_MAX_THREADS` (default: 64) - Maximum supported threads
@@ -132,7 +131,7 @@ cblas_shutdown();                    // Cleanup thread pool
 2. Include `#include "cblas.h"` and `#include "cblas_simd.h"` (if using SIMD)
 3. Add public API function with error checking using `CBLAS_VALIDATE_VEC1/VEC2` macros
 4. Implement optimized `_k_noinc` variant for `inc==1` cases
-5. Add SIMD code path guarded by `#if defined(USE_SSE) && defined(USE_SIMD)`
+5. Add SIMD code path guarded by platform detection (e.g., `#if defined(__x86_64__) || defined(_M_X64)`)
 6. Update [CMakeLists.txt](CMakeLists.txt) and [Makefile](Makefile) source lists (OBJS variable)
 7. Add tests to [test.c](test.c) and optionally perf harness
 8. Export function declaration in [cblas.h](cblas.h) under appropriate BLAS level section (lines 1100-1250)

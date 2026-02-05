@@ -103,7 +103,7 @@ CBLAS_UNUSED static void AddProd8x4_AVX(float* x, float* y, float* a, CBLAS_INDE
 #endif
 }
 
-#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 
 //------------------------------------------------------
 // compute 8 cols x 4 rows product (FMA version)
@@ -214,7 +214,7 @@ static void AddProd4x4_SIMD(float* x, float* y, float* a, CBLAS_INDEX lda)
 #endif
 }
 
-#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 
 //------------------------------------------------------
 // compute 4 cols x 4 rows product (FMA version)
@@ -340,7 +340,7 @@ static void AddProd2x2_SIMD_d(double* x, double* y, double* a, CBLAS_INDEX lda)
 #endif
 }
 
-#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 
 //------------------------------------------------------
 // Double-precision SIMD: compute 2 cols x 2 rows product (FMA version)
@@ -434,7 +434,7 @@ static void dger_row_noalpha2x2(CBLAS_INDEX m, CBLAS_INDEX n, double* x, CBLAS_I
 	}
 }
 
-#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 
 //------------------------------------------------------
 // Double-precision FMA version: optimized path for alpha == 1.0, 2x2 blocks
@@ -603,7 +603,7 @@ static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_IN
 	}
 }
 
-#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 
 //------------------------------------------------------
 // FMA version of sger_row_noalpha4x4 with prefetching
@@ -744,7 +744,7 @@ void sger_k(cblas_args_t* args)
 	// Use optimized path when alpha == 1.0
 	if (alpha == 1.0f)
 	{
-#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 		// Use FMA version if CPU supports it
 		if (cpu_get_features() & CPU_x64_FMA3)
 		{
@@ -807,7 +807,7 @@ void dger_k(cblas_args_t* args)
 	// Use optimized path when alpha == 1.0
 	if (alpha == 1.0)
 	{
-#if defined(USE_SSE) && defined(USE_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86))
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
 		// Use FMA version if CPU supports it
 		if (cpu_get_features() & CPU_x64_FMA3)
 		{
