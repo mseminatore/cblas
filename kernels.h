@@ -77,6 +77,17 @@ void cblas_drot_k_noinc_sse(cblas_args_t* args);
 void cblas_drot_k_noinc_avx(cblas_args_t* args);
 void cblas_drot_k_noinc_neon(cblas_args_t* args);
 
+void cblas_snrm2_k(cblas_args_t* args);
+void cblas_snrm2_k_noinc(cblas_args_t* args);
+void cblas_snrm2_k_noinc_sse(cblas_args_t* args);
+void cblas_snrm2_k_noinc_avx(cblas_args_t* args);
+void cblas_snrm2_k_noinc_neon(cblas_args_t* args);
+void cblas_dnrm2_k(cblas_args_t* args);
+void cblas_dnrm2_k_noinc(cblas_args_t* args);
+void cblas_dnrm2_k_noinc_sse(cblas_args_t* args);
+void cblas_dnrm2_k_noinc_avx(cblas_args_t* args);
+void cblas_dnrm2_k_noinc_neon(cblas_args_t* args);
+
 // Level-2 kernel function declarations
 
 // Level-3 kernel function declarations

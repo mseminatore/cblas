@@ -530,6 +530,11 @@ typedef struct
     kernel_function drot_k;         // double-precision rotation
     kernel_function drot_k_noinc;   // double-precision rotation inc=1
 
+    kernel_function snrm2_k;        // single-precision euclidean norm
+    kernel_function snrm2_k_noinc;  // single-precision euclidean norm inc=1
+    kernel_function dnrm2_k;        // double-precision euclidean norm
+    kernel_function dnrm2_k_noinc;  // double-precision euclidean norm inc=1
+
     kernel_function sscal_k;        // single-precision scale
     kernel_function dscal_k;        // double-precision scale
     kernel_function saxpy_k;        // single-precision A*X plus Y
