@@ -13,8 +13,6 @@
 #define Y(i) y[(i) * incy]
 #define A(col, row) a[(row) * lda + (col)]
 
-#define GER_BLOCK_SIZE 64
-
 //------------------------------------------------------
 // compute 4 cols x 4 rows product (FMA version)
 //------------------------------------------------------
