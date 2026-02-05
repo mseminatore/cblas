@@ -308,6 +308,8 @@ static void init_blas_kernels(void)
 			blas_kernels.dasum_k_noinc = cblas_dasum_k_noinc_avx;
 			blas_kernels.scopy_k_noinc = cblas_scopy_k_noinc_avx;
 			blas_kernels.dcopy_k_noinc = cblas_dcopy_k_noinc_avx;
+			blas_kernels.sswap_k_noinc = cblas_sswap_k_noinc_avx;
+			blas_kernels.dswap_k_noinc = cblas_dswap_k_noinc_avx;
 
 			// Check for FMA3 support and dispatch accordingly
 			if (cpu_features & CPU_x64_FMA3)
