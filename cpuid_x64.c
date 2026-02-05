@@ -343,6 +343,8 @@ static void init_blas_kernels(void)
 			{
 				blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc_fma;
 				blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc_fma;
+				blas_kernels.snrm2_k_noinc = cblas_snrm2_k_noinc_fma;
+				blas_kernels.dnrm2_k_noinc = cblas_dnrm2_k_noinc_fma;
 				blas_kernels.sgemm_k = sgemm_k_fma;
 			}
 		}
