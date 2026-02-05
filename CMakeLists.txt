@@ -103,6 +103,7 @@ add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c rot.c asum.c 
     kernels/copy_k_sse.c kernels/copy_k_avx.c kernels/copy_k_neon.c
     kernels/swap_k_sse.c kernels/swap_k_avx.c kernels/swap_k_neon.c
     kernels/setv_k_sse.c kernels/setv_k_avx.c kernels/setv_k_neon.c
+    kernels/rot_k_sse.c kernels/rot_k_avx.c kernels/rot_k_neon.c
     ${CPUID_FILE} 
     ${SERVER_FILE}
 )

@@ -525,6 +525,11 @@ typedef struct
     kernel_function ssetv_k_noinc;  // single-precision set vector inc=1
     kernel_function dsetv_k_noinc;  // double-precision set vector inc=1
 
+    kernel_function srot_k;         // single-precision rotation
+    kernel_function srot_k_noinc;   // single-precision rotation inc=1
+    kernel_function drot_k;         // double-precision rotation
+    kernel_function drot_k_noinc;   // double-precision rotation inc=1
+
     kernel_function sscal_k;        // single-precision scale
     kernel_function dscal_k;        // double-precision scale
     kernel_function saxpy_k;        // single-precision A*X plus Y

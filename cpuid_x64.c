@@ -277,6 +277,11 @@ static void init_blas_kernels(void)
 	blas_kernels.ssetv_k_noinc = cblas_ssetv_k_noinc;
 	blas_kernels.dsetv_k_noinc = cblas_dsetv_k_noinc;
 
+	blas_kernels.srot_k = cblas_srot_k;
+	blas_kernels.drot_k = cblas_drot_k;
+	blas_kernels.srot_k_noinc = cblas_srot_k_noinc;
+	blas_kernels.drot_k_noinc = cblas_drot_k_noinc;
+
 	//blas_kernels.sscal_k = cblas_sscal_k;
 	//blas_kernels.dscal_k = cblas_dscal_k;
 	//blas_kernels.saxpy_k = cblas_saxpy_k;
@@ -306,6 +311,8 @@ static void init_blas_kernels(void)
 		blas_kernels.dswap_k_noinc = cblas_dswap_k_noinc_sse;
 		blas_kernels.ssetv_k_noinc = cblas_ssetv_k_noinc_sse;
 		blas_kernels.dsetv_k_noinc = cblas_dsetv_k_noinc_sse;
+		blas_kernels.srot_k_noinc = cblas_srot_k_noinc_sse;
+		blas_kernels.drot_k_noinc = cblas_drot_k_noinc_sse;
 
 		if (cpu_features & CPU_AVX)
 		{
@@ -319,6 +326,8 @@ static void init_blas_kernels(void)
 			blas_kernels.dswap_k_noinc = cblas_dswap_k_noinc_avx;
 			blas_kernels.ssetv_k_noinc = cblas_ssetv_k_noinc_avx;
 			blas_kernels.dsetv_k_noinc = cblas_dsetv_k_noinc_avx;
+			blas_kernels.srot_k_noinc = cblas_srot_k_noinc_avx;
+			blas_kernels.drot_k_noinc = cblas_drot_k_noinc_avx;
 
 			// Check for FMA3 support and dispatch accordingly
 			if (cpu_features & CPU_x64_FMA3)
