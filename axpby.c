@@ -65,25 +65,37 @@ void cblas_saxpby(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float 
 
     CBLAS_STATS_START();
 
+#ifdef MT_ENABLED
+    int mt_used = (n > CBLAS_MT_AXPY) ? 1 : 0;
+#else
     int mt_used = 0;
+#endif
 
-    cblas_args_t args = {
-        .n = n,
-        .incx = incx,
-        .incy = incy,
-        .x = x,
-        .y = y,
-        .alpha = &alpha,
-        .beta = &beta
-    };
+    kernel_function kernel = blas_kernels.saxpby_k;
 
+    // special case kernel for no increments
     if (incx == 1 && incy == 1)
     {
-        blas_kernels.saxpby_k_noinc(&args);
+        kernel = blas_kernels.saxpby_k_noinc;
+    }
+
+    if (mt_used)
+    {
+        cblas_level1_exec(sizeof(float), kernel, n, x, incx, y, incy, &alpha, &beta, "SAXPBY");
     }
     else
     {
-        blas_kernels.saxpby_k(&args);
+        cblas_args_t args = {
+            .n = n,
+            .incx = incx,
+            .incy = incy,
+            .x = x,
+            .y = y,
+            .alpha = &alpha,
+            .beta = &beta
+        };
+
+        kernel(&args);
     }
 
     CBLAS_STATS_END("saxpby", n, mt_used);
@@ -149,25 +161,37 @@ void cblas_daxpby(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, doub
 
     CBLAS_STATS_START();
 
+#ifdef MT_ENABLED
+    int mt_used = (n > CBLAS_MT_AXPY) ? 1 : 0;
+#else
     int mt_used = 0;
+#endif
 
-    cblas_args_t args = {
-        .n = n,
-        .incx = incx,
-        .incy = incy,
-        .x = x,
-        .y = y,
-        .alpha = &alpha,
-        .beta = &beta
-    };
+    kernel_function kernel = blas_kernels.daxpby_k;
 
+    // special case kernel for no increments
     if (incx == 1 && incy == 1)
     {
-        blas_kernels.daxpby_k_noinc(&args);
+        kernel = blas_kernels.daxpby_k_noinc;
+    }
+
+    if (mt_used)
+    {
+        cblas_level1_exec(sizeof(double), kernel, n, x, incx, y, incy, &alpha, &beta, "DAXPBY");
     }
     else
     {
-        blas_kernels.daxpby_k(&args);
+        cblas_args_t args = {
+            .n = n,
+            .incx = incx,
+            .incy = incy,
+            .x = x,
+            .y = y,
+            .alpha = &alpha,
+            .beta = &beta
+        };
+
+        kernel(&args);
     }
 
     CBLAS_STATS_END("daxpby", n, mt_used);
