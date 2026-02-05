@@ -88,6 +88,11 @@ static unsigned int __cpu_get_features(void)
 	blas_kernels.sswap_k_noinc = cblas_sswap_k_noinc;
 	blas_kernels.dswap_k_noinc = cblas_dswap_k_noinc;
 
+	blas_kernels.ssetv_k = cblas_ssetv_k;
+	blas_kernels.dsetv_k = cblas_dsetv_k;
+	blas_kernels.ssetv_k_noinc = cblas_ssetv_k_noinc;
+	blas_kernels.dsetv_k_noinc = cblas_dsetv_k_noinc;
+
 	// Initialize Level-2 kernel function pointers
 	blas_kernels.sger_k = sger_k;
 	blas_kernels.dger_k = dger_k;
@@ -108,6 +113,8 @@ static unsigned int __cpu_get_features(void)
 		blas_kernels.dcopy_k_noinc = cblas_dcopy_k_noinc_neon;
 		blas_kernels.sswap_k_noinc = cblas_sswap_k_noinc_neon;
 		blas_kernels.dswap_k_noinc = cblas_dswap_k_noinc_neon;
+		blas_kernels.ssetv_k_noinc = cblas_ssetv_k_noinc_neon;
+		blas_kernels.dsetv_k_noinc = cblas_dsetv_k_noinc_neon;
     }
 
     return cpu_features;
