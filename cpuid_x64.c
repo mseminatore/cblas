@@ -309,7 +309,7 @@ static void init_blas_kernels(void)
 	blas_kernels.dgemv_k = dgemv_k_base;
 
 	// Initialize Level-3 kernel function pointers
-	blas_kernels.sgemm_k = sgemm_k;
+	blas_kernels.sgemm_k = sgemm_k_base;
 
 	// Initialize kernel function pointers based on CPU features
 	if (cpu_features & CPU_SSE)
@@ -338,6 +338,9 @@ static void init_blas_kernels(void)
 		// Level-2 SSE kernels
 		blas_kernels.sger_k = sger_k_sse;
 		blas_kernels.dger_k = dger_k_sse;
+
+		// Level-3 SSE kernels
+		blas_kernels.sgemm_k = sgemm_k_avx;
 
 		if (cpu_features & CPU_AVX)
 		{
