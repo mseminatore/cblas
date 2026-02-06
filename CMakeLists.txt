@@ -194,6 +194,7 @@ target_link_libraries(test_autotune cblas ${MATH_LIB})
 install(TARGETS cblas DESTINATION lib)
 install(FILES cblas.h DESTINATION include)
 install(FILES ${PROJECT_BINARY_DIR}/cblas_config.h DESTINATION include)
+install(FILES platform/cpuid.h platform/simd.h platform/threading.h DESTINATION include/platform)
 
 # cmake --build . --config Release
 # cmake --install . --prefix c:\opt -v
