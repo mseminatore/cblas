@@ -89,6 +89,10 @@ void sger_k_sse(cblas_args_t* args)
         float *xr, *yc, *ap;
         CBLAS_INDEX col, row;
 
+#if defined(CBLAS_PREFETCH)
+        const CBLAS_INDEX prefetch_distance = 64;
+#endif
+
         for (row = 0; row + 4 <= m; row += 4)
         {
             xr = &X(row);
@@ -97,6 +101,15 @@ void sger_k_sse(cblas_args_t* args)
 
             for (col = 0; col + 4 <= n; col += 4)
             {
+#if defined(CBLAS_PREFETCH)
+                if (col + prefetch_distance < n) {
+                    CBLAS_PREFETCH(ap + prefetch_distance, 1, 3);
+                    CBLAS_PREFETCH(ap + lda + prefetch_distance, 1, 3);
+                    CBLAS_PREFETCH(ap + 2*lda + prefetch_distance, 1, 3);
+                    CBLAS_PREFETCH(ap + 3*lda + prefetch_distance, 1, 3);
+                    CBLAS_PREFETCH(yc + prefetch_distance, 0, 3);
+                }
+#endif
                 AddProd4x4_SSE(xr, yc, ap, lda);
                 yc += 4;
                 ap += 4;
@@ -181,6 +194,10 @@ void dger_k_sse(cblas_args_t* args)
         double *xr, *yc, *ap;
         CBLAS_INDEX col, row;
 
+#if defined(CBLAS_PREFETCH)
+        const CBLAS_INDEX prefetch_distance = 64;
+#endif
+
         for (row = 0; row + 2 <= m; row += 2)
         {
             xr = &X(row);
@@ -189,6 +206,13 @@ void dger_k_sse(cblas_args_t* args)
 
             for (col = 0; col + 2 <= n; col += 2)
             {
+#if defined(CBLAS_PREFETCH)
+                if (col + prefetch_distance < n) {
+                    CBLAS_PREFETCH(ap + prefetch_distance, 1, 3);
+                    CBLAS_PREFETCH(ap + lda + prefetch_distance, 1, 3);
+                    CBLAS_PREFETCH(yc + prefetch_distance, 0, 3);
+                }
+#endif
                 AddProd2x2_SSE_d(xr, yc, ap, lda);
                 yc += 2;
                 ap += 2;
