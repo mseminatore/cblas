@@ -305,8 +305,8 @@ static void init_blas_kernels(void)
 	// Initialize Level-2 kernel function pointers (base versions)
 	blas_kernels.sger_k = sger_k_base;
 	blas_kernels.dger_k = dger_k_base;
-	blas_kernels.sgemv_k = sgemv_k;
-	blas_kernels.dgemv_k = dgemv_k;
+	blas_kernels.sgemv_k = sgemv_k_base;
+	blas_kernels.dgemv_k = dgemv_k_base;
 
 	// Initialize Level-3 kernel function pointers
 	blas_kernels.sgemm_k = sgemm_k;
@@ -361,6 +361,10 @@ static void init_blas_kernels(void)
 			blas_kernels.daxpy_k_noinc = cblas_daxpy_k_noinc_avx;
 			blas_kernels.saxpby_k_noinc = cblas_saxpby_k_noinc_avx;
 			blas_kernels.daxpby_k_noinc = cblas_daxpby_k_noinc_avx;
+
+			// Level-2 AVX kernels (uses FMA internally if supported)
+			blas_kernels.sgemv_k = sgemv_k_avx;
+			blas_kernels.dgemv_k = dgemv_k_avx;
 
 			// Check for FMA3 support and dispatch accordingly
 			if (cpu_features & CPU_x64_FMA3)

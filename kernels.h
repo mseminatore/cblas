@@ -141,6 +141,12 @@ void dger_k_neon(cblas_args_t* args);
 
 void sgemv_k(cblas_args_t* args);
 void dgemv_k(cblas_args_t* args);
+void sgemv_k_base(cblas_args_t* args);
+void dgemv_k_base(cblas_args_t* args);
+void sgemv_k_avx(cblas_args_t* args);
+void dgemv_k_avx(cblas_args_t* args);
+void sgemv_k_neon(cblas_args_t* args);
+void dgemv_k_neon(cblas_args_t* args);
 
 // Level-3 kernel function declarations
 
