@@ -22,10 +22,16 @@ void cblas_srot_k_noinc_sse(cblas_args_t* args)
     __m128 c_vec = _mm_set1_ps(c);
     __m128 s_vec = _mm_set1_ps(s);
     CBLAS_INDEX i = 0;
+    int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
 
     // Process 16 elements at a time using 4 SSE registers
     for (; i + 16 <= n; i += 16)
     {
+        if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+            CBLAS_PREFETCH(x + i + CBLAS_PREFETCH_DISTANCE, 1, 3);
+            CBLAS_PREFETCH(y + i + CBLAS_PREFETCH_DISTANCE, 1, 3);
+        }
+
         // Load x and y values
         __m128 x0 = _mm_loadu_ps(x + i);
         __m128 x1 = _mm_loadu_ps(x + i + 4);
@@ -97,10 +103,16 @@ void cblas_drot_k_noinc_sse(cblas_args_t* args)
     __m128d c_vec = _mm_set1_pd(c);
     __m128d s_vec = _mm_set1_pd(s);
     CBLAS_INDEX i = 0;
+    int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
 
     // Process 8 elements at a time using 4 SSE registers (2 doubles each)
     for (; i + 8 <= n; i += 8)
     {
+        if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+            CBLAS_PREFETCH(x + i + CBLAS_PREFETCH_DISTANCE, 1, 3);
+            CBLAS_PREFETCH(y + i + CBLAS_PREFETCH_DISTANCE, 1, 3);
+        }
+
         // Load x and y values
         __m128d x0 = _mm_loadu_pd(x + i);
         __m128d x1 = _mm_loadu_pd(x + i + 2);

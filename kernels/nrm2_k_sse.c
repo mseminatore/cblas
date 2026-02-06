@@ -23,10 +23,15 @@ void cblas_snrm2_k_noinc_sse(cblas_args_t* args)
     __m128 sum1 = _mm_setzero_ps();
     __m128 sum2 = _mm_setzero_ps();
     __m128 sum3 = _mm_setzero_ps();
+    int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
 
     // Process 16 floats per iteration (4 accumulators × 4 floats)
     for (; i + 16 <= n; i += 16)
     {
+        if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+            CBLAS_PREFETCH(x + i + CBLAS_PREFETCH_DISTANCE, 0, 3);
+        }
+
         __m128 x0 = _mm_loadu_ps(x + i);
         __m128 x1 = _mm_loadu_ps(x + i + 4);
         __m128 x2 = _mm_loadu_ps(x + i + 8);
@@ -78,10 +83,15 @@ void cblas_dnrm2_k_noinc_sse(cblas_args_t* args)
     __m128d sum1 = _mm_setzero_pd();
     __m128d sum2 = _mm_setzero_pd();
     __m128d sum3 = _mm_setzero_pd();
+    int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
 
     // Process 8 doubles per iteration (4 accumulators × 2 doubles)
     for (; i + 8 <= n; i += 8)
     {
+        if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+            CBLAS_PREFETCH(x + i + CBLAS_PREFETCH_DISTANCE, 0, 3);
+        }
+
         __m128d x0 = _mm_loadu_pd(x + i);
         __m128d x1 = _mm_loadu_pd(x + i + 2);
         __m128d x2 = _mm_loadu_pd(x + i + 4);

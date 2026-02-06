@@ -20,10 +20,15 @@ void cblas_sasum_k_noinc_avx(cblas_args_t* args)
 
     __m256 sum_vec = _mm256_setzero_ps();
     __m256 sign_mask = _mm256_castsi256_ps(_mm256_set1_epi32(0x7FFFFFFF)); // Mask to clear sign bit
+    int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
 
     // Process 32 elements at a time using 4 AVX registers (8 floats each)
     for (; i + 32 <= n; i += 32)
     {
+        if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+            CBLAS_PREFETCH(x + CBLAS_PREFETCH_DISTANCE, 0, 3);
+        }
+
         __m256 a = _mm256_loadu_ps(x);
         __m256 b = _mm256_loadu_ps(x + 8);
         __m256 c = _mm256_loadu_ps(x + 16);
@@ -75,10 +80,15 @@ void cblas_dasum_k_noinc_avx(cblas_args_t* args)
 
     __m256d sum_vec = _mm256_setzero_pd();
     __m256d sign_mask = _mm256_castsi256_pd(_mm256_set1_epi64x(0x7FFFFFFFFFFFFFFFLL)); // Mask to clear sign bit
+    int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
 
     // Process 16 elements at a time using 4 AVX registers (4 doubles each)
     for (; i + 16 <= n; i += 16)
     {
+        if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+            CBLAS_PREFETCH(x + CBLAS_PREFETCH_DISTANCE, 0, 3);
+        }
+
         __m256d a = _mm256_loadu_pd(x);
         __m256d b = _mm256_loadu_pd(x + 4);
         __m256d c = _mm256_loadu_pd(x + 8);

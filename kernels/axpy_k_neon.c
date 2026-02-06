@@ -21,10 +21,16 @@ void cblas_saxpy_k_noinc_neon(cblas_args_t* args)
     register CBLAS_INDEX i = 0;
     
     float32x4_t alpha_vec = vdupq_n_f32(alpha);
+    int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
     
     // Process 16 elements at a time (4x4)
     for (; i + 16 <= n; i += 16)
     {
+        if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+            CBLAS_PREFETCH(x + i + CBLAS_PREFETCH_DISTANCE, 0, 3);
+            CBLAS_PREFETCH(y + i + CBLAS_PREFETCH_DISTANCE, 1, 3);
+        }
+
         float32x4_t x0 = vld1q_f32(x + i);
         float32x4_t x1 = vld1q_f32(x + i + 4);
         float32x4_t x2 = vld1q_f32(x + i + 8);
@@ -74,10 +80,16 @@ void cblas_daxpy_k_noinc_neon(cblas_args_t* args)
     register CBLAS_INDEX i = 0;
     
     float64x2_t alpha_vec = vdupq_n_f64(alpha);
+    int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
     
     // Process 8 elements at a time (4x2)
     for (; i + 8 <= n; i += 8)
     {
+        if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+            CBLAS_PREFETCH(x + i + CBLAS_PREFETCH_DISTANCE, 0, 3);
+            CBLAS_PREFETCH(y + i + CBLAS_PREFETCH_DISTANCE, 1, 3);
+        }
+
         float64x2_t x0 = vld1q_f64(x + i);
         float64x2_t x1 = vld1q_f64(x + i + 2);
         float64x2_t x2 = vld1q_f64(x + i + 4);

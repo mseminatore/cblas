@@ -19,10 +19,15 @@ void cblas_sasum_k_noinc_neon(cblas_args_t* args)
     CBLAS_INDEX i = 0;
 
     float32x4_t sum_vec = vdupq_n_f32(0.0f);
+    int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
 
     // Process 16 elements at a time using 4 NEON registers
     for (; i + 16 <= n; i += 16)
     {
+        if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+            CBLAS_PREFETCH(x + CBLAS_PREFETCH_DISTANCE, 0, 3);
+        }
+
         float32x4_t a = vld1q_f32(x);
         float32x4_t b = vld1q_f32(x + 4);
         float32x4_t c = vld1q_f32(x + 8);
@@ -67,10 +72,15 @@ void cblas_dasum_k_noinc_neon(cblas_args_t* args)
     CBLAS_INDEX i = 0;
     
     float64x2_t sum_vec = vdupq_n_f64(0.0);
+    int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
 
     // Process 8 elements at a time using 4 NEON registers (2 doubles each)
     for (; i + 8 <= n; i += 8)
     {
+        if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+            CBLAS_PREFETCH(x + CBLAS_PREFETCH_DISTANCE, 0, 3);
+        }
+
         float64x2_t a = vld1q_f64(x);
         float64x2_t b = vld1q_f64(x + 2);
         float64x2_t c = vld1q_f64(x + 4);

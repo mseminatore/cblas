@@ -22,10 +22,16 @@ void cblas_srot_k_noinc_neon(cblas_args_t* args)
     float32x4_t c_vec = vdupq_n_f32(c);
     float32x4_t s_vec = vdupq_n_f32(s);
     CBLAS_INDEX i = 0;
+    int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
 
     // Process 16 elements at a time using 4 NEON registers
     for (; i + 16 <= n; i += 16)
     {
+        if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+            CBLAS_PREFETCH(x + i + CBLAS_PREFETCH_DISTANCE, 1, 3);
+            CBLAS_PREFETCH(y + i + CBLAS_PREFETCH_DISTANCE, 1, 3);
+        }
+
         // Load x and y values
         float32x4_t x0 = vld1q_f32(x + i);
         float32x4_t x1 = vld1q_f32(x + i + 4);
@@ -110,10 +116,16 @@ void cblas_drot_k_noinc_neon(cblas_args_t* args)
     float64x2_t c_vec = vdupq_n_f64(c);
     float64x2_t s_vec = vdupq_n_f64(s);
     CBLAS_INDEX i = 0;
+    int use_prefetch = (n > CBLAS_PREFETCH_THRESHOLD);
 
     // Process 8 elements at a time using 4 NEON registers (2 doubles each)
     for (; i + 8 <= n; i += 8)
     {
+        if (use_prefetch && i + CBLAS_PREFETCH_DISTANCE < n) {
+            CBLAS_PREFETCH(x + i + CBLAS_PREFETCH_DISTANCE, 1, 3);
+            CBLAS_PREFETCH(y + i + CBLAS_PREFETCH_DISTANCE, 1, 3);
+        }
+
         // Load x and y values
         float64x2_t x0 = vld1q_f64(x + i);
         float64x2_t x1 = vld1q_f64(x + i + 2);
