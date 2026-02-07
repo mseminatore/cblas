@@ -65,7 +65,7 @@
 #define CBLAS_MT_COPY_DEFAULT   16384   // Lower threshold for COPY - pure memory bandwidth operation
 #define CBLAS_MT_GER_DEFAULT    2048    // Lower threshold for GER - matrix operations benefit from earlier MT
 #define CBLAS_MT_GEMM_DEFAULT   4096    // Lower threshold for GEMM - compute-intensive operation benefits from MT
-#define CBLAS_MT_GEMV_DEFAULT   4096    // Lower threshold for GEMV - matrix-vector benefits from earlier MT
+#define CBLAS_MT_GEMV_DEFAULT   65536   // Higher threshold for GEMV - memory-bound, MT overhead hurts small sizes
 
 // Note: Runtime threshold variables are declared after CBLAS_INDEX is defined (see below)
 // Legacy macros for backward compatibility will be defined there as well
