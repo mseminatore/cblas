@@ -88,5 +88,5 @@ dkms.conf
 mt_debug*.json
 
 # Test programs
-test_*
+#test_*
 gemv_perf

@@ -174,17 +174,31 @@ static void test_swap(void)
 	TEST(EQUAL_ARRAY(sa, sb));
 	TEST(EQUAL_ARRAY(sc, sd));
 
-	// TODO - swap using incx/incy > 1
-// print_sarray(ARRAY_SIZE(sa), sa);
-// print_sarray(ARRAY_SIZE(sa), sc);
- 	//cblas_sswap(ARRAY_SIZE(sa), sa, 2, sc, 2);
-// print_sarray(ARRAY_SIZE(sa), sa);
-// print_sarray(ARRAY_SIZE(sa), sc);
+	// sswap with incx=2, incy=2 (swap every other element)
+	COMMENT("sswap with incx=2, incy=2");
+	{
+		float x[] = {1.0f, 0.0f, 2.0f, 0.0f, 3.0f};  // values at 0, 2, 4
+		float y[] = {4.0f, 0.0f, 5.0f, 0.0f, 6.0f};  // values at 0, 2, 4
+		float x_expected[] = {4.0f, 0.0f, 5.0f, 0.0f, 6.0f};
+		float y_expected[] = {1.0f, 0.0f, 2.0f, 0.0f, 3.0f};
 
-// 	cblas_sswap(ARRAY_SIZE(sa), sa, 2, sc, 2);
- 	TEST(EQUAL_ARRAY(sa, sb));
-// print_sarray(ARRAY_SIZE(sa), sa);
-// print_sarray(ARRAY_SIZE(sa), sc);
+		cblas_sswap(3, x, 2, y, 2);  // swap 3 elements with stride 2
+		TEST(equal_sarray_epsilon(x, x_expected, 5));
+		TEST(equal_sarray_epsilon(y, y_expected, 5));
+	}
+
+	// sswap with mixed strides (incx=2, incy=1)
+	COMMENT("sswap with incx=2, incy=1");
+	{
+		float x[] = {1.0f, 0.0f, 2.0f, 0.0f, 3.0f};  // values at 0, 2, 4
+		float y[] = {4.0f, 5.0f, 6.0f};              // contiguous
+		float x_expected[] = {4.0f, 0.0f, 5.0f, 0.0f, 6.0f};
+		float y_expected[] = {1.0f, 2.0f, 3.0f};
+
+		cblas_sswap(3, x, 2, y, 1);  // swap 3 elements
+		TEST(equal_sarray_epsilon(x, x_expected, 5));
+		TEST(equal_sarray_epsilon(y, y_expected, 3));
+	}
 
 	SUITE("cblas_dswap");
 
@@ -197,6 +211,19 @@ static void test_swap(void)
 	cblas_dswap(ARRAY_SIZE(da), da, 1, dc, 1);
 	TEST(EQUAL_ARRAY(da, db));
 	TEST(EQUAL_ARRAY(dc, dd));
+
+	// dswap with incx=2, incy=2
+	COMMENT("dswap with incx=2, incy=2");
+	{
+		double x[] = {1.0, 0.0, 2.0, 0.0, 3.0};
+		double y[] = {4.0, 0.0, 5.0, 0.0, 6.0};
+		double x_expected[] = {4.0, 0.0, 5.0, 0.0, 6.0};
+		double y_expected[] = {1.0, 0.0, 2.0, 0.0, 3.0};
+
+		cblas_dswap(3, x, 2, y, 2);
+		TEST(equal_darray_epsilon(x, x_expected, 5));
+		TEST(equal_darray_epsilon(y, y_expected, 5));
+	}
 }
 
 //------------------------------------------------------
