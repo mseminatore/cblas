@@ -386,6 +386,8 @@ static inline double mt_get_time_us(void) {
 #endif
 
 // GER matrix-vector operations
+// For row-major: lda >= n (number of columns)
+// For column-major: lda >= m (number of rows)
 #ifdef CBLAS_CHECK_INPUTS
 #ifdef CBLAS_XERBLA_INPUTS
 #define CBLAS_VALIDATE_GER(layout, m, n, x, incx, y, incy, a, lda, ret) \
@@ -403,7 +405,7 @@ static inline double mt_get_time_us(void) {
             info = 8; \
         else if (!(a)) \
             info = 9; \
-        else if ((lda) < MAX(1, (m))) \
+        else if ((layout) == CblasRowMajor ? (lda) < MAX(1, (n)) : (lda) < MAX(1, (m))) \
             info = 10; \
         if (info) { \
             XERBLA(info); \
@@ -413,11 +415,12 @@ static inline double mt_get_time_us(void) {
 #else
 #define CBLAS_VALIDATE_GER(layout, m, n, x, incx, y, incy, a, lda, ret) \
     do { \
-        if ((m) < 0 || (n) < 0 || !(x) || (incx) == 0 || (incy) == 0 || !(a) || (lda) < MAX(1, (m))) { \
+        CBLAS_INDEX _lda_min = ((layout) == CblasRowMajor) ? MAX(1, (n)) : MAX(1, (m)); \
+        if ((m) < 0 || (n) < 0 || !(x) || (incx) == 0 || (incy) == 0 || !(a) || (lda) < _lda_min) { \
             assert((m) > 0 && (n) > 0 && (incx) != 0 && (incy) != 0); \
             assert((x) && (y) && (a)); \
             assert((layout) == CblasRowMajor || (layout) == CblasColMajor); \
-            assert((lda) >= MAX(1, (m))); \
+            assert((lda) >= _lda_min); \
             return ret; \
         } \
     } while(0)

@@ -19,12 +19,15 @@
 void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, float* a, CBLAS_INDEX lda, float* x, CBLAS_INDEX incx, float beta, float* y, CBLAS_INDEX incy)
 {
 #ifdef CBLAS_CHECK_INPUTS
+	// For row-major: lda >= n (number of columns)
+	// For column-major: lda >= m (number of rows)
+	CBLAS_INDEX lda_min = (layout == CblasRowMajor) ? MAX(1, n) : MAX(1, m);
 
 #ifdef CBLAS_XERBLA_INPUTS
 	int info = 0;
 	if (!a)
 		info = 6;
-	else if (lda < MAX(1, m))
+	else if (lda < lda_min)
 		info = 7;
 	else if (!x)
 		info = 8;
@@ -40,9 +43,9 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 		return;
 	}
 #else
-	if (!a || lda < MAX(1, m) || !x || incx == 0 || !y || incy == 0)
+	if (!a || lda < lda_min || !x || incx == 0 || !y || incy == 0)
 	{
-		assert(m >= 0 && n >= 0 && a && lda >= MAX(1, m) && x && y && incx != 0 && incy != 0);
+		assert(m >= 0 && n >= 0 && a && lda >= lda_min && x && y && incx != 0 && incy != 0);
 		return;
 	}
 #endif
@@ -121,12 +124,15 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLAS_INDEX n, double alpha, double* a, CBLAS_INDEX lda, double* x, CBLAS_INDEX incx, double beta, double* y, CBLAS_INDEX incy)
 {
 #ifdef CBLAS_CHECK_INPUTS
+	// For row-major: lda >= n (number of columns)
+	// For column-major: lda >= m (number of rows)
+	CBLAS_INDEX lda_min = (layout == CblasRowMajor) ? MAX(1, n) : MAX(1, m);
 
 #ifdef CBLAS_XERBLA_INPUTS
 	int info = 0;
 	if (!a)
 		info = 6;
-	else if (lda < MAX(1, m))
+	else if (lda < lda_min)
 		info = 7;
 	else if (!x)
 		info = 8;
@@ -142,9 +148,9 @@ void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 		return;
 	}
 #else
-	if (!a || lda < MAX(1, m) || !x || incx == 0 || !y || incy == 0)
+	if (!a || lda < lda_min || !x || incx == 0 || !y || incy == 0)
 	{
-		assert(m >= 0 && n >= 0 && a && lda >= MAX(1, m) && x && y && incx != 0 && incy != 0);
+		assert(m >= 0 && n >= 0 && a && lda >= lda_min && x && y && incx != 0 && incy != 0);
 		return;
 	}
 #endif

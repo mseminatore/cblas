@@ -863,8 +863,9 @@ static void test_rotg(void)
 //------------------------------------------------------
 // Naive reference GEMM implementations for accuracy testing
 // C = alpha * A * B + beta * C (row-major, no transpose)
+// Note: sgemm version currently unused (sgemm accuracy tests disabled)
 //------------------------------------------------------
-static void naive_sgemm(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
+CBLAS_UNUSED static void naive_sgemm(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
                         float alpha, const float* A, CBLAS_INDEX lda,
                         const float* B, CBLAS_INDEX ldb,
                         float beta, float* C, CBLAS_INDEX ldc)
@@ -912,8 +913,9 @@ static void naive_dgemm(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
 
 //------------------------------------------------------
 // Random matrix generation for accuracy tests
+// Note: smatrix version currently unused (sgemm accuracy tests disabled)
 //------------------------------------------------------
-static void fill_random_smatrix(float* M, CBLAS_INDEX rows, CBLAS_INDEX cols, unsigned int seed)
+CBLAS_UNUSED static void fill_random_smatrix(float* M, CBLAS_INDEX rows, CBLAS_INDEX cols, unsigned int seed)
 {
 	srand(seed);
 	for (CBLAS_INDEX i = 0; i < rows * cols; i++) {
@@ -1353,20 +1355,19 @@ static void test_nonsquare_level2(void)
 	}
 
 	// sgemv with 4x2 matrix transposed
-	// TODO: Fix sgemv transposed with non-square matrix (lda validation issue)
-	// COMMENT("sgemv with 4x2 matrix transposed");
-	// {
-	// 	float A[] = {1, 2,
-	// 	             3, 4,
-	// 	             5, 6,
-	// 	             7, 8};  // 4x2 row-major
-	// 	float x[] = {1, 1, 1, 1};  // 4 elements
-	// 	float y[] = {0, 0};        // 2 elements
-	// 	float expected[] = {16, 20};  // col sums
+	COMMENT("sgemv with 4x2 matrix transposed");
+	{
+		float A[] = {1, 2,
+		             3, 4,
+		             5, 6,
+		             7, 8};  // 4x2 row-major
+		float x[] = {1, 1, 1, 1};  // 4 elements
+		float y[] = {0, 0};        // 2 elements
+		float expected[] = {16, 20};  // col sums
 
-	// 	cblas_sgemv(CblasRowMajor, CblasTrans, 4, 2, 1.0f, A, 2, x, 1, 0.0f, y, 1);
-	// 	TEST(equal_sarray_epsilon(y, expected, 2));
-	// }
+		cblas_sgemv(CblasRowMajor, CblasTrans, 4, 2, 1.0f, A, 2, x, 1, 0.0f, y, 1);
+		TEST(equal_sarray_epsilon(y, expected, 2));
+	}
 
 	// dgemv with 3x5 matrix
 	COMMENT("dgemv with 3x5 matrix");
@@ -1396,23 +1397,23 @@ static void test_nonsquare_level2(void)
 		TEST(equal_sarray_epsilon(A, expected, 8));
 	}
 
-	// TODO: Fix dger with non-square 4x2 matrix (lda validation issue)
-	// COMMENT("dger with non-square 4x2");
-	// {
-	// 	double x[] = {1, 2, 3, 4};  // M=4
-	// 	double y[] = {1, 2};        // N=2
-	// 	double A[] = {0, 0,
-	// 	              0, 0,
-	// 	              0, 0,
-	// 	              0, 0};  // 4x2
-	// 	double expected[] = {1, 2,
-	// 	                     2, 4,
-	// 	                     3, 6,
-	// 	                     4, 8};
+	// dger with non-square 4x2 matrix
+	COMMENT("dger with non-square 4x2");
+	{
+		double x[] = {1, 2, 3, 4};  // M=4
+		double y[] = {1, 2};        // N=2
+		double A[] = {0, 0,
+		              0, 0,
+		              0, 0,
+		              0, 0};  // 4x2
+		double expected[] = {1, 2,
+		                     2, 4,
+		                     3, 6,
+		                     4, 8};
 
-	// 	cblas_dger(CblasRowMajor, 4, 2, 1.0, x, 1, y, 1, A, 2);
-	// 	TEST(equal_darray_epsilon(A, expected, 8));
-	// }
+		cblas_dger(CblasRowMajor, 4, 2, 1.0, x, 1, y, 1, A, 2);
+		TEST(equal_darray_epsilon(A, expected, 8));
+	}
 }
 
 //------------------------------------------------------
