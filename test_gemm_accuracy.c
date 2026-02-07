@@ -87,7 +87,7 @@ static void fill_random_dmatrix(double* M, CBLAS_INDEX rows, CBLAS_INDEX cols, u
 //------------------------------------------------------
 // Array comparison with relaxed epsilon for large matrices
 //------------------------------------------------------
-static int equal_sarray_relaxed(float* a, float* b, CBLAS_INDEX len, float eps)
+CBLAS_UNUSED static int equal_sarray_relaxed(float* a, float* b, CBLAS_INDEX len, float eps)
 {
 	for (CBLAS_INDEX i = 0; i < len; i++) {
 		if (fabsf(a[i] - b[i]) > eps)
@@ -108,7 +108,7 @@ static int equal_darray_relaxed(double* a, double* b, CBLAS_INDEX len, double ep
 //------------------------------------------------------
 // Test helper: run single sgemm accuracy test
 //------------------------------------------------------
-static int run_sgemm_accuracy_test(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, 
+CBLAS_UNUSED static int run_sgemm_accuracy_test(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, 
                                     float alpha, float beta, unsigned int seed)
 {
 	float* A = malloc(m * k * sizeof(float));
@@ -370,5 +370,5 @@ int test_main(int argc, char* argv[])
 
 	cblas_shutdown();
 
-	END_TESTS();
+	return 0;
 }
