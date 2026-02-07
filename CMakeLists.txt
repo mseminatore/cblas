@@ -26,6 +26,7 @@ add_test(NAME test_level2_mt COMMAND test_level2_mt)
 add_test(NAME test_stats COMMAND test_stats)
 add_test(NAME test_mt_debug COMMAND test_mt_debug)
 add_test(NAME test_autotune COMMAND test_autotune)
+add_test(NAME test_gemm_accuracy COMMAND test_gemm_accuracy)
 
 if ( WIN32 )
 # The disabled test causes issues on Windows CI due to timeouts
@@ -189,6 +190,9 @@ target_link_libraries(test_level2_mt cblas ${MATH_LIB})
 
 add_executable(test_autotune test_main.c test_autotune.c)
 target_link_libraries(test_autotune cblas ${MATH_LIB})
+
+add_executable(test_gemm_accuracy test_main.c test_gemm_accuracy.c)
+target_link_libraries(test_gemm_accuracy cblas ${MATH_LIB})
 
 # install targets
 install(TARGETS cblas DESTINATION lib)

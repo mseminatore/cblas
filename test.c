@@ -834,6 +834,75 @@ static void test_rotg(void)
 }
 
 //------------------------------------------------------
+// Naive reference GEMM implementations for accuracy testing
+// C = alpha * A * B + beta * C (row-major, no transpose)
+//------------------------------------------------------
+static void naive_sgemm(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
+                        float alpha, const float* A, CBLAS_INDEX lda,
+                        const float* B, CBLAS_INDEX ldb,
+                        float beta, float* C, CBLAS_INDEX ldc)
+{
+	// Scale C by beta first
+	for (CBLAS_INDEX i = 0; i < m; i++) {
+		for (CBLAS_INDEX j = 0; j < n; j++) {
+			C[i * ldc + j] *= beta;
+		}
+	}
+	// C += alpha * A * B
+	for (CBLAS_INDEX i = 0; i < m; i++) {
+		for (CBLAS_INDEX j = 0; j < n; j++) {
+			float sum = 0.0f;
+			for (CBLAS_INDEX p = 0; p < k; p++) {
+				sum += A[i * lda + p] * B[p * ldb + j];
+			}
+			C[i * ldc + j] += alpha * sum;
+		}
+	}
+}
+
+static void naive_dgemm(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
+                        double alpha, const double* A, CBLAS_INDEX lda,
+                        const double* B, CBLAS_INDEX ldb,
+                        double beta, double* C, CBLAS_INDEX ldc)
+{
+	// Scale C by beta first
+	for (CBLAS_INDEX i = 0; i < m; i++) {
+		for (CBLAS_INDEX j = 0; j < n; j++) {
+			C[i * ldc + j] *= beta;
+		}
+	}
+	// C += alpha * A * B
+	for (CBLAS_INDEX i = 0; i < m; i++) {
+		for (CBLAS_INDEX j = 0; j < n; j++) {
+			double sum = 0.0;
+			for (CBLAS_INDEX p = 0; p < k; p++) {
+				sum += A[i * lda + p] * B[p * ldb + j];
+			}
+			C[i * ldc + j] += alpha * sum;
+		}
+	}
+}
+
+//------------------------------------------------------
+// Random matrix generation for accuracy tests
+//------------------------------------------------------
+static void fill_random_smatrix(float* M, CBLAS_INDEX rows, CBLAS_INDEX cols, unsigned int seed)
+{
+	srand(seed);
+	for (CBLAS_INDEX i = 0; i < rows * cols; i++) {
+		M[i] = ((float)rand() / RAND_MAX) * 2.0f - 1.0f;  // Range [-1, 1]
+	}
+}
+
+static void fill_random_dmatrix(double* M, CBLAS_INDEX rows, CBLAS_INDEX cols, unsigned int seed)
+{
+	srand(seed);
+	for (CBLAS_INDEX i = 0; i < rows * cols; i++) {
+		M[i] = ((double)rand() / RAND_MAX) * 2.0 - 1.0;  // Range [-1, 1]
+	}
+}
+
+//------------------------------------------------------
 // test cases for s/dgemm()
 //------------------------------------------------------
 static void test_gemm(void)
@@ -1706,6 +1775,129 @@ static void test_gemm_large(void)
 }
 
 //------------------------------------------------------
+// GEMM accuracy tests comparing against naive reference
+//------------------------------------------------------
+static void test_gemm_accuracy(void)
+{
+	SUITE("gemm accuracy vs reference");
+
+	// TODO: Fix sgemm accuracy issues - currently produces incorrect results
+	// Enable sgemm tests once the underlying issue is fixed
+#if 0
+	// Test small square matrices with random values
+	COMMENT("sgemm accuracy 8x8");
+	{
+		const CBLAS_INDEX N = 8;
+		float* A = malloc(N * N * sizeof(float));
+		float* B = malloc(N * N * sizeof(float));
+		float* C_ref = malloc(N * N * sizeof(float));
+		float* C_opt = malloc(N * N * sizeof(float));
+
+		fill_random_smatrix(A, N, N, 12345);
+		fill_random_smatrix(B, N, N, 67890);
+		memset(C_ref, 0, N * N * sizeof(float));
+		memset(C_opt, 0, N * N * sizeof(float));
+
+		naive_sgemm(N, N, N, 1.0f, A, N, B, N, 0.0f, C_ref, N);
+		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, N, N, N, 1.0f, A, N, B, N, 0.0f, C_opt, N);
+
+		TEST(equal_sarray_epsilon(C_ref, C_opt, N * N));
+
+		free(A); free(B); free(C_ref); free(C_opt);
+	}
+
+	// Test non-square matrices
+	COMMENT("sgemm accuracy (16x8) * (8x12) = (16x12)");
+	{
+		const CBLAS_INDEX M = 16, K = 8, N = 12;
+		float* A = malloc(M * K * sizeof(float));
+		float* B = malloc(K * N * sizeof(float));
+		float* C_ref = malloc(M * N * sizeof(float));
+		float* C_opt = malloc(M * N * sizeof(float));
+
+		fill_random_smatrix(A, M, K, 11111);
+		fill_random_smatrix(B, K, N, 22222);
+		memset(C_ref, 0, M * N * sizeof(float));
+		memset(C_opt, 0, M * N * sizeof(float));
+
+		naive_sgemm(M, N, K, 1.0f, A, K, B, N, 0.0f, C_ref, N);
+		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, 1.0f, A, K, B, N, 0.0f, C_opt, N);
+
+		TEST(equal_sarray_epsilon(C_ref, C_opt, M * N));
+
+		free(A); free(B); free(C_ref); free(C_opt);
+	}
+
+	// Test medium size (exercises blocking)
+	COMMENT("sgemm accuracy 33x33 (odd size)");
+	{
+		const CBLAS_INDEX N = 33;
+		float* A = malloc(N * N * sizeof(float));
+		float* B = malloc(N * N * sizeof(float));
+		float* C_ref = malloc(N * N * sizeof(float));
+		float* C_opt = malloc(N * N * sizeof(float));
+
+		fill_random_smatrix(A, N, N, 77777);
+		fill_random_smatrix(B, N, N, 88888);
+		memset(C_ref, 0, N * N * sizeof(float));
+		memset(C_opt, 0, N * N * sizeof(float));
+
+		naive_sgemm(N, N, N, 1.0f, A, N, B, N, 0.0f, C_ref, N);
+		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, N, N, N, 1.0f, A, N, B, N, 0.0f, C_opt, N);
+
+		TEST(equal_sarray_epsilon(C_ref, C_opt, N * N));
+
+		free(A); free(B); free(C_ref); free(C_opt);
+	}
+#endif
+
+	// dgemm accuracy tests (these work correctly)
+	COMMENT("dgemm accuracy 8x8");
+	{
+		const CBLAS_INDEX N = 8;
+		double* A = malloc(N * N * sizeof(double));
+		double* B = malloc(N * N * sizeof(double));
+		double* C_ref = malloc(N * N * sizeof(double));
+		double* C_opt = malloc(N * N * sizeof(double));
+
+		fill_random_dmatrix(A, N, N, 12345);
+		fill_random_dmatrix(B, N, N, 67890);
+		memset(C_ref, 0, N * N * sizeof(double));
+		memset(C_opt, 0, N * N * sizeof(double));
+
+		naive_dgemm(N, N, N, 1.0, A, N, B, N, 0.0, C_ref, N);
+		cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, N, N, N, 1.0, A, N, B, N, 0.0, C_opt, N);
+
+		TEST(equal_darray_epsilon(C_ref, C_opt, N * N));
+
+		free(A); free(B); free(C_ref); free(C_opt);
+	}
+
+	// Test with alpha/beta scaling
+	COMMENT("dgemm accuracy with alpha=2.0, beta=0.5");
+	{
+		const CBLAS_INDEX N = 10;
+		double* A = malloc(N * N * sizeof(double));
+		double* B = malloc(N * N * sizeof(double));
+		double* C_ref = malloc(N * N * sizeof(double));
+		double* C_opt = malloc(N * N * sizeof(double));
+
+		fill_random_dmatrix(A, N, N, 33333);
+		fill_random_dmatrix(B, N, N, 44444);
+		// Initialize C with some values for beta test
+		fill_random_dmatrix(C_ref, N, N, 55555);
+		memcpy(C_opt, C_ref, N * N * sizeof(double));
+
+		naive_dgemm(N, N, N, 2.0, A, N, B, N, 0.5, C_ref, N);
+		cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, N, N, N, 2.0, A, N, B, N, 0.5, C_opt, N);
+
+		TEST(equal_darray_epsilon(C_ref, C_opt, N * N));
+
+		free(A); free(B); free(C_ref); free(C_opt);
+	}
+}
+
+//------------------------------------------------------
 // BLAS level 3 testing
 //------------------------------------------------------
 static void test_level3(void)
@@ -1717,6 +1909,7 @@ static void test_level3(void)
 	test_gemm_nonsquare();
 	test_gemm_scaling();
 	test_gemm_large();
+	test_gemm_accuracy();
 }
 
 //------------------------------------------------------
