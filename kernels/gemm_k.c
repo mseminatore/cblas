@@ -18,24 +18,28 @@
 
 //------------------------------------------------------
 // compute dot product of row of X and col of Y (scalar)
+// alpha is applied to the result before accumulating
 //------------------------------------------------------
-static void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *gamma)
+static void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *gamma, float alpha)
 {
     float *px = x;
     float *py = y;
+    float sum = 0.0f;
     
     for (CBLAS_INDEX p = 0; p < k; p++)
     {
-        *gamma += (*px) * (*py);
+        sum += (*px) * (*py);
         px += incx;
         py += incy;
     }
+    *gamma += alpha * sum;
 }
 
 //------------------------------------------------------
 // compute 16 dot products at a time, 4 cols x 4 rows (scalar)
+// alpha is applied when storing results back to C
 //------------------------------------------------------
-static void AddDot4x4_base(CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float* c, CBLAS_INDEX ldc)
+static void AddDot4x4_base(CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float* c, CBLAS_INDEX ldc, float alpha)
 {
     register float 
         c_00, c_10, c_20, c_30,
@@ -98,10 +102,11 @@ static void AddDot4x4_base(CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, C
         c_33 += a_p3 * b_3p;
     }
 
-    C(0, 0) += c_00; C(1, 0) += c_10; C(2, 0) += c_20; C(3,0) += c_30;
-    C(0, 1) += c_01; C(1, 1) += c_11; C(2, 1) += c_21; C(3,1) += c_31;
-    C(0, 2) += c_02; C(1, 2) += c_12; C(2, 2) += c_22; C(3,2) += c_32;
-    C(0, 3) += c_03; C(1, 3) += c_13; C(2, 3) += c_23; C(3,3) += c_33;
+    // Apply alpha scaling and accumulate into C
+    C(0, 0) += alpha * c_00; C(1, 0) += alpha * c_10; C(2, 0) += alpha * c_20; C(3, 0) += alpha * c_30;
+    C(0, 1) += alpha * c_01; C(1, 1) += alpha * c_11; C(2, 1) += alpha * c_21; C(3, 1) += alpha * c_31;
+    C(0, 2) += alpha * c_02; C(1, 2) += alpha * c_12; C(2, 2) += alpha * c_22; C(3, 2) += alpha * c_32;
+    C(0, 3) += alpha * c_03; C(1, 3) += alpha * c_13; C(2, 3) += alpha * c_23; C(3, 3) += alpha * c_33;
 }
 
 //------------------------------------------------------
@@ -154,14 +159,16 @@ static void PackMatrixA(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
 
 //------------------------------------------------------
 // InnerKernel - base scalar implementation
+// Correct GotoBLAS-style packing: pack once per mc×kc tile, then iterate
 //------------------------------------------------------
 static void InnerKernel_base(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, 
                              float* a, CBLAS_INDEX lda, 
                              float* b, CBLAS_INDEX ldb, 
-                             float* c, CBLAS_INDEX ldc)
+                             float* c, CBLAS_INDEX ldc,
+                             float alpha)
 {
     float* packedA = (float*)malloc(cblas_gemm_mc * cblas_gemm_kc * sizeof(float));
-    float* packedB = (float*)malloc(cblas_gemm_kc * cblas_gemm_nb * sizeof(float));
+    float* packedB = (float*)malloc(cblas_gemm_kc * 4 * sizeof(float));  // Only pack 4 columns at a time
     
     if (!packedA || !packedB) {
         free(packedA);
@@ -173,37 +180,37 @@ static void InnerKernel_base(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
 
     for (row = 0; row + 4 <= m; row += 4)
     {
-        if (row == 0)
-            PackMatrixB(k, &B(0, 0), ldb, packedB);
+        // Pack this 4×k panel of A once
+        PackMatrixA(k, &A(0, row), lda, packedA);
 
         for (col = 0; col + 4 <= n; col += 4)
         {
-            if (col == 0) 
-                PackMatrixA(k, &A(0, row), lda, packedA);
+            // Pack each 4-column panel of B for this iteration
+            PackMatrixB(k, &B(col, 0), ldb, packedB);
 
-            AddDot4x4_base(k, packedA, 4, packedB, k, &C(col, row), ldc);
+            AddDot4x4_base(k, packedA, 4, packedB, 4, &C(col, row), ldc, alpha);
         }
 
         // handle leftover columns
         switch(n - col)
         {
             case 3:     
-                AddDot(k, &A(0, row), 1, &B(col + 2, 0), ldb, &C(col + 2, row));
-                AddDot(k, &A(0, row+1), 1, &B(col + 2, 0), ldb, &C(col + 2, row+1));
-                AddDot(k, &A(0, row+2), 1, &B(col + 2, 0), ldb, &C(col + 2, row+2));
-                AddDot(k, &A(0, row+3), 1, &B(col + 2, 0), ldb, &C(col + 2, row+3));
+                AddDot(k, &A(0, row), 1, &B(col + 2, 0), ldb, &C(col + 2, row), alpha);
+                AddDot(k, &A(0, row+1), 1, &B(col + 2, 0), ldb, &C(col + 2, row+1), alpha);
+                AddDot(k, &A(0, row+2), 1, &B(col + 2, 0), ldb, &C(col + 2, row+2), alpha);
+                AddDot(k, &A(0, row+3), 1, &B(col + 2, 0), ldb, &C(col + 2, row+3), alpha);
                 CBLAS_FALLTHROUGH;
             case 2:
-                AddDot(k, &A(0, row), 1, &B(col + 1, 0), ldb, &C(col + 1, row));
-                AddDot(k, &A(0, row+1), 1, &B(col + 1, 0), ldb, &C(col + 1, row+1));
-                AddDot(k, &A(0, row+2), 1, &B(col + 1, 0), ldb, &C(col + 1, row+2));
-                AddDot(k, &A(0, row+3), 1, &B(col + 1, 0), ldb, &C(col + 1, row+3));
+                AddDot(k, &A(0, row), 1, &B(col + 1, 0), ldb, &C(col + 1, row), alpha);
+                AddDot(k, &A(0, row+1), 1, &B(col + 1, 0), ldb, &C(col + 1, row+1), alpha);
+                AddDot(k, &A(0, row+2), 1, &B(col + 1, 0), ldb, &C(col + 1, row+2), alpha);
+                AddDot(k, &A(0, row+3), 1, &B(col + 1, 0), ldb, &C(col + 1, row+3), alpha);
                 CBLAS_FALLTHROUGH;
             case 1:
-                AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row));
-                AddDot(k, &A(0, row+1), 1, &B(col, 0), ldb, &C(col, row+1));
-                AddDot(k, &A(0, row+2), 1, &B(col, 0), ldb, &C(col, row+2));
-                AddDot(k, &A(0, row+3), 1, &B(col, 0), ldb, &C(col, row+3));
+                AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row), alpha);
+                AddDot(k, &A(0, row+1), 1, &B(col, 0), ldb, &C(col, row+1), alpha);
+                AddDot(k, &A(0, row+2), 1, &B(col, 0), ldb, &C(col, row+2), alpha);
+                AddDot(k, &A(0, row+3), 1, &B(col, 0), ldb, &C(col, row+3), alpha);
                 CBLAS_FALLTHROUGH;
             case 0: ;
         }
@@ -212,11 +219,11 @@ static void InnerKernel_base(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
     // handle leftover rows
     switch(m - row)
     {
-        case 3: for (col = 0; col < n; col++) AddDot(k, &A(0, row + 2), 1, &B(col, 0), ldb, &C(col, row + 2));
+        case 3: for (col = 0; col < n; col++) AddDot(k, &A(0, row + 2), 1, &B(col, 0), ldb, &C(col, row + 2), alpha);
             CBLAS_FALLTHROUGH;
-        case 2: for (col = 0; col < n; col++) AddDot(k, &A(0, row + 1), 1, &B(col, 0), ldb, &C(col, row + 1));
+        case 2: for (col = 0; col < n; col++) AddDot(k, &A(0, row + 1), 1, &B(col, 0), ldb, &C(col, row + 1), alpha);
             CBLAS_FALLTHROUGH;
-        case 1: for (col = 0; col < n; col++) AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row));
+        case 1: for (col = 0; col < n; col++) AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row), alpha);
             CBLAS_FALLTHROUGH;
         case 0: ;
     }
@@ -232,6 +239,66 @@ void sgemm_k_base(cblas_args_t* args)
 {
     InnerKernel_base(args->ib, args->n, args->pb, 
                      args->a, args->lda, 
-                     args->b, args->ldb, 
-                     args->c, args->ldc);
+                     args->b, args->ldb,
+                     args->c, args->ldc,
+                     args->alpha_s);
+}
+
+//------------------------------------------------------
+// Double-precision scalar dot product
+//------------------------------------------------------
+static void AddDot_d(CBLAS_INDEX k, double *x, CBLAS_INDEX incx, double *y, CBLAS_INDEX incy, double *gamma, double alpha)
+{
+    double *px = x;
+    double *py = y;
+    double sum = 0.0;
+    
+    for (CBLAS_INDEX p = 0; p < k; p++)
+    {
+        sum += (*px) * (*py);
+        px += incx;
+        py += incy;
+    }
+    *gamma += alpha * sum;
+}
+
+//------------------------------------------------------
+// DGEMM base scalar kernel
+// Simple implementation for CPUs without FMA
+//------------------------------------------------------
+static void InnerKernel_dgemm_base(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, 
+                                   double* a, CBLAS_INDEX lda, 
+                                   double* b, CBLAS_INDEX ldb, 
+                                   double* c, CBLAS_INDEX ldc,
+                                   double alpha)
+{
+    // Redefine macros for double
+    #undef A
+    #undef B
+    #undef C
+    #define A(col, row) a[((row) * lda + (col))]
+    #define B(col, row) b[((row) * ldb + (col))]
+    #define C(col, row) c[((row) * ldc + (col))]
+
+    CBLAS_INDEX row, col;
+
+    for (row = 0; row < m; row++)
+    {
+        for (col = 0; col < n; col++)
+        {
+            AddDot_d(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row), alpha);
+        }
+    }
+}
+
+//------------------------------------------------------
+// DGEMM kernel - base scalar version
+//------------------------------------------------------
+void dgemm_k_base(cblas_args_t* args)
+{
+    InnerKernel_dgemm_base(args->ib, args->n, args->pb, 
+                           (double*)args->a, args->lda, 
+                           (double*)args->b, args->ldb,
+                           (double*)args->c, args->ldc,
+                           args->alpha_d);
 }

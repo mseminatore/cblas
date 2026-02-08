@@ -266,6 +266,206 @@ void dger_k_sse(cblas_args_t* args)
     }
 }
 
+//------------------------------------------------------
+// compute 4 cols x 4 rows product (AVX 256-bit, single)
+//------------------------------------------------------
+static void AddProd4x8_AVX(float* x, float* y, float* a, CBLAS_INDEX lda)
+{
+    __m256 x0, x1, x2, x3, y0, a0, a1, a2, a3;
+
+    x0 = _mm256_broadcast_ss(x);
+    x1 = _mm256_broadcast_ss(x + 1);
+    x2 = _mm256_broadcast_ss(x + 2);
+    x3 = _mm256_broadcast_ss(x + 3);
+    
+    y0 = _mm256_loadu_ps(y);
+    
+    a0 = _mm256_loadu_ps(a);
+    a1 = _mm256_loadu_ps(a + lda);
+    a2 = _mm256_loadu_ps(a + 2 * lda);
+    a3 = _mm256_loadu_ps(a + 3 * lda);
+
+    // compute 4x8 product (non-FMA)
+    a0 = _mm256_add_ps(a0, _mm256_mul_ps(x0, y0));
+    a1 = _mm256_add_ps(a1, _mm256_mul_ps(x1, y0));
+    a2 = _mm256_add_ps(a2, _mm256_mul_ps(x2, y0));
+    a3 = _mm256_add_ps(a3, _mm256_mul_ps(x3, y0));
+
+    // store results
+    _mm256_storeu_ps(a, a0);
+    _mm256_storeu_ps(a + lda, a1);
+    _mm256_storeu_ps(a + 2 * lda, a2);
+    _mm256_storeu_ps(a + 3 * lda, a3);
+}
+
+//------------------------------------------------------
+// compute 2 cols x 2 rows product (AVX 256-bit, double)
+//------------------------------------------------------
+static void AddProd2x4_AVX_d(double* x, double* y, double* a, CBLAS_INDEX lda)
+{
+    __m256d x0, x1, y0, a0, a1;
+
+    x0 = _mm256_broadcast_sd(x);
+    x1 = _mm256_broadcast_sd(x + 1);
+    
+    y0 = _mm256_loadu_pd(y);
+    
+    a0 = _mm256_loadu_pd(a);
+    a1 = _mm256_loadu_pd(a + lda);
+
+    a0 = _mm256_add_pd(a0, _mm256_mul_pd(x0, y0));
+    a1 = _mm256_add_pd(a1, _mm256_mul_pd(x1, y0));
+
+    _mm256_storeu_pd(a, a0);
+    _mm256_storeu_pd(a + lda, a1);
+}
+
+//------------------------------------------------------
+// Single-precision GER kernel (AVX 256-bit, non-FMA)
+//------------------------------------------------------
+void sger_k_avx(cblas_args_t* args)
+{
+    float* x = (float*)args->x;
+    float* y = (float*)args->y;
+    float* a = (float*)args->a;
+    CBLAS_INDEX m = args->m;
+    CBLAS_INDEX n = args->n;
+    CBLAS_INDEX incx = args->incx;
+    CBLAS_INDEX incy = args->incy;
+    CBLAS_INDEX lda = args->lda;
+    float alpha = *(float*)args->alpha;
+
+    if (alpha == 1.0f && incx == 1 && incy == 1)
+    {
+        float *xr, *yc, *ap;
+        CBLAS_INDEX col, row;
+
+        for (row = 0; row + 4 <= m; row += 4)
+        {
+            xr = &x[row];
+            yc = y;
+            ap = &A(0, row);
+
+            for (col = 0; col + 8 <= n; col += 8)
+            {
+                AddProd4x8_AVX(xr, yc, ap, lda);
+                yc += 8;
+                ap += 8;
+            }
+
+            // Handle remaining columns with SSE
+            for (; col + 4 <= n; col += 4)
+            {
+                AddProd4x4_SSE(xr, yc, ap, lda);
+                yc += 4;
+                ap += 4;
+            }
+
+            // Scalar cleanup
+            for (CBLAS_INDEX i = 0; i < 4; i++)
+            {
+                for (CBLAS_INDEX c = col; c < n; c++)
+                {
+                    A(c, row + i) += xr[i] * y[c];
+                }
+            }
+        }
+
+        // Handle remaining rows
+        for (; row < m; row++)
+        {
+            for (col = 0; col < n; col++)
+            {
+                A(col, row) += x[row] * y[col];
+            }
+        }
+    }
+    else
+    {
+        // Fallback to scalar
+        for (CBLAS_INDEX row = 0; row < m; row++)
+        {
+            for (CBLAS_INDEX col = 0; col < n; col++)
+            {
+                A(col, row) += alpha * X(row) * Y(col);
+            }
+        }
+    }
+}
+
+//------------------------------------------------------
+// Double-precision GER kernel (AVX 256-bit, non-FMA)
+//------------------------------------------------------
+void dger_k_avx(cblas_args_t* args)
+{
+    double* x = (double*)args->x;
+    double* y = (double*)args->y;
+    double* a = (double*)args->a;
+    CBLAS_INDEX m = args->m;
+    CBLAS_INDEX n = args->n;
+    CBLAS_INDEX incx = args->incx;
+    CBLAS_INDEX incy = args->incy;
+    CBLAS_INDEX lda = args->lda;
+    double alpha = *(double*)args->alpha;
+
+    if (alpha == 1.0 && incx == 1 && incy == 1)
+    {
+        double *xr, *yc, *ap;
+        CBLAS_INDEX col, row;
+
+        for (row = 0; row + 2 <= m; row += 2)
+        {
+            xr = &x[row];
+            yc = y;
+            ap = &A(0, row);
+
+            for (col = 0; col + 4 <= n; col += 4)
+            {
+                AddProd2x4_AVX_d(xr, yc, ap, lda);
+                yc += 4;
+                ap += 4;
+            }
+
+            // Handle remaining columns with SSE
+            for (; col + 2 <= n; col += 2)
+            {
+                AddProd2x2_SSE_d(xr, yc, ap, lda);
+                yc += 2;
+                ap += 2;
+            }
+
+            // Scalar cleanup
+            for (CBLAS_INDEX i = 0; i < 2; i++)
+            {
+                for (CBLAS_INDEX c = col; c < n; c++)
+                {
+                    A(c, row + i) += xr[i] * y[c];
+                }
+            }
+        }
+
+        // Handle remaining rows
+        for (; row < m; row++)
+        {
+            for (col = 0; col < n; col++)
+            {
+                A(col, row) += x[row] * y[col];
+            }
+        }
+    }
+    else
+    {
+        // Fallback to scalar
+        for (CBLAS_INDEX row = 0; row < m; row++)
+        {
+            for (CBLAS_INDEX col = 0; col < n; col++)
+            {
+                A(col, row) += alpha * X(row) * Y(col);
+            }
+        }
+    }
+}
+
 #endif // x86/x64
 
 //------------------------------------------------------

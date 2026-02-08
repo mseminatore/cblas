@@ -498,6 +498,10 @@ typedef struct
 {
     CBLAS_INDEX m, n, k, incx, incy, lda, ldb, ldc, ib, pb;
     void *x, *y, *c, *alpha, *beta, *a, *b;
+    
+    // Scalar alpha/beta for direct access in kernels (avoids void* dereferencing)
+    float  alpha_s, beta_s;   // single-precision
+    double alpha_d, beta_d;   // double-precision
 } cblas_args_t;
 
 // kernel operation for MT tasks
@@ -1241,6 +1245,42 @@ int cpu_get_l1_data_cache_size(void);
 extern CBLAS_INDEX cblas_gemm_mc;   // Rows of A to pack
 extern CBLAS_INDEX cblas_gemm_kc;   // Inner dimension
 extern CBLAS_INDEX cblas_gemm_nb;   // Columns of B to pack
+
+//------------------------------------------------------
+// GEMM packing buffer pool (thread-local static buffers)
+//------------------------------------------------------
+
+/**
+ * @brief Per-thread GEMM packing buffers
+ * @note Pre-allocated to avoid malloc overhead in hot path
+ */
+typedef struct {
+    float  *packedA_s;   // single-precision packed A buffer (mc * kc floats)
+    float  *packedB_s;   // single-precision packed B buffer (kc * nb floats)
+    double *packedA_d;   // double-precision packed A buffer (mc * kc doubles)
+    double *packedB_d;   // double-precision packed B buffer (kc * nb doubles)
+    int     allocated;   // non-zero if buffers are allocated
+} cblas_gemm_buffer_t;
+
+/**
+ * @brief Get packing buffer for current thread
+ * @param thread_id Thread index (0 to MAX_THREADS-1)
+ * @return Pointer to buffer structure, or NULL if invalid thread_id
+ * @note Returns pre-allocated static buffer if available, else caller must use heap
+ */
+cblas_gemm_buffer_t* cblas_get_gemm_buffer(int thread_id);
+
+/**
+ * @brief Initialize GEMM buffer pool (called by cblas_init)
+ * @note Allocates packing buffers for all threads based on cblas_gemm_mc/kc/nb
+ */
+void cblas_init_gemm_buffers(void);
+
+/**
+ * @brief Cleanup GEMM buffer pool (called by cblas_shutdown)
+ * @note Frees all allocated packing buffers
+ */
+void cblas_cleanup_gemm_buffers(void);
 
 //------------------------------------------------------
 // internal functions

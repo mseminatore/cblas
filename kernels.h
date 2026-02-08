@@ -134,6 +134,8 @@ void sger_k_base(cblas_args_t* args);
 void dger_k_base(cblas_args_t* args);
 void sger_k_sse(cblas_args_t* args);
 void dger_k_sse(cblas_args_t* args);
+void sger_k_avx(cblas_args_t* args);
+void dger_k_avx(cblas_args_t* args);
 void sger_k_fma(cblas_args_t* args);
 void dger_k_fma(cblas_args_t* args);
 void sger_k_neon(cblas_args_t* args);
@@ -151,9 +153,17 @@ void dgemv_k_neon(cblas_args_t* args);
 // Level-3 kernel function declarations
 void sgemm_k(cblas_args_t* args);
 void sgemm_k_base(cblas_args_t* args);
+void sgemm_k_sse(cblas_args_t* args);
 void sgemm_k_avx(cblas_args_t* args);
 void sgemm_k_fma(cblas_args_t* args);
 void sgemm_k_neon(cblas_args_t* args);
+
+void dgemm_k(cblas_args_t* args);
+void dgemm_k_base(cblas_args_t* args);
+void dgemm_k_sse(cblas_args_t* args);
+void dgemm_k_avx(cblas_args_t* args);
+void dgemm_k_fma(cblas_args_t* args);
+void dgemm_k_neon(cblas_args_t* args);
 
 #endif // __KERNELS_H
 

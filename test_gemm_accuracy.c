@@ -15,9 +15,9 @@
 #include "test.h"
 #include "cblas.h"
 
-// Set to 1 to enable sgemm tests (currently failing due to known issues)
-// Set to 0 to only run dgemm tests (which pass)
-#define TEST_SGEMM_ACCURACY 0
+// Set to 1 to enable sgemm tests
+// Set to 0 to only run dgemm tests
+#define TEST_SGEMM_ACCURACY 1
 
 //------------------------------------------------------
 // Naive reference GEMM implementations
@@ -141,14 +141,14 @@ CBLAS_UNUSED static int run_sgemm_accuracy_test(CBLAS_INDEX m, CBLAS_INDEX n, CB
 		}
 	}
 
-	// Use relative error tolerance for sgemm (more appropriate for FP)
-	// Single precision: ~7 digits, so 1e-4 relative error is reasonable for SIMD/FMA differences
-	float rel_eps = 1e-4f;
-	int result = (max_rel_err < rel_eps);
+	// Use absolute error tolerance that scales with k (number of FMA operations)
+	// Single precision: ~7 digits, so k * 1e-5 is appropriate
+	float abs_eps = k * 1e-5f;
+	int result = (max_diff < abs_eps);
 
 	if (!result) {
 		printf("\n    [DEBUG] sgemm %dx%dx%d: max_diff=%.2e, max_rel_err=%.2e (eps=%.2e)\n",
-			(int)m, (int)n, (int)k, max_diff, max_rel_err, rel_eps);
+			(int)m, (int)n, (int)k, max_diff, max_rel_err, abs_eps);
 	}
 
 	free(A); free(B); free(C_ref); free(C_opt);

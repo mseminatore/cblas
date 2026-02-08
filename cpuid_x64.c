@@ -308,8 +308,9 @@ static void init_blas_kernels(void)
 	blas_kernels.sgemv_k = sgemv_k_base;
 	blas_kernels.dgemv_k = dgemv_k_base;
 
-	// Initialize Level-3 kernel function pointers
+	// Initialize Level-3 kernel function pointers (base versions)
 	blas_kernels.sgemm_k = sgemm_k_base;
+	blas_kernels.dgemm_k = dgemm_k_base;
 
 	// Initialize kernel function pointers based on CPU features
 	if (cpu_features & CPU_SSE)
@@ -339,8 +340,9 @@ static void init_blas_kernels(void)
 		blas_kernels.sger_k = sger_k_sse;
 		blas_kernels.dger_k = dger_k_sse;
 
-		// Level-3 SSE kernels
-		blas_kernels.sgemm_k = sgemm_k_avx;
+		// Level-3 SSE kernels (128-bit)
+		blas_kernels.sgemm_k = sgemm_k_sse;
+		blas_kernels.dgemm_k = dgemm_k_sse;
 
 		if (cpu_features & CPU_AVX)
 		{
@@ -365,9 +367,15 @@ static void init_blas_kernels(void)
 			blas_kernels.saxpby_k_noinc = cblas_saxpby_k_noinc_avx;
 			blas_kernels.daxpby_k_noinc = cblas_daxpby_k_noinc_avx;
 
-			// Level-2 AVX kernels (uses FMA internally if supported)
+			// Level-2 AVX kernels
 			blas_kernels.sgemv_k = sgemv_k_avx;
 			blas_kernels.dgemv_k = dgemv_k_avx;
+			blas_kernels.sger_k = sger_k_avx;
+			blas_kernels.dger_k = dger_k_avx;
+
+			// Level-3 AVX kernels (256-bit)
+			blas_kernels.sgemm_k = sgemm_k_avx;
+			blas_kernels.dgemm_k = dgemm_k_avx;
 
 			// Check for FMA3 support and dispatch accordingly
 			if (cpu_features & CPU_x64_FMA3)
@@ -381,6 +389,7 @@ static void init_blas_kernels(void)
 				blas_kernels.saxpby_k_noinc = cblas_saxpby_k_noinc_fma;
 				blas_kernels.daxpby_k_noinc = cblas_daxpby_k_noinc_fma;
 				blas_kernels.sgemm_k = sgemm_k_fma;
+				blas_kernels.dgemm_k = dgemm_k_fma;
 
 				// Level-2 FMA kernels
 				blas_kernels.sger_k = sger_k_fma;

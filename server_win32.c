@@ -166,6 +166,9 @@ void cblas_shutdown()
     platform_mutex_destroy(&queue_lock);
     platform_mutex_destroy(&server_lock);
 
+    // cleanup GEMM packing buffers
+    cblas_cleanup_gemm_buffers();
+
     // cleanup stats resources
     cblas_cleanup_stats();
 }

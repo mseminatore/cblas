@@ -157,6 +157,9 @@ void cblas_shutdown(void)
     // particularly GitHub Actions runners. They will be cleaned up automatically
     // when the program exits.
 
+    // cleanup GEMM packing buffers
+    cblas_cleanup_gemm_buffers();
+
     // cleanup stats resources
     cblas_cleanup_stats();
 }

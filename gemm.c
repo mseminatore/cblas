@@ -169,8 +169,6 @@
 //------------------------------------------------------
 void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float alpha, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float beta, float* c, CBLAS_INDEX ldc)
 {
-    (void)alpha;
-    (void)beta;
 #ifdef CBLAS_CHECK_INPUTS
     CBLAS_INDEX nota = (transa == CblasNoTrans);
     CBLAS_INDEX notb = (transb == CblasNoTrans);
@@ -222,13 +220,37 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         assert(transb == CblasTrans || transb == CblasNoTrans);
         assert(m > 0 && n > 0 && k > 0);
         assert(a && b && c);
-        assert(alpha != 0.0f && beta != 0.0f);
         return;
     }
 #endif
 #endif
 
     CBLAS_STATS_START();
+
+    // Handle beta scaling of C before computing A*B
+    // C = beta * C (done once, before any kernel calls)
+    if (beta == 0.0f)
+    {
+        // Zero out C
+        for (CBLAS_INDEX row = 0; row < m; row++)
+            for (CBLAS_INDEX col = 0; col < n; col++)
+                C(col, row) = 0.0f;
+    }
+    else if (beta != 1.0f)
+    {
+        // Scale C by beta
+        for (CBLAS_INDEX row = 0; row < m; row++)
+            for (CBLAS_INDEX col = 0; col < n; col++)
+                C(col, row) *= beta;
+    }
+    // If beta == 1.0f, C is unchanged
+
+    // If alpha is 0, we're done (C = beta * C)
+    if (alpha == 0.0f)
+    {
+        CBLAS_STATS_END("sgemm", m * n * k, 0);
+        return;
+    }
 
     CBLAS_INDEX pb, ib;
 
@@ -242,7 +264,6 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         CBLAS_INDEX total_tiles = horiz_tiles * vert_tiles;
         CBLAS_INDEX tile_count = 0;
 
-        //printf("tile count = %u\n", total_tiles);
         // Use heap allocation for large tile arrays to avoid stack overflow
         work_queue_t *queue = (work_queue_t*)malloc(total_tiles * sizeof(work_queue_t));
         cblas_args_t *args = (cblas_args_t*)malloc(total_tiles * sizeof(cblas_args_t));
@@ -283,6 +304,8 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
                 args[tile_count].c = &C(0, row);
                 args[tile_count].ib = ib;
                 args[tile_count].pb = pb;
+                args[tile_count].alpha_s = alpha;  // Pass alpha to kernel
+                args[tile_count].beta_s = 1.0f;    // Beta already applied to C
             
                 queue[tile_count].finished   = 0;
                 queue[tile_count].args       = &args[tile_count];
@@ -290,7 +313,6 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
                 queue[tile_count].next       = &queue[tile_count + 1];
 
                 tile_count++;
-                // InnerKernel(ib, n, pb, &A(p, row), lda, &B(0, p), ldb, &C(0, row), ldc);
             }
         }
 
@@ -316,6 +338,8 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         st_args.lda = lda;
         st_args.ldb = ldb;
         st_args.ldc = ldc;
+        st_args.alpha_s = alpha;  // Pass alpha to kernel
+        st_args.beta_s = 1.0f;    // Beta already applied to C
         
         // THREE-LEVEL CACHE-BLOCKING LOOP STRUCTURE:
         // ===========================================
@@ -357,6 +381,8 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     st_args.lda = lda;
     st_args.ldb = ldb;
     st_args.ldc = ldc;
+    st_args.alpha_s = alpha;  // Pass alpha to kernel
+    st_args.beta_s = 1.0f;    // Beta already applied to C
     
     for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
     {
@@ -546,8 +572,6 @@ CBLAS_UNUSED static void AddDot_d(CBLAS_INDEX k, double *a, CBLAS_INDEX lda, dou
 //------------------------------------------------------
 void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, double alpha, double *a, CBLAS_INDEX lda, double *b, CBLAS_INDEX ldb, double beta, double *c, CBLAS_INDEX ldc)
 {
-    (void)alpha;
-    (void)beta;
 #ifdef CBLAS_CHECK_INPUTS
     CBLAS_INDEX nota = (transa == CblasNoTrans);
     CBLAS_INDEX notb = (transb == CblasNoTrans);
@@ -632,90 +656,38 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         return;
     }
 
-    // Simple SIMD-optimized implementation using blocked approach
-    // Process in 2x2 blocks for better cache locality
-    CBLAS_INDEX row, col;
+    // Use cache-blocked kernel-based implementation
+    CBLAS_INDEX pb, ib;
+    cblas_args_t st_args;
     
-    if (alpha == 1.0)
+    st_args.n = n;
+    st_args.lda = lda;
+    st_args.ldb = ldb;
+    st_args.ldc = ldc;
+    st_args.alpha_d = alpha;  // Pass alpha to kernel
+    st_args.beta_d = 1.0;     // Beta already applied to C
+    
+    // Double precision uses smaller tiles (half elements per cache line)
+    // Use mc/2, kc, nb for double precision
+    CBLAS_INDEX mc_d = cblas_gemm_mc;
+    CBLAS_INDEX kc_d = cblas_gemm_kc;
+    
+    for (CBLAS_INDEX p = 0; p < k; p += kc_d) 
     {
-        // Optimized path when alpha = 1.0
-        for (row = 0; row + 2 <= m; row += 2)
+        pb = MIN(k - p, kc_d);
+        for (CBLAS_INDEX row = 0; row < m; row += mc_d) 
         {
-            for (col = 0; col + 2 <= n; col += 2)
-            {
-                // Process 2x2 block
-                for (CBLAS_INDEX p = 0; p < k; p++)
-                {
-                    // Row 0, Cols 0-1
-                    C(col, row) += A(p, row) * B(col, p);
-                    C(col + 1, row) += A(p, row) * B(col + 1, p);
-                    
-                    // Row 1, Cols 0-1
-                    C(col, row + 1) += A(p, row + 1) * B(col, p);
-                    C(col + 1, row + 1) += A(p, row + 1) * B(col + 1, p);
-                }
-            }
+            ib = MIN(m - row, mc_d);
             
-            // Handle remaining columns
-            for (; col < n; col++)
-            {
-                for (CBLAS_INDEX p = 0; p < k; p++)
-                {
-                    C(col, row) += A(p, row) * B(col, p);
-                    C(col, row + 1) += A(p, row + 1) * B(col, p);
-                }
-            }
-        }
-        
-        // Handle remaining rows
-        for (; row < m; row++)
-        {
-            for (col = 0; col < n; col++)
-            {
-                for (CBLAS_INDEX p = 0; p < k; p++)
-                    C(col, row) += A(p, row) * B(col, p);
-            }
-        }
-    }
-    else
-    {
-        // Generic path with alpha scaling
-        for (row = 0; row + 2 <= m; row += 2)
-        {
-            for (col = 0; col + 2 <= n; col += 2)
-            {
-                // Process 2x2 block
-                for (CBLAS_INDEX p = 0; p < k; p++)
-                {
-                    // Row 0, Cols 0-1
-                    C(col, row) += alpha * A(p, row) * B(col, p);
-                    C(col + 1, row) += alpha * A(p, row) * B(col + 1, p);
-                    
-                    // Row 1, Cols 0-1
-                    C(col, row + 1) += alpha * A(p, row + 1) * B(col, p);
-                    C(col + 1, row + 1) += alpha * A(p, row + 1) * B(col + 1, p);
-                }
-            }
+            // Setup args for this tile
+            st_args.a = &A(p, row);
+            st_args.b = &B(0, p);
+            st_args.c = &C(0, row);
+            st_args.ib = ib;
+            st_args.pb = pb;
             
-            // Handle remaining columns
-            for (; col < n; col++)
-            {
-                for (CBLAS_INDEX p = 0; p < k; p++)
-                {
-                    C(col, row) += alpha * A(p, row) * B(col, p);
-                    C(col, row + 1) += alpha * A(p, row + 1) * B(col, p);
-                }
-            }
-        }
-        
-        // Handle remaining rows
-        for (; row < m; row++)
-        {
-            for (col = 0; col < n; col++)
-            {
-                for (CBLAS_INDEX p = 0; p < k; p++)
-                    C(col, row) += alpha * A(p, row) * B(col, p);
-            }
+            // Dispatch to platform-optimized kernel
+            blas_kernels.dgemm_k(&st_args);
         }
     }
 

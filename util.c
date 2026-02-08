@@ -33,6 +33,127 @@ CBLAS_INDEX cblas_gemm_kc = 256;   // Inner dimension
 CBLAS_INDEX cblas_gemm_nb = 256;   // Columns of B to pack
 
 //------------------------------------------------------
+// GEMM packing buffer pool - one buffer set per thread
+//------------------------------------------------------
+static cblas_gemm_buffer_t gemm_buffer_pool[MAX_THREADS];
+static int gemm_buffers_initialized = 0;
+
+//------------------------------------------------------
+// Initialize GEMM buffer pool
+//------------------------------------------------------
+void cblas_init_gemm_buffers(void)
+{
+    if (gemm_buffers_initialized)
+        return;
+    
+    // Zero out the pool first
+    memset(gemm_buffer_pool, 0, sizeof(gemm_buffer_pool));
+    
+    // Allocate buffers for each potential thread
+    // Use maximum tile sizes to ensure buffers are large enough
+    size_t packedA_s_size = (size_t)cblas_gemm_mc * cblas_gemm_kc * sizeof(float);
+    size_t packedB_s_size = (size_t)cblas_gemm_kc * cblas_gemm_nb * sizeof(float);
+    size_t packedA_d_size = (size_t)cblas_gemm_mc * cblas_gemm_kc * sizeof(double);
+    size_t packedB_d_size = (size_t)cblas_gemm_kc * cblas_gemm_nb * sizeof(double);
+    
+    for (int i = 0; i < MAX_THREADS; i++)
+    {
+        // Allocate with alignment for SIMD operations (64-byte for AVX-512 compatibility)
+#ifdef _WIN32
+        gemm_buffer_pool[i].packedA_s = (float*)_aligned_malloc(packedA_s_size, 64);
+        gemm_buffer_pool[i].packedB_s = (float*)_aligned_malloc(packedB_s_size, 64);
+        gemm_buffer_pool[i].packedA_d = (double*)_aligned_malloc(packedA_d_size, 64);
+        gemm_buffer_pool[i].packedB_d = (double*)_aligned_malloc(packedB_d_size, 64);
+#else
+        posix_memalign((void**)&gemm_buffer_pool[i].packedA_s, 64, packedA_s_size);
+        posix_memalign((void**)&gemm_buffer_pool[i].packedB_s, 64, packedB_s_size);
+        posix_memalign((void**)&gemm_buffer_pool[i].packedA_d, 64, packedA_d_size);
+        posix_memalign((void**)&gemm_buffer_pool[i].packedB_d, 64, packedB_d_size);
+#endif
+        
+        // Check if all allocations succeeded
+        if (gemm_buffer_pool[i].packedA_s && gemm_buffer_pool[i].packedB_s &&
+            gemm_buffer_pool[i].packedA_d && gemm_buffer_pool[i].packedB_d)
+        {
+            gemm_buffer_pool[i].allocated = 1;
+        }
+        else
+        {
+            // Allocation failed - clean up partial allocations
+#ifdef _WIN32
+            if (gemm_buffer_pool[i].packedA_s) _aligned_free(gemm_buffer_pool[i].packedA_s);
+            if (gemm_buffer_pool[i].packedB_s) _aligned_free(gemm_buffer_pool[i].packedB_s);
+            if (gemm_buffer_pool[i].packedA_d) _aligned_free(gemm_buffer_pool[i].packedA_d);
+            if (gemm_buffer_pool[i].packedB_d) _aligned_free(gemm_buffer_pool[i].packedB_d);
+#else
+            free(gemm_buffer_pool[i].packedA_s);
+            free(gemm_buffer_pool[i].packedB_s);
+            free(gemm_buffer_pool[i].packedA_d);
+            free(gemm_buffer_pool[i].packedB_d);
+#endif
+            gemm_buffer_pool[i].packedA_s = NULL;
+            gemm_buffer_pool[i].packedB_s = NULL;
+            gemm_buffer_pool[i].packedA_d = NULL;
+            gemm_buffer_pool[i].packedB_d = NULL;
+            gemm_buffer_pool[i].allocated = 0;
+        }
+    }
+    
+    gemm_buffers_initialized = 1;
+}
+
+//------------------------------------------------------
+// Cleanup GEMM buffer pool
+//------------------------------------------------------
+void cblas_cleanup_gemm_buffers(void)
+{
+    if (!gemm_buffers_initialized)
+        return;
+    
+    for (int i = 0; i < MAX_THREADS; i++)
+    {
+        if (gemm_buffer_pool[i].allocated)
+        {
+#ifdef _WIN32
+            _aligned_free(gemm_buffer_pool[i].packedA_s);
+            _aligned_free(gemm_buffer_pool[i].packedB_s);
+            _aligned_free(gemm_buffer_pool[i].packedA_d);
+            _aligned_free(gemm_buffer_pool[i].packedB_d);
+#else
+            free(gemm_buffer_pool[i].packedA_s);
+            free(gemm_buffer_pool[i].packedB_s);
+            free(gemm_buffer_pool[i].packedA_d);
+            free(gemm_buffer_pool[i].packedB_d);
+#endif
+            gemm_buffer_pool[i].packedA_s = NULL;
+            gemm_buffer_pool[i].packedB_s = NULL;
+            gemm_buffer_pool[i].packedA_d = NULL;
+            gemm_buffer_pool[i].packedB_d = NULL;
+            gemm_buffer_pool[i].allocated = 0;
+        }
+    }
+    
+    gemm_buffers_initialized = 0;
+}
+
+//------------------------------------------------------
+// Get GEMM buffer for a thread
+//------------------------------------------------------
+cblas_gemm_buffer_t* cblas_get_gemm_buffer(int thread_id)
+{
+    if (thread_id < 0 || thread_id >= MAX_THREADS)
+        return NULL;
+    
+    if (!gemm_buffers_initialized)
+        return NULL;
+    
+    if (!gemm_buffer_pool[thread_id].allocated)
+        return NULL;
+    
+    return &gemm_buffer_pool[thread_id];
+}
+
+//------------------------------------------------------
 // Performance counters - track stats per operation
 //------------------------------------------------------
 #define STATS_TABLE_SIZE 32
@@ -768,6 +889,9 @@ void cblas_init(int threads)
 
     // Compute optimal GEMM block sizes based on cache
     cblas_compute_gemm_block_sizes();
+    
+    // Initialize GEMM packing buffer pool
+    cblas_init_gemm_buffers();
     
     // Detect CPU features for kernel dispatch
     cpu_get_features();
