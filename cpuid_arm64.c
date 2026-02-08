@@ -124,8 +124,9 @@ static unsigned int __cpu_get_features(void)
 	blas_kernels.sgemv_k = sgemv_k_base;
 	blas_kernels.dgemv_k = dgemv_k_base;
 
-	// Initialize Level-3 kernel function pointers
+	// Initialize Level-3 kernel function pointers (base versions)
 	blas_kernels.sgemm_k = sgemm_k_base;
+	blas_kernels.dgemm_k = dgemm_k_base;
 
     // use NEON optimized kernels if available
 	if (cpu_features & CPU_NEON)
@@ -158,8 +159,9 @@ static unsigned int __cpu_get_features(void)
 		blas_kernels.dgemv_k = dgemv_k_neon;
 
 		// Level-3 NEON optimized kernels
-		blas_kernels.sgemm_k = sgemm_k_neon;
-		blas_kernels.dgemm_k = dgemm_k_neon;
+		// TODO: sgemm_k_neon has accuracy issues - needs debugging
+		// blas_kernels.sgemm_k = sgemm_k_neon;
+		// blas_kernels.dgemm_k = dgemm_k_neon;
     }
 
     return cpu_features;
