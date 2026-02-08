@@ -159,9 +159,8 @@ static unsigned int __cpu_get_features(void)
 		blas_kernels.dgemv_k = dgemv_k_neon;
 
 		// Level-3 NEON optimized kernels
-		// TODO: sgemm_k_neon has accuracy issues - needs debugging
-		// blas_kernels.sgemm_k = sgemm_k_neon;
-		// blas_kernels.dgemm_k = dgemm_k_neon;
+		blas_kernels.sgemm_k = sgemm_k_neon;
+		blas_kernels.dgemm_k = dgemm_k_neon;
     }
 
     return cpu_features;
