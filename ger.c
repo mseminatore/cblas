@@ -44,11 +44,8 @@ static void AddProd4x1(float x, float *y, float *a)
 	ar = _mm_load_ps(a);
 
 	// A += x * y
-#ifdef USE_INTEL_FMA
-	ar = _mm_fmadd_ps(ar, xr, yr);
-#else
-	ar = _mm_add_ps(ar, _mm_mul_ps(xr, yr));
-#endif
+	ar = _mm_fmadd_ps(ar, xr, yr);	// A += x * y using FMA
+	// ar = _mm_add_ps(ar, _mm_mul_ps(xr, yr));	// A += x * y using non-FMA
 
 	// store 4 floats
 	_mm_store_ps(a, ar);

@@ -467,15 +467,12 @@ CBLAS_UNUSED static void AddDot2x2_d(CBLAS_INDEX k, double *a, CBLAS_INDEX lda, 
         b_row = _mm_loadu_pd(b);
         b += 2;
 
-#if defined(USE_INTEL_FMA)
         // Rows 1-2 using FMA
         c_row1 = _mm_fmadd_pd(a_p0, b_row, c_row1);
         c_row2 = _mm_fmadd_pd(a_p1, b_row, c_row2);
-#else
         // Rows 1-2 using SSE
-        c_row1 = _mm_add_pd(c_row1, _mm_mul_pd(a_p0, b_row));
-        c_row2 = _mm_add_pd(c_row2, _mm_mul_pd(a_p1, b_row));
-#endif
+        // c_row1 = _mm_add_pd(c_row1, _mm_mul_pd(a_p0, b_row));
+        // c_row2 = _mm_add_pd(c_row2, _mm_mul_pd(a_p1, b_row));
     }
 
     // Store results
