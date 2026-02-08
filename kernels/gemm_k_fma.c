@@ -48,73 +48,6 @@ static void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, CBLAS_IN
 }
 
 //------------------------------------------------------
-// compute 16 dot products at a time, 4 cols x 4 rows (FMA)
-// alpha is applied when storing results back to C
-//------------------------------------------------------
-static void AddDot4x4_fma(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CBLAS_INDEX ldb, float *c, CBLAS_INDEX ldc, float alpha)
-{
-    (void)lda;
-    (void)ldb;
-    __m128 c_row1, c_row2, c_row3, c_row4;
-    __m128 c_old1, c_old2, c_old3, c_old4;
-    __m128 b_row;
-    __m128 a_p0, a_p1, a_p2, a_p3;
-    __m128 alpha_vec = _mm_set1_ps(alpha);
-    
-    // Load current C values
-    c_old1 = _mm_loadu_ps(&C(0,0));
-    c_old2 = _mm_loadu_ps(&C(0,1));
-    c_old3 = _mm_loadu_ps(&C(0,2));
-    c_old4 = _mm_loadu_ps(&C(0,3));
-    
-    // Initialize accumulators to zero
-    c_row1 = _mm_setzero_ps();
-    c_row2 = _mm_setzero_ps();
-    c_row3 = _mm_setzero_ps();
-    c_row4 = _mm_setzero_ps();
-
-    for (CBLAS_INDEX p = 0; p < k; p++) 
-    {
-        // load and duplicate 
-        a_p0 = _mm_load_ps1(a);
-        a_p1 = _mm_load_ps1(a + 1);
-        a_p2 = _mm_load_ps1(a + 2);
-        a_p3 = _mm_load_ps1(a + 3);
-
-        // Prefetch data ahead
-        if (p + PREFETCH_DISTANCE < k) {
-            CBLAS_PREFETCH(a + (PREFETCH_DISTANCE * 4), 0, 3);
-            CBLAS_PREFETCH(b + (PREFETCH_DISTANCE * 4), 0, 3);
-        }
-
-        a += 4;
-
-        // Use unaligned load for b since alignment is not guaranteed
-        b_row = _mm_loadu_ps(b);
-
-        b += 4;
-
-        // rows 1 - 4 using FMA
-        c_row1 = _mm_fmadd_ps(a_p0, b_row, c_row1);
-        c_row2 = _mm_fmadd_ps(a_p1, b_row, c_row2);
-        c_row3 = _mm_fmadd_ps(a_p2, b_row, c_row3);
-        c_row4 = _mm_fmadd_ps(a_p3, b_row, c_row4);
-    }
-
-    // Apply alpha and accumulate: C = C + alpha * (A*B)
-    c_row1 = _mm_fmadd_ps(alpha_vec, c_row1, c_old1);
-    c_row2 = _mm_fmadd_ps(alpha_vec, c_row2, c_old2);
-    c_row3 = _mm_fmadd_ps(alpha_vec, c_row3, c_old3);
-    c_row4 = _mm_fmadd_ps(alpha_vec, c_row4, c_old4);
-
-    // Store results
-    _mm_storeu_ps(&C(0, 0), c_row1);
-    _mm_storeu_ps(&C(0, 1), c_row2);
-    _mm_storeu_ps(&C(0, 2), c_row3);
-    _mm_storeu_ps(&C(0, 3), c_row4);
-}
-
-//------------------------------------------------------
 // 6x16 micro-kernel using AVX2+FMA
 // Computes C[6x16] += alpha * A[6xk] * B[kx16]
 // Uses 12 YMM registers for C (6 rows × 2 YMM per row)
@@ -450,54 +383,6 @@ static void PackMatrixA_1(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
     for (CBLAS_INDEX i = 0; i < k; i++)
     {
         a_to[i] = *a_0++;
-    }
-}
-
-//------------------------------------------------------
-// PackMatrixB - Copy a k×4 panel of B into contiguous memory (for 4x4 kernel)
-//------------------------------------------------------
-static void PackMatrixB_4(CBLAS_INDEX k, float *b, CBLAS_INDEX ldb, float *b_to)
-{
-    for (CBLAS_INDEX j = 0; j < k; j++)
-    {
-        float *b_ij_pntr = &B(0, j);
-
-        if (j + 8 < k) {
-            CBLAS_PREFETCH(&B(0, j + 8), 0, 3);
-        }
-
-        *b_to       = *b_ij_pntr;
-        *(b_to + 1) = *(b_ij_pntr + 1);
-        *(b_to + 2) = *(b_ij_pntr + 2);
-        *(b_to + 3) = *(b_ij_pntr + 3);
-
-        b_to += 4;
-    }
-}
-
-//------------------------------------------------------
-// PackMatrixA - Copy a 4×k panel of A into contiguous memory (for 4x4 kernel)
-//------------------------------------------------------
-static void PackMatrixA_4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
-{
-    float *a_0i_pntr = &A(0,0), *a_1i_pntr = &A(0,1),
-          *a_2i_pntr = &A(0,2), *a_3i_pntr = &A(0,3);
-
-    for (CBLAS_INDEX i = 0; i < k; i++)
-    {
-        if (i + 8 < k) {
-            CBLAS_PREFETCH(a_0i_pntr + 8, 0, 3);
-            CBLAS_PREFETCH(a_1i_pntr + 8, 0, 3);
-            CBLAS_PREFETCH(a_2i_pntr + 8, 0, 3);
-            CBLAS_PREFETCH(a_3i_pntr + 8, 0, 3);
-        }
-
-        *a_to       = *a_0i_pntr++;
-        *(a_to + 1) = *a_1i_pntr++;
-        *(a_to + 2) = *a_2i_pntr++;
-        *(a_to + 3) = *a_3i_pntr++;
-
-        a_to += 4;
     }
 }
 
