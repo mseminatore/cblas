@@ -65,10 +65,14 @@ void cblas_init_gemm_buffers(void)
         gemm_buffer_pool[i].packedA_d = (double*)_aligned_malloc(packedA_d_size, 64);
         gemm_buffer_pool[i].packedB_d = (double*)_aligned_malloc(packedB_d_size, 64);
 #else
-        posix_memalign((void**)&gemm_buffer_pool[i].packedA_s, 64, packedA_s_size);
-        posix_memalign((void**)&gemm_buffer_pool[i].packedB_s, 64, packedB_s_size);
-        posix_memalign((void**)&gemm_buffer_pool[i].packedA_d, 64, packedA_d_size);
-        posix_memalign((void**)&gemm_buffer_pool[i].packedB_d, 64, packedB_d_size);
+        if (posix_memalign((void**)&gemm_buffer_pool[i].packedA_s, 64, packedA_s_size) != 0)
+            gemm_buffer_pool[i].packedA_s = NULL;
+        if (posix_memalign((void**)&gemm_buffer_pool[i].packedB_s, 64, packedB_s_size) != 0)
+            gemm_buffer_pool[i].packedB_s = NULL;
+        if (posix_memalign((void**)&gemm_buffer_pool[i].packedA_d, 64, packedA_d_size) != 0)
+            gemm_buffer_pool[i].packedA_d = NULL;
+        if (posix_memalign((void**)&gemm_buffer_pool[i].packedB_d, 64, packedB_d_size) != 0)
+            gemm_buffer_pool[i].packedB_d = NULL;
 #endif
         
         // Check if all allocations succeeded
