@@ -267,6 +267,8 @@ void cblas_execute(CBLAS_INDEX items, work_queue_t* queue)
         cblas_execute_async(items - 1, queue->next);
 
     // execute the first task on the main thread
+    // Main thread uses highest buffer slot to avoid conflict with workers (0 to max-2)
+    queue->args->thread_id = cblas_max_threads - 1;
     queue->kernel(queue->args);
     
     atomic_store_explicit(&queue->finished, 1, memory_order_release);
