@@ -889,8 +889,6 @@ void cblas_init(int threads)
     threads = 1;
 #endif
 
-    cblas_set_num_threads(threads);
-
     // Compute optimal GEMM block sizes based on cache
     cblas_compute_gemm_block_sizes();
     
@@ -899,6 +897,9 @@ void cblas_init(int threads)
     
     // Detect CPU features for kernel dispatch
     cpu_get_features();
+
+    // Set initial thread count BEFORE server init (server checks cblas_max_threads)
+    cblas_max_threads = threads;
 
     // start thread server
 #ifdef MT_ENABLED

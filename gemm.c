@@ -259,14 +259,14 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     
     if (mt_used)
     {
-        CBLAS_INDEX horiz_tiles = k / cblas_gemm_kc + 1;
+        // Only parallelize across m-dimension (row blocks) to avoid race conditions.
+        // Tiles with different p values but same row write to the same C elements,
+        // so k-blocks must be processed sequentially.
         CBLAS_INDEX vert_tiles = m / cblas_gemm_mc + 1;
-        CBLAS_INDEX total_tiles = horiz_tiles * vert_tiles;
-        CBLAS_INDEX tile_count = 0;
 
-        // Use heap allocation for large tile arrays to avoid stack overflow
-        work_queue_t *queue = (work_queue_t*)malloc(total_tiles * sizeof(work_queue_t));
-        cblas_args_t *args = (cblas_args_t*)malloc(total_tiles * sizeof(cblas_args_t));
+        // Use heap allocation for tile arrays
+        work_queue_t *queue = (work_queue_t*)malloc(vert_tiles * sizeof(work_queue_t));
+        cblas_args_t *args = (cblas_args_t*)malloc(vert_tiles * sizeof(cblas_args_t));
         
         if (!queue || !args) {
             free(queue);
@@ -277,22 +277,23 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         // THREE-LEVEL CACHE-BLOCKING LOOP STRUCTURE (Multi-threaded):
         // ============================================================
         //
-        // The same three-level loop structure as single-threaded version, but
-        // each tile is enqueued as an independent task for parallel execution.
-        // This allows multiple threads to work on different mc×n tiles simultaneously.
+        // Outer k-loop: Process k dimension SEQUENTIALLY in kc-sized blocks
+        // - This is critical: tiles with same row but different p values write
+        //   to the same C elements, so they cannot execute concurrently
         //
-        // Outer k-loop: Iterate over k dimension in kc-sized blocks
-        // Middle m-loop: Iterate over m dimension in mc-sized blocks
-        // - Each combination creates a work item for the thread pool
+        // Middle m-loop: Parallelize across m dimension in mc-sized blocks
+        // - Tiles with different row values write to different C elements,
+        //   so they can safely execute in parallel
         for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
         {
             pb = MIN(k - p, cblas_gemm_kc);  // Handle edge case when k % kc != 0
+            CBLAS_INDEX tile_count = 0;
+            
             for (CBLAS_INDEX row = 0; row < m; row += cblas_gemm_mc) 
             {
                 ib = MIN(m - row, cblas_gemm_mc);  // Handle edge case when m % mc != 0
 
                 // Setup work item for this mc×n tile
-                // Each thread will independently pack and compute its assigned tile
                 args[tile_count].incx = 1;
                 args[tile_count].incy = 1;
                 args[tile_count].n = n;
@@ -315,15 +316,17 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 
                 tile_count++;
             }
+
+            assert(tile_count <= vert_tiles);
+
+            // mark end of task queue for this k-block
+            queue[tile_count - 1].next = NULL;
+
+            // Execute all row tiles for this k-block in parallel, then wait
+            // This ensures all contributions to C from this k-block complete
+            // before moving to the next k-block
+            cblas_execute(tile_count, queue);
         }
-
-        assert(tile_count <= total_tiles);
-
-        // mark end of task queue
-        queue[tile_count - 1].next = NULL;
-
-        // synchronously execute task queue (parallel execution by worker threads)
-        cblas_execute(tile_count, queue);
         
         // Free heap-allocated arrays
         free(queue);
