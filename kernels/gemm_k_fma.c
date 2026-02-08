@@ -241,6 +241,219 @@ static void AddDot6x16_fma(CBLAS_INDEX k, float *a, float *b, float *c, CBLAS_IN
 }
 
 //------------------------------------------------------
+// 4x16 micro-kernel using AVX2+FMA
+// For remainder handling when 4 <= remaining_rows < 6
+//------------------------------------------------------
+static void AddDot4x16_fma(CBLAS_INDEX k, float *a, float *b, float *c, CBLAS_INDEX ldc, float alpha)
+{
+    // C accumulator registers: 4 rows × 2 YMM = 8 registers
+    __m256 c00, c01;  // Row 0
+    __m256 c10, c11;  // Row 1
+    __m256 c20, c21;  // Row 2
+    __m256 c30, c31;  // Row 3
+    
+    __m256 b0, b1;
+    __m256 a_elem;
+    __m256 alpha_vec = _mm256_set1_ps(alpha);
+    
+    c00 = _mm256_setzero_ps(); c01 = _mm256_setzero_ps();
+    c10 = _mm256_setzero_ps(); c11 = _mm256_setzero_ps();
+    c20 = _mm256_setzero_ps(); c21 = _mm256_setzero_ps();
+    c30 = _mm256_setzero_ps(); c31 = _mm256_setzero_ps();
+    
+    for (CBLAS_INDEX p = 0; p < k; p++)
+    {
+        b0 = _mm256_loadu_ps(b);
+        b1 = _mm256_loadu_ps(b + 8);
+        b += NR;
+        
+        a_elem = _mm256_set1_ps(a[0]);
+        c00 = _mm256_fmadd_ps(a_elem, b0, c00);
+        c01 = _mm256_fmadd_ps(a_elem, b1, c01);
+        
+        a_elem = _mm256_set1_ps(a[1]);
+        c10 = _mm256_fmadd_ps(a_elem, b0, c10);
+        c11 = _mm256_fmadd_ps(a_elem, b1, c11);
+        
+        a_elem = _mm256_set1_ps(a[2]);
+        c20 = _mm256_fmadd_ps(a_elem, b0, c20);
+        c21 = _mm256_fmadd_ps(a_elem, b1, c21);
+        
+        a_elem = _mm256_set1_ps(a[3]);
+        c30 = _mm256_fmadd_ps(a_elem, b0, c30);
+        c31 = _mm256_fmadd_ps(a_elem, b1, c31);
+        
+        a += 4;  // 4 rows packed
+    }
+    
+    // Store results
+    __m256 c_old0, c_old1;
+    
+    c_old0 = _mm256_loadu_ps(&C(0, 0));
+    c_old1 = _mm256_loadu_ps(&C(8, 0));
+    c00 = _mm256_fmadd_ps(alpha_vec, c00, c_old0);
+    c01 = _mm256_fmadd_ps(alpha_vec, c01, c_old1);
+    _mm256_storeu_ps(&C(0, 0), c00);
+    _mm256_storeu_ps(&C(8, 0), c01);
+    
+    c_old0 = _mm256_loadu_ps(&C(0, 1));
+    c_old1 = _mm256_loadu_ps(&C(8, 1));
+    c10 = _mm256_fmadd_ps(alpha_vec, c10, c_old0);
+    c11 = _mm256_fmadd_ps(alpha_vec, c11, c_old1);
+    _mm256_storeu_ps(&C(0, 1), c10);
+    _mm256_storeu_ps(&C(8, 1), c11);
+    
+    c_old0 = _mm256_loadu_ps(&C(0, 2));
+    c_old1 = _mm256_loadu_ps(&C(8, 2));
+    c20 = _mm256_fmadd_ps(alpha_vec, c20, c_old0);
+    c21 = _mm256_fmadd_ps(alpha_vec, c21, c_old1);
+    _mm256_storeu_ps(&C(0, 2), c20);
+    _mm256_storeu_ps(&C(8, 2), c21);
+    
+    c_old0 = _mm256_loadu_ps(&C(0, 3));
+    c_old1 = _mm256_loadu_ps(&C(8, 3));
+    c30 = _mm256_fmadd_ps(alpha_vec, c30, c_old0);
+    c31 = _mm256_fmadd_ps(alpha_vec, c31, c_old1);
+    _mm256_storeu_ps(&C(0, 3), c30);
+    _mm256_storeu_ps(&C(8, 3), c31);
+}
+
+//------------------------------------------------------
+// 2x16 micro-kernel using AVX2+FMA
+// For remainder handling when 2 <= remaining_rows < 4
+//------------------------------------------------------
+static void AddDot2x16_fma(CBLAS_INDEX k, float *a, float *b, float *c, CBLAS_INDEX ldc, float alpha)
+{
+    __m256 c00, c01;  // Row 0
+    __m256 c10, c11;  // Row 1
+    
+    __m256 b0, b1;
+    __m256 a_elem;
+    __m256 alpha_vec = _mm256_set1_ps(alpha);
+    
+    c00 = _mm256_setzero_ps(); c01 = _mm256_setzero_ps();
+    c10 = _mm256_setzero_ps(); c11 = _mm256_setzero_ps();
+    
+    for (CBLAS_INDEX p = 0; p < k; p++)
+    {
+        b0 = _mm256_loadu_ps(b);
+        b1 = _mm256_loadu_ps(b + 8);
+        b += NR;
+        
+        a_elem = _mm256_set1_ps(a[0]);
+        c00 = _mm256_fmadd_ps(a_elem, b0, c00);
+        c01 = _mm256_fmadd_ps(a_elem, b1, c01);
+        
+        a_elem = _mm256_set1_ps(a[1]);
+        c10 = _mm256_fmadd_ps(a_elem, b0, c10);
+        c11 = _mm256_fmadd_ps(a_elem, b1, c11);
+        
+        a += 2;  // 2 rows packed
+    }
+    
+    // Store results
+    __m256 c_old0, c_old1;
+    
+    c_old0 = _mm256_loadu_ps(&C(0, 0));
+    c_old1 = _mm256_loadu_ps(&C(8, 0));
+    c00 = _mm256_fmadd_ps(alpha_vec, c00, c_old0);
+    c01 = _mm256_fmadd_ps(alpha_vec, c01, c_old1);
+    _mm256_storeu_ps(&C(0, 0), c00);
+    _mm256_storeu_ps(&C(8, 0), c01);
+    
+    c_old0 = _mm256_loadu_ps(&C(0, 1));
+    c_old1 = _mm256_loadu_ps(&C(8, 1));
+    c10 = _mm256_fmadd_ps(alpha_vec, c10, c_old0);
+    c11 = _mm256_fmadd_ps(alpha_vec, c11, c_old1);
+    _mm256_storeu_ps(&C(0, 1), c10);
+    _mm256_storeu_ps(&C(8, 1), c11);
+}
+
+//------------------------------------------------------
+// 1x16 micro-kernel using AVX2+FMA
+// For remainder handling when remaining_rows == 1
+//------------------------------------------------------
+static void AddDot1x16_fma(CBLAS_INDEX k, float *a, float *b, float *c, CBLAS_INDEX ldc, float alpha)
+{
+    (void)ldc;  // Not used for single row
+    
+    __m256 c00, c01;  // Row 0
+    __m256 b0, b1;
+    __m256 a_elem;
+    __m256 alpha_vec = _mm256_set1_ps(alpha);
+    
+    c00 = _mm256_setzero_ps();
+    c01 = _mm256_setzero_ps();
+    
+    for (CBLAS_INDEX p = 0; p < k; p++)
+    {
+        b0 = _mm256_loadu_ps(b);
+        b1 = _mm256_loadu_ps(b + 8);
+        b += NR;
+        
+        a_elem = _mm256_set1_ps(a[0]);
+        c00 = _mm256_fmadd_ps(a_elem, b0, c00);
+        c01 = _mm256_fmadd_ps(a_elem, b1, c01);
+        
+        a += 1;
+    }
+    
+    // Store results
+    __m256 c_old0 = _mm256_loadu_ps(&C(0, 0));
+    __m256 c_old1 = _mm256_loadu_ps(&C(8, 0));
+    c00 = _mm256_fmadd_ps(alpha_vec, c00, c_old0);
+    c01 = _mm256_fmadd_ps(alpha_vec, c01, c_old1);
+    _mm256_storeu_ps(&C(0, 0), c00);
+    _mm256_storeu_ps(&C(8, 0), c01);
+}
+
+//------------------------------------------------------
+// PackMatrixA_4_wide - Pack 4 rows for use with 4x16 kernel
+//------------------------------------------------------
+static void PackMatrixA_4_wide(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
+{
+    float *a_ptrs[4] = { &A(0,0), &A(0,1), &A(0,2), &A(0,3) };
+    
+    for (CBLAS_INDEX i = 0; i < k; i++)
+    {
+        a_to[0] = *a_ptrs[0]++;
+        a_to[1] = *a_ptrs[1]++;
+        a_to[2] = *a_ptrs[2]++;
+        a_to[3] = *a_ptrs[3]++;
+        a_to += 4;
+    }
+}
+
+//------------------------------------------------------
+// PackMatrixA_2 - Pack 2 rows for use with 2x16 kernel
+//------------------------------------------------------
+static void PackMatrixA_2(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
+{
+    float *a_0 = &A(0,0);
+    float *a_1 = &A(0,1);
+    
+    for (CBLAS_INDEX i = 0; i < k; i++)
+    {
+        a_to[0] = *a_0++;
+        a_to[1] = *a_1++;
+        a_to += 2;
+    }
+}
+
+//------------------------------------------------------
+// PackMatrixA_1 - Pack 1 row for use with 1x16 kernel
+//------------------------------------------------------
+static void PackMatrixA_1(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
+{
+    float *a_0 = &A(0,0);
+    
+    for (CBLAS_INDEX i = 0; i < k; i++)
+    {
+        a_to[i] = *a_0++;
+    }
+}
+
+//------------------------------------------------------
 // PackMatrixB - Copy a k×4 panel of B into contiguous memory (for 4x4 kernel)
 //------------------------------------------------------
 static void PackMatrixB_4(CBLAS_INDEX k, float *b, CBLAS_INDEX ldb, float *b_to)
@@ -291,29 +504,51 @@ static void PackMatrixA_4(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
 //------------------------------------------------------
 // PackMatrixB_16 - Copy a k×16 panel of B into contiguous memory
 // Packing format: For each row p of B, store 16 consecutive columns
+// Vectorized version using AVX for full-width copies
 //------------------------------------------------------
 static void PackMatrixB_16(CBLAS_INDEX k, CBLAS_INDEX n_cols, float *b, CBLAS_INDEX ldb, float *b_to)
 {
-    for (CBLAS_INDEX j = 0; j < k; j++)
-    {
-        float *b_ij_pntr = &B(0, j);
-        
-        // Prefetch ahead
-        if (j + 4 < k) {
-            CBLAS_PREFETCH(&B(0, j + 4), 0, 3);
+    if (n_cols >= NR) {
+        // Fast path: full 16 columns, use AVX loads/stores
+        for (CBLAS_INDEX j = 0; j < k; j++)
+        {
+            float *b_ij_pntr = &B(0, j);
+            
+            // Prefetch ahead
+            if (j + 4 < k) {
+                CBLAS_PREFETCH(&B(0, j + 4), 0, 3);
+            }
+            
+            // Load and store 16 floats using AVX (2 YMM registers)
+            __m256 b0 = _mm256_loadu_ps(b_ij_pntr);
+            __m256 b1 = _mm256_loadu_ps(b_ij_pntr + 8);
+            _mm256_storeu_ps(b_to, b0);
+            _mm256_storeu_ps(b_to + 8, b1);
+            
+            b_to += NR;
         }
-        
-        // Copy up to 16 columns, zero-pad if fewer
-        CBLAS_INDEX col;
-        for (col = 0; col < n_cols && col < NR; col++) {
-            b_to[col] = b_ij_pntr[col];
+    } else {
+        // Slow path: partial columns, need zero-padding
+        for (CBLAS_INDEX j = 0; j < k; j++)
+        {
+            float *b_ij_pntr = &B(0, j);
+            
+            if (j + 4 < k) {
+                CBLAS_PREFETCH(&B(0, j + 4), 0, 3);
+            }
+            
+            // Copy available columns
+            CBLAS_INDEX col;
+            for (col = 0; col < n_cols; col++) {
+                b_to[col] = b_ij_pntr[col];
+            }
+            // Zero-pad remaining columns
+            for (; col < NR; col++) {
+                b_to[col] = 0.0f;
+            }
+            
+            b_to += NR;
         }
-        // Zero-pad remaining columns
-        for (; col < NR; col++) {
-            b_to[col] = 0.0f;
-        }
-        
-        b_to += NR;
     }
 }
 
@@ -412,22 +647,22 @@ static void InnerKernel_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         }
     }
 
-    // Handle leftover rows (< 6) - fall back to 4x4 or scalar
+    // Handle leftover rows (< 6) using optimized remainder kernels
     CBLAS_INDEX remaining_rows = m - row;
     if (remaining_rows > 0)
     {
-        // Use 4x4 kernel for remaining 4+ rows
+        // Use 4x16 kernel for 4-5 remaining rows
         if (remaining_rows >= 4)
         {
-            PackMatrixA_4(k, &A(0, row), lda, packedA);
+            PackMatrixA_4_wide(k, &A(0, row), lda, packedA);
             
-            for (col = 0; col + 4 <= n; col += 4)
+            for (col = 0; col + NR <= n; col += NR)
             {
-                PackMatrixB_4(k, &B(col, 0), ldb, packedB);
-                AddDot4x4_fma(k, packedA, 4, packedB, 4, &C(col, row), ldc, alpha);
+                PackMatrixB_16(k, NR, &B(col, 0), ldb, packedB);
+                AddDot4x16_fma(k, packedA, packedB, &C(col, row), ldc, alpha);
             }
             
-            // Leftover columns with 4 rows
+            // Leftover columns with 4 rows - use scalar
             for (; col < n; col++) {
                 for (CBLAS_INDEX r = 0; r < 4; r++) {
                     AddDot(k, &A(0, row + r), 1, &B(col, 0), ldb, &C(col, row + r), alpha);
@@ -437,10 +672,40 @@ static void InnerKernel_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
             remaining_rows -= 4;
         }
         
-        // Handle final 1-3 rows with scalar
-        for (CBLAS_INDEX r = 0; r < remaining_rows; r++) {
-            for (col = 0; col < n; col++) {
-                AddDot(k, &A(0, row + r), 1, &B(col, 0), ldb, &C(col, row + r), alpha);
+        // Use 2x16 kernel for 2-3 remaining rows
+        if (remaining_rows >= 2)
+        {
+            PackMatrixA_2(k, &A(0, row), lda, packedA);
+            
+            for (col = 0; col + NR <= n; col += NR)
+            {
+                PackMatrixB_16(k, NR, &B(col, 0), ldb, packedB);
+                AddDot2x16_fma(k, packedA, packedB, &C(col, row), ldc, alpha);
+            }
+            
+            // Leftover columns
+            for (; col < n; col++) {
+                AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row), alpha);
+                AddDot(k, &A(0, row + 1), 1, &B(col, 0), ldb, &C(col, row + 1), alpha);
+            }
+            row += 2;
+            remaining_rows -= 2;
+        }
+        
+        // Use 1x16 kernel for last remaining row
+        if (remaining_rows == 1)
+        {
+            PackMatrixA_1(k, &A(0, row), lda, packedA);
+            
+            for (col = 0; col + NR <= n; col += NR)
+            {
+                PackMatrixB_16(k, NR, &B(col, 0), ldb, packedB);
+                AddDot1x16_fma(k, packedA, packedB, &C(col, row), ldc, alpha);
+            }
+            
+            // Leftover columns
+            for (; col < n; col++) {
+                AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row), alpha);
             }
         }
     }
