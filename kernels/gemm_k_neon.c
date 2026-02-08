@@ -189,21 +189,198 @@ static void AddDot4x8_neon(CBLAS_INDEX k, float *a, float *b, float *c, CBLAS_IN
 }
 
 //------------------------------------------------------
+// 2x8 micro-kernel using NEON
+// For remainder handling when 2 <= remaining_rows < 4
+//------------------------------------------------------
+static void AddDot2x8_neon(CBLAS_INDEX k, float *a, float *b, float *c, CBLAS_INDEX ldc, float alpha)
+{
+    float32x4_t c00, c01;  // Row 0
+    float32x4_t c10, c11;  // Row 1
+    
+    float32x4_t b0, b1;
+    float32x4_t a_elem;
+    float32x4_t alpha_vec = vdupq_n_f32(alpha);
+    
+    c00 = vdupq_n_f32(0.0f); c01 = vdupq_n_f32(0.0f);
+    c10 = vdupq_n_f32(0.0f); c11 = vdupq_n_f32(0.0f);
+    
+    for (CBLAS_INDEX p = 0; p < k; p++)
+    {
+        b0 = vld1q_f32(b);
+        b1 = vld1q_f32(b + 4);
+        b += NR;
+        
+#ifdef __ARM_FEATURE_FMA
+        a_elem = vld1q_dup_f32(&a[0]);
+        c00 = vfmaq_f32(c00, a_elem, b0);
+        c01 = vfmaq_f32(c01, a_elem, b1);
+        
+        a_elem = vld1q_dup_f32(&a[1]);
+        c10 = vfmaq_f32(c10, a_elem, b0);
+        c11 = vfmaq_f32(c11, a_elem, b1);
+#else
+        a_elem = vld1q_dup_f32(&a[0]);
+        c00 = vaddq_f32(c00, vmulq_f32(a_elem, b0));
+        c01 = vaddq_f32(c01, vmulq_f32(a_elem, b1));
+        
+        a_elem = vld1q_dup_f32(&a[1]);
+        c10 = vaddq_f32(c10, vmulq_f32(a_elem, b0));
+        c11 = vaddq_f32(c11, vmulq_f32(a_elem, b1));
+#endif
+        
+        a += 2;  // 2 rows packed
+    }
+    
+    // Store results
+    float32x4_t c_old0, c_old1;
+    
+#ifdef __ARM_FEATURE_FMA
+    c_old0 = vld1q_f32(&C(0, 0));
+    c_old1 = vld1q_f32(&C(4, 0));
+    c00 = vfmaq_f32(c_old0, alpha_vec, c00);
+    c01 = vfmaq_f32(c_old1, alpha_vec, c01);
+    vst1q_f32(&C(0, 0), c00);
+    vst1q_f32(&C(4, 0), c01);
+    
+    c_old0 = vld1q_f32(&C(0, 1));
+    c_old1 = vld1q_f32(&C(4, 1));
+    c10 = vfmaq_f32(c_old0, alpha_vec, c10);
+    c11 = vfmaq_f32(c_old1, alpha_vec, c11);
+    vst1q_f32(&C(0, 1), c10);
+    vst1q_f32(&C(4, 1), c11);
+#else
+    c_old0 = vld1q_f32(&C(0, 0));
+    c_old1 = vld1q_f32(&C(4, 0));
+    c00 = vaddq_f32(c_old0, vmulq_f32(alpha_vec, c00));
+    c01 = vaddq_f32(c_old1, vmulq_f32(alpha_vec, c01));
+    vst1q_f32(&C(0, 0), c00);
+    vst1q_f32(&C(4, 0), c01);
+    
+    c_old0 = vld1q_f32(&C(0, 1));
+    c_old1 = vld1q_f32(&C(4, 1));
+    c10 = vaddq_f32(c_old0, vmulq_f32(alpha_vec, c10));
+    c11 = vaddq_f32(c_old1, vmulq_f32(alpha_vec, c11));
+    vst1q_f32(&C(0, 1), c10);
+    vst1q_f32(&C(4, 1), c11);
+#endif
+}
+
+//------------------------------------------------------
+// 1x8 micro-kernel using NEON
+// For remainder handling when remaining_rows == 1
+//------------------------------------------------------
+static void AddDot1x8_neon(CBLAS_INDEX k, float *a, float *b, float *c, CBLAS_INDEX ldc, float alpha)
+{
+    (void)ldc;  // Not used for single row
+    
+    float32x4_t c00, c01;  // Row 0
+    float32x4_t b0, b1;
+    float32x4_t a_elem;
+    float32x4_t alpha_vec = vdupq_n_f32(alpha);
+    
+    c00 = vdupq_n_f32(0.0f);
+    c01 = vdupq_n_f32(0.0f);
+    
+    for (CBLAS_INDEX p = 0; p < k; p++)
+    {
+        b0 = vld1q_f32(b);
+        b1 = vld1q_f32(b + 4);
+        b += NR;
+        
+#ifdef __ARM_FEATURE_FMA
+        a_elem = vld1q_dup_f32(&a[0]);
+        c00 = vfmaq_f32(c00, a_elem, b0);
+        c01 = vfmaq_f32(c01, a_elem, b1);
+#else
+        a_elem = vld1q_dup_f32(&a[0]);
+        c00 = vaddq_f32(c00, vmulq_f32(a_elem, b0));
+        c01 = vaddq_f32(c01, vmulq_f32(a_elem, b1));
+#endif
+        
+        a += 1;
+    }
+    
+    // Store results
+#ifdef __ARM_FEATURE_FMA
+    float32x4_t c_old0 = vld1q_f32(&C(0, 0));
+    float32x4_t c_old1 = vld1q_f32(&C(4, 0));
+    c00 = vfmaq_f32(c_old0, alpha_vec, c00);
+    c01 = vfmaq_f32(c_old1, alpha_vec, c01);
+    vst1q_f32(&C(0, 0), c00);
+    vst1q_f32(&C(4, 0), c01);
+#else
+    float32x4_t c_old0 = vld1q_f32(&C(0, 0));
+    float32x4_t c_old1 = vld1q_f32(&C(4, 0));
+    c00 = vaddq_f32(c_old0, vmulq_f32(alpha_vec, c00));
+    c01 = vaddq_f32(c_old1, vmulq_f32(alpha_vec, c01));
+    vst1q_f32(&C(0, 0), c00);
+    vst1q_f32(&C(4, 0), c01);
+#endif
+}
+
+//------------------------------------------------------
+// PackMatrixA_2 - Pack 2 rows for use with 2x8 kernel
+//------------------------------------------------------
+static void PackMatrixA_2_neon(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
+{
+    float *a_0 = &A(0,0);
+    float *a_1 = &A(0,1);
+    
+    for (CBLAS_INDEX i = 0; i < k; i++)
+    {
+        a_to[0] = *a_0++;
+        a_to[1] = *a_1++;
+        a_to += 2;
+    }
+}
+
+//------------------------------------------------------
+// PackMatrixA_1 - Pack 1 row for use with 1x8 kernel
+//------------------------------------------------------
+static void PackMatrixA_1_neon(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
+{
+    float *a_0 = &A(0,0);
+    
+    for (CBLAS_INDEX i = 0; i < k; i++)
+    {
+        a_to[i] = *a_0++;
+    }
+}
+
+//------------------------------------------------------
 // PackMatrixB_8 - Copy a k×8 panel of B into contiguous memory
+// Vectorized version using NEON for full-width copies
 //------------------------------------------------------
 static void PackMatrixB_8(CBLAS_INDEX k, CBLAS_INDEX n_cols, float *b, CBLAS_INDEX ldb, float *b_to)
 {
-    for (CBLAS_INDEX j = 0; j < k; j++)
-    {
-        float *b_ij_pntr = &B(0, j);
-        CBLAS_INDEX col;
-        for (col = 0; col < n_cols && col < NR; col++) {
-            b_to[col] = b_ij_pntr[col];
+    if (n_cols >= NR) {
+        // Fast path: full 8 columns, use NEON loads/stores
+        for (CBLAS_INDEX j = 0; j < k; j++)
+        {
+            float *b_ij_pntr = &B(0, j);
+            
+            // Load and store 8 floats using NEON (2 float32x4_t registers)
+            float32x4_t b0 = vld1q_f32(b_ij_pntr);
+            float32x4_t b1 = vld1q_f32(b_ij_pntr + 4);
+            vst1q_f32(b_to, b0);
+            vst1q_f32(b_to + 4, b1);
+            
+            b_to += NR;
         }
-        for (; col < NR; col++) {
-            b_to[col] = 0.0f;
+    } else {
+        // Slow path: partial columns, need zero-padding
+        for (CBLAS_INDEX j = 0; j < k; j++)
+        {
+            float *b_ij_pntr = &B(0, j);
+            CBLAS_INDEX col;
+            for (col = 0; col < n_cols; col++) {
+                b_to[col] = b_ij_pntr[col];
+            }
+            for (; col < NR; col++) {
+                b_to[col] = 0.0f;
+            }
+            b_to += NR;
         }
-        b_to += NR;
     }
 }
 
@@ -281,10 +458,45 @@ static void InnerKernel_neon(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         }
     }
 
-    // Handle leftover rows (< 4) with scalar
-    for (; row < m; row++) {
-        for (col = 0; col < n; col++) {
-            AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row), alpha);
+    // Handle leftover rows using optimized remainder kernels
+    CBLAS_INDEX remaining_rows = m - row;
+    if (remaining_rows > 0)
+    {
+        // Use 2x8 kernel for 2-3 remaining rows
+        if (remaining_rows >= 2)
+        {
+            PackMatrixA_2_neon(k, &A(0, row), lda, packedA);
+            
+            for (col = 0; col + NR <= n; col += NR)
+            {
+                PackMatrixB_8(k, NR, &B(col, 0), ldb, packedB);
+                AddDot2x8_neon(k, packedA, packedB, &C(col, row), ldc, alpha);
+            }
+            
+            // Leftover columns
+            for (; col < n; col++) {
+                AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row), alpha);
+                AddDot(k, &A(0, row + 1), 1, &B(col, 0), ldb, &C(col, row + 1), alpha);
+            }
+            row += 2;
+            remaining_rows -= 2;
+        }
+        
+        // Use 1x8 kernel for last remaining row
+        if (remaining_rows == 1)
+        {
+            PackMatrixA_1_neon(k, &A(0, row), lda, packedA);
+            
+            for (col = 0; col + NR <= n; col += NR)
+            {
+                PackMatrixB_8(k, NR, &B(col, 0), ldb, packedB);
+                AddDot1x8_neon(k, packedA, packedB, &C(col, row), ldc, alpha);
+            }
+            
+            // Leftover columns
+            for (; col < n; col++) {
+                AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row), alpha);
+            }
         }
     }
     
