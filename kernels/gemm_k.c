@@ -167,19 +167,23 @@ static void InnerKernel_base(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
                              float* c, CBLAS_INDEX ldc,
                              float alpha, int thread_id)
 {
-    // Temporarily disabled buffer pool - always use malloc
+    cblas_gemm_buffer_t* buf = cblas_get_gemm_buffer(thread_id);
     float* packedA;
     float* packedB;
     int use_pool = 0;
-    (void)thread_id;
     
-    packedA = (float*)malloc(cblas_gemm_mc * cblas_gemm_kc * sizeof(float));
-    packedB = (float*)malloc(cblas_gemm_kc * 4 * sizeof(float));
-    
-    if (!packedA || !packedB) {
-        free(packedA);
-        free(packedB);
-        return;
+    if (buf) {
+        packedA = buf->packedA_s;
+        packedB = buf->packedB_s;
+        use_pool = 1;
+    } else {
+        packedA = (float*)malloc(cblas_gemm_mc * cblas_gemm_kc * sizeof(float));
+        packedB = (float*)malloc(cblas_gemm_kc * 4 * sizeof(float));
+        if (!packedA || !packedB) {
+            free(packedA);
+            free(packedB);
+            return;
+        }
     }
 
     CBLAS_INDEX row, col;
