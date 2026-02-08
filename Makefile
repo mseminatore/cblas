@@ -129,10 +129,11 @@ nrm2_asum_rot_perf: $(LIBNAME) nrm2_asum_rot_perf.o
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 install:
-	sudo mkdir -p /opt/cblas/lib /opt/cblas/include
+	sudo mkdir -p /opt/cblas/lib /opt/cblas/include/platform
 	sudo cp libcblas.a /opt/cblas/lib
 	sudo cp cblas.h /opt/cblas/include
 	sudo cp cblas_config.h /opt/cblas/include
+	sudo cp platform/cpuid.h /opt/cblas/include/platform
 
 test: all
 	./blas_test

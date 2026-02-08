@@ -47,9 +47,6 @@
 #define GEMV_BLOCK_SIZE 256  // Fits in L1 cache
 #define GER_BLOCK_SIZE 256   // Fits in L1 cache
 
-// Note: FMA usage is now determined at runtime via cpu_get_features()
-// No need for compile-time USE_INTEL_FMA define
-
 // uncomment to enable multi-threading debug messages
 //#define MT_DEBUG
 
