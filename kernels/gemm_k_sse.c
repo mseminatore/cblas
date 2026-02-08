@@ -158,19 +158,33 @@ static void PackMatrixA(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
 // InnerKernel - SSE implementation (128-bit)
 // Correct GotoBLAS-style packing: pack once per mc×kc tile, then iterate
 //------------------------------------------------------
+// InnerKernel - SSE 128-bit optimized inner kernel with 4x4 micro-kernel
+// GotoBLAS-style: pack A once per row-block, pack B for each col-block
+//------------------------------------------------------
 static void InnerKernel_sse(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, 
                             float* a, CBLAS_INDEX lda, 
                             float* b, CBLAS_INDEX ldb, 
                             float* c, CBLAS_INDEX ldc,
-                            float alpha)
+                            float alpha, int thread_id)
 {
-    float* packedA = (float*)malloc(cblas_gemm_mc * cblas_gemm_kc * sizeof(float));
-    float* packedB = (float*)malloc(cblas_gemm_kc * 4 * sizeof(float));  // Only pack 4 columns at a time
+    // Try to use pre-allocated buffers from buffer pool
+    cblas_gemm_buffer_t* buf = cblas_get_gemm_buffer(thread_id);
+    float* packedA;
+    float* packedB;
+    int use_pool = (buf != NULL);
     
-    if (!packedA || !packedB) {
-        free(packedA);
-        free(packedB);
-        return;
+    if (use_pool) {
+        packedA = buf->packedA_s;
+        packedB = buf->packedB_s;
+    } else {
+        packedA = (float*)malloc(cblas_gemm_mc * cblas_gemm_kc * sizeof(float));
+        packedB = (float*)malloc(cblas_gemm_kc * 4 * sizeof(float));
+        
+        if (!packedA || !packedB) {
+            free(packedA);
+            free(packedB);
+            return;
+        }
     }
 
     CBLAS_INDEX row, col;
@@ -225,8 +239,10 @@ static void InnerKernel_sse(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         case 0: ;
     }
     
-    free(packedA);
-    free(packedB);
+    if (!use_pool) {
+        free(packedA);
+        free(packedB);
+    }
 }
 
 //------------------------------------------------------
@@ -238,7 +254,7 @@ void sgemm_k_sse(cblas_args_t* args)
                     args->a, args->lda, 
                     args->b, args->ldb, 
                     args->c, args->ldc,
-                    args->alpha_s);
+                    args->alpha_s, args->thread_id);
 }
 
 #endif // x86_64

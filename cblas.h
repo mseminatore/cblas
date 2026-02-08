@@ -502,6 +502,9 @@ typedef struct
     // Scalar alpha/beta for direct access in kernels (avoids void* dereferencing)
     float  alpha_s, beta_s;   // single-precision
     double alpha_d, beta_d;   // double-precision
+    
+    // Thread ID for accessing pre-allocated buffers (set by dispatcher, -1 if unknown)
+    int thread_id;
 } cblas_args_t;
 
 // kernel operation for MT tasks

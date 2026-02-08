@@ -238,6 +238,9 @@ static void *cblas_worker_thread(void *pvArg)
 
         work_item->thread_num = thread_num;
         work_item->tid = cblas_thread_ids[thread_num];
+        
+        // Pass thread_id to kernel for buffer pool access
+        work_item->args->thread_id = thread_num;
 
         MT_TRACE_THREAD(thread_num, "executing a task.\n");
 

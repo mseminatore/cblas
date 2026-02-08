@@ -358,20 +358,34 @@ static void PackMatrixA_6(CBLAS_INDEX k, CBLAS_INDEX m_rows, float *a, CBLAS_IND
 // InnerKernel - FMA implementation with 6x16 micro-kernel
 // GotoBLAS-style: pack A once per row-block, pack B for each col-block
 //------------------------------------------------------
+// InnerKernel - optimized inner kernel with 6x16 micro-kernel
+// GotoBLAS-style: pack A once per row-block, pack B for each col-block
+//------------------------------------------------------
 static void InnerKernel_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, 
                             float* a, CBLAS_INDEX lda, 
                             float* b, CBLAS_INDEX ldb, 
                             float* c, CBLAS_INDEX ldc,
-                            float alpha)
+                            float alpha, int thread_id)
 {
-    // Allocate buffers for packing
-    float* packedA = (float*)malloc(MR * k * sizeof(float));
-    float* packedB = (float*)malloc(k * NR * sizeof(float));
+    // Try to use pre-allocated buffers from buffer pool
+    cblas_gemm_buffer_t* buf = cblas_get_gemm_buffer(thread_id);
+    float* packedA;
+    float* packedB;
+    int use_pool = (buf != NULL);
     
-    if (!packedA || !packedB) {
-        free(packedA);
-        free(packedB);
-        return;
+    if (use_pool) {
+        packedA = buf->packedA_s;
+        packedB = buf->packedB_s;
+    } else {
+        // Fallback to malloc if buffer pool unavailable
+        packedA = (float*)malloc(MR * k * sizeof(float));
+        packedB = (float*)malloc(k * NR * sizeof(float));
+        
+        if (!packedA || !packedB) {
+            free(packedA);
+            free(packedB);
+            return;
+        }
     }
 
     CBLAS_INDEX row, col;
@@ -433,8 +447,10 @@ static void InnerKernel_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         }
     }
     
-    free(packedA);
-    free(packedB);
+    if (!use_pool) {
+        free(packedA);
+        free(packedB);
+    }
 }
 
 //------------------------------------------------------
@@ -446,7 +462,7 @@ void sgemm_k_fma(cblas_args_t* args)
                     args->a, args->lda, 
                     args->b, args->ldb, 
                     args->c, args->ldc,
-                    args->alpha_s);
+                    args->alpha_s, args->thread_id);
 }
 
 #endif // x86_64

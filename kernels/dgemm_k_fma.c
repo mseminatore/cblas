@@ -313,16 +313,26 @@ static void InnerKernel_dgemm_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
                                   double* a, CBLAS_INDEX lda, 
                                   double* b, CBLAS_INDEX ldb, 
                                   double* c, CBLAS_INDEX ldc,
-                                  double alpha)
+                                  double alpha, int thread_id)
 {
-    // Allocate buffers for packing
-    double* packedA = (double*)malloc(MR_D * k * sizeof(double));
-    double* packedB = (double*)malloc(k * NR_D * sizeof(double));
+    // Try to use pre-allocated buffers from buffer pool
+    cblas_gemm_buffer_t* buf = cblas_get_gemm_buffer(thread_id);
+    double* packedA;
+    double* packedB;
+    int use_pool = (buf != NULL);
     
-    if (!packedA || !packedB) {
-        free(packedA);
-        free(packedB);
-        return;
+    if (use_pool) {
+        packedA = buf->packedA_d;
+        packedB = buf->packedB_d;
+    } else {
+        packedA = (double*)malloc(MR_D * k * sizeof(double));
+        packedB = (double*)malloc(k * NR_D * sizeof(double));
+        
+        if (!packedA || !packedB) {
+            free(packedA);
+            free(packedB);
+            return;
+        }
     }
 
     CBLAS_INDEX row, col;
@@ -359,8 +369,10 @@ static void InnerKernel_dgemm_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         }
     }
     
-    free(packedA);
-    free(packedB);
+    if (!use_pool) {
+        free(packedA);
+        free(packedB);
+    }
 }
 
 //------------------------------------------------------
@@ -372,7 +384,7 @@ void dgemm_k_fma(cblas_args_t* args)
                           (double*)args->a, args->lda, 
                           (double*)args->b, args->ldb, 
                           (double*)args->c, args->ldc,
-                          args->alpha_d);
+                          args->alpha_d, args->thread_id);
 }
 
 #endif // x86_64

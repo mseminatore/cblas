@@ -340,6 +340,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         st_args.ldc = ldc;
         st_args.alpha_s = alpha;  // Pass alpha to kernel
         st_args.beta_s = 1.0f;    // Beta already applied to C
+        st_args.thread_id = 0;    // Main thread uses buffer slot 0
         
         // THREE-LEVEL CACHE-BLOCKING LOOP STRUCTURE:
         // ===========================================
@@ -383,6 +384,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     st_args.ldc = ldc;
     st_args.alpha_s = alpha;  // Pass alpha to kernel
     st_args.beta_s = 1.0f;    // Beta already applied to C
+    st_args.thread_id = 0;    // Main thread uses buffer slot 0
     
     for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
     {
@@ -666,6 +668,7 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     st_args.ldc = ldc;
     st_args.alpha_d = alpha;  // Pass alpha to kernel
     st_args.beta_d = 1.0;     // Beta already applied to C
+    st_args.thread_id = 0;    // Main thread uses buffer slot 0
     
     // Double precision uses smaller tiles (half elements per cache line)
     // Use mc/2, kc, nb for double precision
