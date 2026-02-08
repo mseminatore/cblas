@@ -12,6 +12,8 @@ dot_perf
 dot_threshold_tuning
 dot_threshold_tuning_large
 nrm2_asum_rot_perf
+test_autotune
+test_gemm_accuracy
 test_strided
 test_mt_debug
 test_threshold
