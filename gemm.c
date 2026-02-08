@@ -306,6 +306,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
                 args[tile_count].pb = pb;
                 args[tile_count].alpha_s = alpha;  // Pass alpha to kernel
                 args[tile_count].beta_s = 1.0f;    // Beta already applied to C
+                args[tile_count].thread_id = 0;    // Will be set by worker thread
             
                 queue[tile_count].finished   = 0;
                 queue[tile_count].args       = &args[tile_count];

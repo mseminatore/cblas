@@ -158,24 +158,19 @@ static void InnerKernel_dgemm_avx(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
                                   double* c, CBLAS_INDEX ldc,
                                   double alpha, int thread_id)
 {
-    // Try to use pre-allocated buffers from buffer pool
-    cblas_gemm_buffer_t* buf = cblas_get_gemm_buffer(thread_id);
+    // Temporarily disabled buffer pool - always use malloc
     double* packedA;
     double* packedB;
-    int use_pool = (buf != NULL);
+    int use_pool = 0;
+    (void)thread_id;
     
-    if (use_pool) {
-        packedA = buf->packedA_d;
-        packedB = buf->packedB_d;
-    } else {
-        packedA = (double*)malloc(MR_D * k * sizeof(double));
-        packedB = (double*)malloc(k * NR_D * sizeof(double));
-        
-        if (!packedA || !packedB) {
-            free(packedA);
-            free(packedB);
-            return;
-        }
+    packedA = (double*)malloc(MR_D * k * sizeof(double));
+    packedB = (double*)malloc(k * NR_D * sizeof(double));
+    
+    if (!packedA || !packedB) {
+        free(packedA);
+        free(packedB);
+        return;
     }
 
     CBLAS_INDEX row, col;

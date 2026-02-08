@@ -367,25 +367,20 @@ static void InnerKernel_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
                             float* c, CBLAS_INDEX ldc,
                             float alpha, int thread_id)
 {
-    // Try to use pre-allocated buffers from buffer pool
-    cblas_gemm_buffer_t* buf = cblas_get_gemm_buffer(thread_id);
+    // Temporarily disabled buffer pool - always use malloc
+    // TODO: Debug buffer pool integration issue on Linux
     float* packedA;
     float* packedB;
-    int use_pool = (buf != NULL);
+    int use_pool = 0;
+    (void)thread_id;  // Suppress unused warning
     
-    if (use_pool) {
-        packedA = buf->packedA_s;
-        packedB = buf->packedB_s;
-    } else {
-        // Fallback to malloc if buffer pool unavailable
-        packedA = (float*)malloc(MR * k * sizeof(float));
-        packedB = (float*)malloc(k * NR * sizeof(float));
-        
-        if (!packedA || !packedB) {
-            free(packedA);
-            free(packedB);
-            return;
-        }
+    packedA = (float*)malloc(MR * k * sizeof(float));
+    packedB = (float*)malloc(k * NR * sizeof(float));
+    
+    if (!packedA || !packedB) {
+        free(packedA);
+        free(packedB);
+        return;
     }
 
     CBLAS_INDEX row, col;
