@@ -344,7 +344,11 @@ static void init_blas_kernels(void)
 		blas_kernels.sgemm_k = sgemm_k_sse;
 		blas_kernels.dgemm_k = dgemm_k_sse;
 
-		if (cpu_features & CPU_AVX)
+		// AVX/AVX2 kernels - require AVX2 because the build system compiles
+		// all AVX kernels with -mavx2 flag, which allows the compiler to
+		// auto-generate AVX2 instructions even in "AVX-only" source code.
+		// Sandy Bridge/Ivy Bridge (AVX without AVX2) will use SSE kernels.
+		if (cpu_features & CPU_AVX2)
 		{
 			blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc_avx;
 			blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc_avx;
@@ -367,34 +371,37 @@ static void init_blas_kernels(void)
 			blas_kernels.saxpby_k_noinc = cblas_saxpby_k_noinc_avx;
 			blas_kernels.daxpby_k_noinc = cblas_daxpby_k_noinc_avx;
 
-			// Level-2 AVX kernels
-			blas_kernels.sgemv_k = sgemv_k_avx;
-			blas_kernels.dgemv_k = dgemv_k_avx;
+			// Level-2 AVX kernels (also require AVX2 due to _mm256_broadcast_ss)
 			blas_kernels.sger_k = sger_k_avx;
 			blas_kernels.dger_k = dger_k_avx;
 
 			// Level-3 AVX kernels (256-bit)
 			blas_kernels.sgemm_k = sgemm_k_avx;
 			blas_kernels.dgemm_k = dgemm_k_avx;
+		}
 
-			// Check for FMA3 support and dispatch accordingly
-			if (cpu_features & CPU_x64_FMA3)
-			{
-				blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc_fma;
-				blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc_fma;
-				blas_kernels.snrm2_k_noinc = cblas_snrm2_k_noinc_fma;
-				blas_kernels.dnrm2_k_noinc = cblas_dnrm2_k_noinc_fma;
-				blas_kernels.saxpy_k_noinc = cblas_saxpy_k_noinc_fma;
-				blas_kernels.daxpy_k_noinc = cblas_daxpy_k_noinc_fma;
-				blas_kernels.saxpby_k_noinc = cblas_saxpby_k_noinc_fma;
-				blas_kernels.daxpby_k_noinc = cblas_daxpby_k_noinc_fma;
-				blas_kernels.sgemm_k = sgemm_k_fma;
-				blas_kernels.dgemm_k = dgemm_k_fma;
+		// FMA kernels - require FMA3 instruction support
+		// GEMV AVX kernel uses _mm256_fmadd intrinsics
+		if (cpu_features & CPU_x64_FMA3)
+		{
+			blas_kernels.sgemv_k = sgemv_k_avx;
+			blas_kernels.dgemv_k = dgemv_k_avx;
 
-				// Level-2 FMA kernels
-				blas_kernels.sger_k = sger_k_fma;
-				blas_kernels.dger_k = dger_k_fma;
-			}
+			// Upgrade other kernels to FMA versions
+			blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc_fma;
+			blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc_fma;
+			blas_kernels.snrm2_k_noinc = cblas_snrm2_k_noinc_fma;
+			blas_kernels.dnrm2_k_noinc = cblas_dnrm2_k_noinc_fma;
+			blas_kernels.saxpy_k_noinc = cblas_saxpy_k_noinc_fma;
+			blas_kernels.daxpy_k_noinc = cblas_daxpy_k_noinc_fma;
+			blas_kernels.saxpby_k_noinc = cblas_saxpby_k_noinc_fma;
+			blas_kernels.daxpby_k_noinc = cblas_daxpby_k_noinc_fma;
+			blas_kernels.sgemm_k = sgemm_k_fma;
+			blas_kernels.dgemm_k = dgemm_k_fma;
+
+			// Level-2 FMA kernels
+			blas_kernels.sger_k = sger_k_fma;
+			blas_kernels.dger_k = dger_k_fma;
 		}
 	}
 }

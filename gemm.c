@@ -169,43 +169,69 @@
 //------------------------------------------------------
 void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, float alpha, float* a, CBLAS_INDEX lda, float* b, CBLAS_INDEX ldb, float beta, float* c, CBLAS_INDEX ldc)
 {
-#ifdef CBLAS_CHECK_INPUTS
-    CBLAS_INDEX nota = (transa == CblasNoTrans);
-    CBLAS_INDEX notb = (transb == CblasNoTrans);
-    CBLAS_INDEX nrowc = m;
-
-    if (layout == CblasRowMajor)
+    // Our kernels use row-major storage: A(col, row) = a[row * lda + col]
+    // 
+    // For CblasRowMajor: User stores row-major, which matches our kernels directly.
+    //   A is m×k with A[i,j] = a[i*lda+j], B is k×n with B[i,j] = b[i*ldb+j]
+    //   This matches kernel expectation, no transformation needed.
+    //
+    // For CblasColMajor: User stores column-major, but our kernels expect row-major.
+    //   Apply the identity: C = alpha * op(A) * op(B) + beta * C in col-major
+    //   is equivalent to: C^T = alpha * op(B)^T * op(A)^T + beta * C^T in row-major
+    //   So we swap A↔B, m↔n, lda↔ldb, and swap transpose flags.
+    
+    float *a_use, *b_use;
+    CBLAS_INDEX m_use, n_use, lda_use, ldb_use;
+    CBLAS_TRANSPOSE transa_use, transb_use;
+    
+    if (layout == CblasColMajor)
     {
-        nota = !nota;
-        notb = !notb;
-        nrowc = n;
+        // Column-major input: swap to convert to row-major computation
+        a_use = b;
+        b_use = a;
+        m_use = n;
+        n_use = m;
+        lda_use = ldb;
+        ldb_use = lda;
+        transa_use = transb;
+        transb_use = transa;
+    }
+    else
+    {
+        // Row-major: use as-is (matches our kernel convention)
+        a_use = a;
+        b_use = b;
+        m_use = m;
+        n_use = n;
+        lda_use = lda;
+        ldb_use = ldb;
+        transa_use = transa;
+        transb_use = transb;
     }
 
-    CBLAS_INDEX nrowa, nrowb;
+#ifdef CBLAS_CHECK_INPUTS
+    CBLAS_INDEX nota = (transa_use == CblasNoTrans);
+    CBLAS_INDEX notb = (transb_use == CblasNoTrans);
 
-    if (nota)
-        nrowa = m;
-    else
-        nrowa = k;
-
-    if (notb)
-        nrowb = k;
-    else
-        nrowb = n;
+    // Row-major storage: lda must be >= number of columns of A
+    // NoTrans: A is m×k, so lda >= k
+    // Trans: A is k×m (accessed as m×k transposed), so lda >= m
+    CBLAS_INDEX ncola = nota ? k : m_use;
+    CBLAS_INDEX ncolb = notb ? n_use : k;
 
 #ifdef CBLAS_XERBLA_INPUTS
     int info = 0;
-    if (!a)
+    if (!a_use)
         info = 8;
-    else if (lda < MAX(1, nrowa))
+    else if (lda_use < MAX(1, ncola))
         info = 9;
-    else if (!b)
+    else if (!b_use)
         info = 10;
-    else if (ldb < MAX(1, nrowb))
+    else if (ldb_use < MAX(1, ncolb))
         info = 11;
     else if (!c)
         info = 12;
-    else if (ldc < MAX(1, nrowc))
+    else if (ldc < MAX(1, n_use))
         info = 13;
 
     if (info) {
@@ -213,7 +239,8 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         return;
     }
 #else
-    if (m < 0 || n < 0 || k < 0 || !a || !b || !c || lda < MAX(1, nrowa) || ldb < MAX(1, nrowb) || ldc < MAX(1, m))
+    if (m_use < 0 || n_use < 0 || k < 0 || !a_use || !b_use || !c || 
+        lda_use < MAX(1, ncola) || ldb_use < MAX(1, ncolb) || ldc < MAX(1, n_use))
     {
         assert(layout == CblasRowMajor || layout == CblasColMajor);
         assert(transa == CblasTrans || transa == CblasNoTrans);
@@ -228,86 +255,106 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     CBLAS_STATS_START();
 
     // Handle beta scaling of C before computing A*B
-    // C = beta * C (done once, before any kernel calls)
+    // C has dimensions m_use x n_use in row-major: C[i,j] = c[i * ldc + j]
     if (beta == 0.0f)
     {
-        // Zero out C
-        for (CBLAS_INDEX row = 0; row < m; row++)
-            for (CBLAS_INDEX col = 0; col < n; col++)
-                C(col, row) = 0.0f;
+        for (CBLAS_INDEX i = 0; i < m_use; i++)
+            for (CBLAS_INDEX j = 0; j < n_use; j++)
+                c[i * ldc + j] = 0.0f;
     }
     else if (beta != 1.0f)
     {
-        // Scale C by beta
-        for (CBLAS_INDEX row = 0; row < m; row++)
-            for (CBLAS_INDEX col = 0; col < n; col++)
-                C(col, row) *= beta;
+        for (CBLAS_INDEX i = 0; i < m_use; i++)
+            for (CBLAS_INDEX j = 0; j < n_use; j++)
+                c[i * ldc + j] *= beta;
     }
-    // If beta == 1.0f, C is unchanged
 
-    // If alpha is 0, we're done (C = beta * C)
     if (alpha == 0.0f)
     {
         CBLAS_STATS_END("sgemm", m * n * k, 0);
         return;
     }
 
+    // Check for transpose - currently only NoTrans/NoTrans is optimized
+    if (transa_use != CblasNoTrans || transb_use != CblasNoTrans)
+    {
+        // Reference implementation with transpose support
+        // Row-major: C[i,j] = c[i * ldc + j]
+        // C = alpha * op(A) * op(B) + C  (beta already applied)
+        for (CBLAS_INDEX i = 0; i < m_use; i++)
+        {
+            for (CBLAS_INDEX j = 0; j < n_use; j++)
+            {
+                float sum = 0.0f;
+                for (CBLAS_INDEX p = 0; p < k; p++)
+                {
+                    // A is m_use x k (notrans) or k x m_use (trans)
+                    // Row-major: A[i,p] = a[i*lda+p] (notrans), A^T[i,p] = a[p*lda+i] (trans)
+                    float a_val = (transa_use == CblasNoTrans) 
+                        ? a_use[i * lda_use + p]
+                        : a_use[p * lda_use + i];
+                    
+                    // B is k x n_use (notrans) or n_use x k (trans)
+                    // Row-major: B[p,j] = b[p*ldb+j] (notrans), B^T[p,j] = b[j*ldb+p] (trans)
+                    float b_val = (transb_use == CblasNoTrans)
+                        ? b_use[p * ldb_use + j]
+                        : b_use[j * ldb_use + p];
+                    
+                    sum += a_val * b_val;
+                }
+                c[i * ldc + j] += alpha * sum;
+            }
+        }
+        CBLAS_STATS_END("sgemm", m * n * k, 0);
+        return;
+    }
+
+    // NoTrans/NoTrans case - use optimized kernels
+    // The kernels use row-major convention: A(col, row) = a[row * lda + col]
+    
     CBLAS_INDEX pb, ib;
 
 #if defined(MT_ENABLED)
-    int mt_used = (m * n * k > CBLAS_MT_GEMM) ? 1 : 0;
+    int mt_used = (m_use * n_use * k > CBLAS_MT_GEMM) ? 1 : 0;
     
     if (mt_used)
     {
-        // Only parallelize across m-dimension (row blocks) to avoid race conditions.
-        // Tiles with different p values but same row write to the same C elements,
-        // so k-blocks must be processed sequentially.
-        CBLAS_INDEX vert_tiles = m / cblas_gemm_mc + 1;
+        CBLAS_INDEX vert_tiles = m_use / cblas_gemm_mc + 1;
 
-        // Use heap allocation for tile arrays
         work_queue_t *queue = (work_queue_t*)malloc(vert_tiles * sizeof(work_queue_t));
         cblas_args_t *args = (cblas_args_t*)malloc(vert_tiles * sizeof(cblas_args_t));
         
         if (!queue || !args) {
             free(queue);
             free(args);
-            return;  // Out of memory
+            return;
         }
 
-        // THREE-LEVEL CACHE-BLOCKING LOOP STRUCTURE (Multi-threaded):
-        // ============================================================
-        //
-        // Outer k-loop: Process k dimension SEQUENTIALLY in kc-sized blocks
-        // - This is critical: tiles with same row but different p values write
-        //   to the same C elements, so they cannot execute concurrently
-        //
-        // Middle m-loop: Parallelize across m dimension in mc-sized blocks
-        // - Tiles with different row values write to different C elements,
-        //   so they can safely execute in parallel
         for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
         {
-            pb = MIN(k - p, cblas_gemm_kc);  // Handle edge case when k % kc != 0
+            pb = MIN(k - p, cblas_gemm_kc);
             CBLAS_INDEX tile_count = 0;
             
-            for (CBLAS_INDEX row = 0; row < m; row += cblas_gemm_mc) 
+            for (CBLAS_INDEX row = 0; row < m_use; row += cblas_gemm_mc) 
             {
-                ib = MIN(m - row, cblas_gemm_mc);  // Handle edge case when m % mc != 0
+                ib = MIN(m_use - row, cblas_gemm_mc);
 
-                // Setup work item for this mc×n tile
+                // Kernel uses A(col, row) = a[row * lda + col]
+                // For this tile: A starts at a_use[row * lda_use + p]
                 args[tile_count].incx = 1;
                 args[tile_count].incy = 1;
-                args[tile_count].n = n;
-                args[tile_count].lda = lda;
-                args[tile_count].ldb = ldb;
+                args[tile_count].n = n_use;
+                args[tile_count].lda = lda_use;
+                args[tile_count].ldb = ldb_use;
                 args[tile_count].ldc = ldc;
-                args[tile_count].a = &A(p, row);
-                args[tile_count].b = &B(0, p);
-                args[tile_count].c = &C(0, row);
+                args[tile_count].a = a_use + row * lda_use + p;  // &A(p, row)
+                args[tile_count].b = b_use + p * ldb_use;        // &B(0, p)
+                args[tile_count].c = c + row * ldc;              // &C(0, row)
                 args[tile_count].ib = ib;
                 args[tile_count].pb = pb;
-                args[tile_count].alpha_s = alpha;  // Pass alpha to kernel
-                args[tile_count].beta_s = 1.0f;    // Beta already applied to C
-                args[tile_count].thread_id = 0;    // Will be set by worker thread
+                args[tile_count].alpha_s = alpha;
+                args[tile_count].beta_s = 1.0f;
+                args[tile_count].thread_id = 0;
             
                 queue[tile_count].finished   = 0;
                 queue[tile_count].args       = &args[tile_count];
@@ -319,58 +366,43 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 
             assert(tile_count <= vert_tiles);
 
-            // mark end of task queue for this k-block
             queue[tile_count - 1].next = NULL;
 
-            // Execute all row tiles for this k-block in parallel, then wait
-            // This ensures all contributions to C from this k-block complete
-            // before moving to the next k-block
             cblas_execute(tile_count, queue);
         }
         
-        // Free heap-allocated arrays
         free(queue);
         free(args);
     }
     else
     {
-        // Below threshold, use single-threaded implementation via dispatched kernel
+        // Below threshold, use single-threaded implementation
         cblas_args_t st_args;
         st_args.incx = 1;
         st_args.incy = 1;
-        st_args.n = n;
-        st_args.lda = lda;
-        st_args.ldb = ldb;
+        st_args.n = n_use;
+        st_args.lda = lda_use;
+        st_args.ldb = ldb_use;
         st_args.ldc = ldc;
-        st_args.alpha_s = alpha;  // Pass alpha to kernel
-        st_args.beta_s = 1.0f;    // Beta already applied to C
-        st_args.thread_id = 0;    // Main thread uses buffer slot 0
+        st_args.alpha_s = alpha;
+        st_args.beta_s = 1.0f;
+        st_args.thread_id = 0;
         
-        // THREE-LEVEL CACHE-BLOCKING LOOP STRUCTURE:
-        // ===========================================
-        //
-        // Outer k-loop: Iterate over k dimension in kc-sized blocks
-        // - Each iteration processes a kc-wide vertical panel of A and horizontal panel of B
-        // - This loop determines how many times we need to pack matrix data
         for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
         {
-            pb = MIN(k - p, cblas_gemm_kc);  // Handle edge case when k % kc != 0
+            pb = MIN(k - p, cblas_gemm_kc);
             
-            // Middle m-loop: Iterate over m dimension in mc-sized blocks
-            // - Each iteration processes an mc-tall horizontal panel of A
-            // - packedA is reused for all columns of C in the inner kernel
-            for (CBLAS_INDEX row = 0; row < m; row += cblas_gemm_mc) 
+            for (CBLAS_INDEX row = 0; row < m_use; row += cblas_gemm_mc) 
             {
-                ib = MIN(m - row, cblas_gemm_mc);  // Handle edge case when m % mc != 0
+                ib = MIN(m_use - row, cblas_gemm_mc);
                 
-                // Setup args for this tile
-                st_args.a = &A(p, row);
-                st_args.b = &B(0, p);
-                st_args.c = &C(0, row);
+                // Kernel uses A(col, row) = a[row * lda + col]
+                st_args.a = a_use + row * lda_use + p;  // &A(p, row)
+                st_args.b = b_use + p * ldb_use;        // &B(0, p)
+                st_args.c = c + row * ldc;              // &C(0, row)
                 st_args.ib = ib;
                 st_args.pb = pb;
                 
-                // Dispatch to platform-optimized kernel
                 blas_kernels.sgemm_k(&st_args);
             }
         }
@@ -378,33 +410,31 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 
 #else
     int mt_used = 0;
-    // Single-threaded implementation via dispatched kernel
+    // Single-threaded implementation
     cblas_args_t st_args;
     st_args.incx = 1;
     st_args.incy = 1;
-    st_args.n = n;
-    st_args.lda = lda;
-    st_args.ldb = ldb;
+    st_args.n = n_use;
+    st_args.lda = lda_use;
+    st_args.ldb = ldb_use;
     st_args.ldc = ldc;
-    st_args.alpha_s = alpha;  // Pass alpha to kernel
-    st_args.beta_s = 1.0f;    // Beta already applied to C
-    st_args.thread_id = 0;    // Main thread uses buffer slot 0
+    st_args.alpha_s = alpha;
+    st_args.beta_s = 1.0f;
+    st_args.thread_id = 0;
     
     for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
     {
         pb = MIN(k - p, cblas_gemm_kc);
-        for (CBLAS_INDEX row = 0; row < m; row += cblas_gemm_mc) 
+        for (CBLAS_INDEX row = 0; row < m_use; row += cblas_gemm_mc) 
         {
-            ib = MIN(m - row, cblas_gemm_mc);
+            ib = MIN(m_use - row, cblas_gemm_mc);
             
-            // Setup args for this tile
-            st_args.a = &A(p, row);
-            st_args.b = &B(0, p);
-            st_args.c = &C(0, row);
+            st_args.a = a_use + row * lda_use + p;
+            st_args.b = b_use + p * ldb_use;
+            st_args.c = c + row * ldc;
             st_args.ib = ib;
             st_args.pb = pb;
             
-            // Dispatch to platform-optimized kernel
             blas_kernels.sgemm_k(&st_args);
         }
     }
@@ -578,43 +608,61 @@ CBLAS_UNUSED static void AddDot_d(CBLAS_INDEX k, double *a, CBLAS_INDEX lda, dou
 //------------------------------------------------------
 void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb, CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, double alpha, double *a, CBLAS_INDEX lda, double *b, CBLAS_INDEX ldb, double beta, double *c, CBLAS_INDEX ldc)
 {
-#ifdef CBLAS_CHECK_INPUTS
-    CBLAS_INDEX nota = (transa == CblasNoTrans);
-    CBLAS_INDEX notb = (transb == CblasNoTrans);
-    CBLAS_INDEX nrowc = m;
-
-    if (layout == CblasRowMajor)
+    // Our kernels use row-major storage: A(col, row) = a[row * lda + col]
+    // 
+    // For CblasRowMajor: User stores row-major, which matches our kernels directly.
+    // For CblasColMajor: Apply swap transformation to convert to row-major.
+    
+    double *a_use, *b_use;
+    CBLAS_INDEX m_use, n_use, lda_use, ldb_use;
+    CBLAS_TRANSPOSE transa_use, transb_use;
+    
+    if (layout == CblasColMajor)
     {
-        nota = !nota;
-        notb = !notb;
-        nrowc = n;
+        // Column-major input: swap to convert to row-major computation
+        a_use = b;
+        b_use = a;
+        m_use = n;
+        n_use = m;
+        lda_use = ldb;
+        ldb_use = lda;
+        transa_use = transb;
+        transb_use = transa;
+    }
+    else
+    {
+        // Row-major: use as-is (matches our kernel convention)
+        a_use = a;
+        b_use = b;
+        m_use = m;
+        n_use = n;
+        lda_use = lda;
+        ldb_use = ldb;
+        transa_use = transa;
+        transb_use = transb;
     }
 
-    CBLAS_INDEX nrowa, nrowb;
+#ifdef CBLAS_CHECK_INPUTS
+    CBLAS_INDEX nota = (transa_use == CblasNoTrans);
+    CBLAS_INDEX notb = (transb_use == CblasNoTrans);
 
-    if (nota)
-        nrowa = m;
-    else
-        nrowa = k;
-
-    if (notb)
-        nrowb = k;
-    else
-        nrowb = n;
+    // Row-major storage: lda must be >= number of columns of A
+    CBLAS_INDEX ncola = nota ? k : m_use;
+    CBLAS_INDEX ncolb = notb ? n_use : k;
 
 #ifdef CBLAS_XERBLA_INPUTS
     int info = 0;
-    if (!a)
+    if (!a_use)
         info = 8;
-    else if (lda < MAX(1, nrowa))
+    else if (lda_use < MAX(1, ncola))
         info = 9;
-    else if (!b)
+    else if (!b_use)
         info = 10;
-    else if (ldb < MAX(1, nrowb))
+    else if (ldb_use < MAX(1, ncolb))
         info = 11;
     else if (!c)
         info = 12;
-    else if (ldc < MAX(1, nrowc))
+    else if (ldc < MAX(1, n_use))
         info = 13;
 
     if (info) {
@@ -622,14 +670,14 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         return;
     }
 #else
-    if (!a || !b || !c || lda < MAX(1, nrowa) || ldb < MAX(1, nrowb) || ldc < MAX(1, m))
+    if (m_use < 0 || n_use < 0 || k < 0 || !a_use || !b_use || !c ||
+        lda_use < MAX(1, ncola) || ldb_use < MAX(1, ncolb) || ldc < MAX(1, n_use))
     {
         assert(layout == CblasRowMajor || layout == CblasColMajor);
         assert(transa == CblasTrans || transa == CblasNoTrans);
         assert(transb == CblasTrans || transb == CblasNoTrans);
         assert(m > 0 && n > 0 && k > 0);
         assert(a && b && c);
-        assert(alpha != 0.0 && beta != 0.0);
         return;
     }
 #endif
@@ -639,61 +687,84 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 
     int mt_used = 0;
 
-    // Apply beta scaling to C if needed
+    // Handle beta scaling of C (row-major: C[i,j] = c[i * ldc + j])
     if (beta == 0.0)
     {
-        // Zero out C
-        for (CBLAS_INDEX row = 0; row < m; row++)
-            for (CBLAS_INDEX col = 0; col < n; col++)
-                C(col, row) = 0.0;
+        for (CBLAS_INDEX i = 0; i < m_use; i++)
+            for (CBLAS_INDEX j = 0; j < n_use; j++)
+                c[i * ldc + j] = 0.0;
     }
     else if (beta != 1.0)
     {
-        // Scale C by beta
-        for (CBLAS_INDEX row = 0; row < m; row++)
-            for (CBLAS_INDEX col = 0; col < n; col++)
-                C(col, row) *= beta;
+        for (CBLAS_INDEX i = 0; i < m_use; i++)
+            for (CBLAS_INDEX j = 0; j < n_use; j++)
+                c[i * ldc + j] *= beta;
     }
 
-    // If alpha is 0, we're done (C = beta * C)
     if (alpha == 0.0)
     {
         CBLAS_STATS_END("dgemm", m * n * k, mt_used);
         return;
     }
 
-    // Use cache-blocked kernel-based implementation
+    // Check for transpose - fall back to reference implementation
+    if (transa_use != CblasNoTrans || transb_use != CblasNoTrans)
+    {
+        // Row-major reference: C[i,j] = c[i * ldc + j]
+        for (CBLAS_INDEX i = 0; i < m_use; i++)
+        {
+            for (CBLAS_INDEX j = 0; j < n_use; j++)
+            {
+                double sum = 0.0;
+                for (CBLAS_INDEX p = 0; p < k; p++)
+                {
+                    double a_val = (transa_use == CblasNoTrans) 
+                        ? a_use[i * lda_use + p]
+                        : a_use[p * lda_use + i];
+                    
+                    double b_val = (transb_use == CblasNoTrans)
+                        ? b_use[p * ldb_use + j]
+                        : b_use[j * ldb_use + p];
+                    
+                    sum += a_val * b_val;
+                }
+                c[i * ldc + j] += alpha * sum;
+            }
+        }
+        CBLAS_STATS_END("dgemm", m * n * k, mt_used);
+        return;
+    }
+
+    // NoTrans/NoTrans case - use optimized kernels
+    // Kernels use row-major: A(col, row) = a[row * lda + col]
     CBLAS_INDEX pb, ib;
     cblas_args_t st_args;
     
-    st_args.n = n;
-    st_args.lda = lda;
-    st_args.ldb = ldb;
+    st_args.n = n_use;
+    st_args.lda = lda_use;
+    st_args.ldb = ldb_use;
     st_args.ldc = ldc;
-    st_args.alpha_d = alpha;  // Pass alpha to kernel
-    st_args.beta_d = 1.0;     // Beta already applied to C
-    st_args.thread_id = 0;    // Main thread uses buffer slot 0
+    st_args.alpha_d = alpha;
+    st_args.beta_d = 1.0;
+    st_args.thread_id = 0;
     
-    // Double precision uses smaller tiles (half elements per cache line)
-    // Use mc/2, kc, nb for double precision
     CBLAS_INDEX mc_d = cblas_gemm_mc;
     CBLAS_INDEX kc_d = cblas_gemm_kc;
     
     for (CBLAS_INDEX p = 0; p < k; p += kc_d) 
     {
         pb = MIN(k - p, kc_d);
-        for (CBLAS_INDEX row = 0; row < m; row += mc_d) 
+        for (CBLAS_INDEX row = 0; row < m_use; row += mc_d) 
         {
-            ib = MIN(m - row, mc_d);
+            ib = MIN(m_use - row, mc_d);
             
-            // Setup args for this tile
-            st_args.a = &A(p, row);
-            st_args.b = &B(0, p);
-            st_args.c = &C(0, row);
+            // Row-major kernel: a + row * lda + p = &A(p, row)
+            st_args.a = a_use + row * lda_use + p;
+            st_args.b = b_use + p * ldb_use;
+            st_args.c = c + row * ldc;
             st_args.ib = ib;
             st_args.pb = pb;
             
-            // Dispatch to platform-optimized kernel
             blas_kernels.dgemm_k(&st_args);
         }
     }

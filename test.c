@@ -1543,63 +1543,62 @@ static void test_gemm_transpose(void)
 {
 	SUITE("gemm transpose operations");
 
-	// TODO: Fix gemm transpose operations - not fully implemented
 	// sgemm with A transposed
-	// COMMENT("sgemm with CblasTrans on A");
-	// {
-	// 	// A is stored as 3x2 but used as 2x3 (transposed)
-	// 	float A[] = {1, 4,
-	// 	             2, 5,
-	// 	             3, 6};  // 3x2 storage, transposed = 2x3
-	// 	float B[] = {1, 0, 0,
-	// 	             0, 1, 0,
-	// 	             0, 0, 1};  // 3x3 identity
-	// 	float C[] = {0, 0, 0,
-	// 	             0, 0, 0};  // 2x3 result
-	// 	float expected[] = {1, 2, 3,
-	// 	                    4, 5, 6};
+	COMMENT("sgemm with CblasTrans on A");
+	{
+		// A is stored as 3x2 but used as 2x3 (transposed)
+		float A[] = {1, 4,
+		             2, 5,
+		             3, 6};  // 3x2 storage, transposed = 2x3
+		float B[] = {1, 0, 0,
+		             0, 1, 0,
+		             0, 0, 1};  // 3x3 identity
+		float C[] = {0, 0, 0,
+		             0, 0, 0};  // 2x3 result
+		float expected[] = {1, 2, 3,
+		                    4, 5, 6};
 
-	// 	cblas_sgemm(CblasRowMajor, CblasTrans, CblasNoTrans, 2, 3, 3, 1.0f, A, 2, B, 3, 0.0f, C, 3);
-	// 	TEST(equal_sarray_epsilon(C, expected, 6));
-	// }
+		cblas_sgemm(CblasRowMajor, CblasTrans, CblasNoTrans, 2, 3, 3, 1.0f, A, 2, B, 3, 0.0f, C, 3);
+		TEST(equal_sarray_epsilon(C, expected, 6));
+	}
 
 	// sgemm with B transposed
-	// COMMENT("sgemm with CblasTrans on B");
-	// {
-	// 	float A[] = {1, 0, 0,
-	// 	             0, 1, 0,
-	// 	             0, 0, 1};  // 3x3 identity
-	// 	// B is stored as 2x3 but used as 3x2 (transposed)
-	// 	float B[] = {1, 4,
-	// 	             2, 5,
-	// 	             3, 6};  // 3x2 storage
-	// 	float C[] = {0, 0,
-	// 	             0, 0,
-	// 	             0, 0};  // 3x2 result
-	// 	float expected[] = {1, 4,
-	// 	                    2, 5,
-	// 	                    3, 6};
+	COMMENT("sgemm with CblasTrans on B");
+	{
+		float A[] = {1, 0, 0,
+		             0, 1, 0,
+		             0, 0, 1};  // 3x3 identity
+		// B is stored as 2x3 (transposed becomes 3x2 = k x n)
+		// Row-major storage means ldb = 3 (number of columns in storage)
+		float B[] = {1, 2, 3,
+		             4, 5, 6};  // 2x3 storage, transposed = 3x2
+		float C[] = {0, 0,
+		             0, 0,
+		             0, 0};  // 3x2 result
+		float expected[] = {1, 4,
+		                    2, 5,
+		                    3, 6};
 
-	// 	cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans, 3, 2, 3, 1.0f, A, 3, B, 3, 0.0f, C, 2);
-	// 	TEST(equal_sarray_epsilon(C, expected, 6));
-	// }
+		cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans, 3, 2, 3, 1.0f, A, 3, B, 3, 0.0f, C, 2);
+		TEST(equal_sarray_epsilon(C, expected, 6));
+	}
 
 	// dgemm with both transposed
-	// COMMENT("dgemm with both A and B transposed");
-	// {
-	// 	double A[] = {1, 3,
-	// 	              2, 4};  // 2x2, transposed = [[1,2],[3,4]]
-	// 	double B[] = {1, 3,
-	// 	              2, 4};  // 2x2, transposed = [[1,2],[3,4]]
-	// 	double C[] = {0, 0,
-	// 	              0, 0};
-	// 	// (A^T)(B^T) = [[1,2],[3,4]] * [[1,2],[3,4]] = [[7,10],[15,22]]
-	// 	double expected[] = {7, 10,
-	// 	                     15, 22};
+	COMMENT("dgemm with both A and B transposed");
+	{
+		double A[] = {1, 3,
+		              2, 4};  // 2x2, transposed = [[1,2],[3,4]]
+		double B[] = {1, 3,
+		              2, 4};  // 2x2, transposed = [[1,2],[3,4]]
+		double C[] = {0, 0,
+		              0, 0};
+		// (A^T)(B^T) = [[1,2],[3,4]] * [[1,2],[3,4]] = [[7,10],[15,22]]
+		double expected[] = {7, 10,
+		                     15, 22};
 
-	// 	cblas_dgemm(CblasRowMajor, CblasTrans, CblasTrans, 2, 2, 2, 1.0, A, 2, B, 2, 0.0, C, 2);
-	// 	TEST(equal_darray_epsilon(C, expected, 4));
-	// }
+		cblas_dgemm(CblasRowMajor, CblasTrans, CblasTrans, 2, 2, 2, 1.0, A, 2, B, 2, 0.0, C, 2);
+		TEST(equal_darray_epsilon(C, expected, 4));
+	}
 }
 
 //------------------------------------------------------
