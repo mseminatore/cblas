@@ -115,15 +115,15 @@ static int test_mt_above_threshold(void)
 static int test_threshold_value(void)
 {
     // Verify threshold is set to a reasonable value
-    // After optimization with 4-way unrolling, prefetching, and improved SIMD,
-    // the overhead of MT is lower, so we can use a lower threshold (32768)
-    // for better performance on memory-bound dot product operations.
-    // Threshold should be >= 16384 (reasonable minimum for MT overhead)
-    // and <= 100000 (to benefit from MT on moderately sized vectors)
-    int threshold_ok = (CBLAS_MT_DOT >= 16384 && CBLAS_MT_DOT <= 100000);
+    // Testing shows MT overhead exceeds benefit for Level-1 ops until ~500K elements
+    // on modern CPUs with fast memory. The threshold should be high enough to
+    // avoid MT overhead hurting small/medium vector operations.
+    // Threshold should be >= 100000 (MT overhead is significant for memory-bound ops)
+    // and <= 10000000 (still allow MT for very large vectors)
+    int threshold_ok = (CBLAS_MT_DOT >= 100000 && CBLAS_MT_DOT <= 10000000);
     
     if (!threshold_ok) {
-        fprintf(stderr, "CBLAS_MT_DOT (%lu) is outside reasonable range (16384-100000)\n", 
+        fprintf(stderr, "CBLAS_MT_DOT (%lu) is outside reasonable range (100000-10000000)\n", 
                 (unsigned long)CBLAS_MT_DOT);
     }
     
