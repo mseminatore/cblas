@@ -52,6 +52,7 @@ static void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, CBLAS_IN
 // Computes C[6x16] += alpha * A[6xk] * B[kx16]
 // Uses 12 YMM registers for C (6 rows × 2 YMM per row)
 // 2 YMM for B loads, 1 YMM for A broadcast
+// K-loop unrolled by 4 for better ILP
 //------------------------------------------------------
 static void AddDot6x16_fma(CBLAS_INDEX k, float *a, float *b, float *c, CBLAS_INDEX ldc, float alpha)
 {
@@ -76,51 +77,134 @@ static void AddDot6x16_fma(CBLAS_INDEX k, float *a, float *b, float *c, CBLAS_IN
     c40 = _mm256_setzero_ps(); c41 = _mm256_setzero_ps();
     c50 = _mm256_setzero_ps(); c51 = _mm256_setzero_ps();
     
-    // Main loop over k dimension
-    for (CBLAS_INDEX p = 0; p < k; p++)
+    CBLAS_INDEX p = 0;
+    
+    // Main loop: unrolled by 4 for better ILP
+    for (; p + 4 <= k; p += 4)
     {
-        // Load B row (16 floats from packed format: 16 consecutive floats)
-        b0 = _mm256_loadu_ps(b);      // B[p, 0:7]
-        b1 = _mm256_loadu_ps(b + 8);  // B[p, 8:15]
-        b += NR;  // Advance to next row of packed B
+        // Prefetch ahead
+        CBLAS_PREFETCH(a + (4 * MR), 0, 3);
+        CBLAS_PREFETCH(b + (4 * NR), 0, 3);
         
-        // Prefetch next iterations
-        if (p + PREFETCH_DISTANCE < k) {
-            CBLAS_PREFETCH(a + (PREFETCH_DISTANCE * MR), 0, 3);
-            CBLAS_PREFETCH(b + (PREFETCH_DISTANCE * NR), 0, 3);
-        }
-        
-        // Row 0: broadcast A[0,p] and FMA
+        // Iteration 0
+        b0 = _mm256_loadu_ps(b);
+        b1 = _mm256_loadu_ps(b + 8);
         a_elem = _mm256_set1_ps(a[0]);
         c00 = _mm256_fmadd_ps(a_elem, b0, c00);
         c01 = _mm256_fmadd_ps(a_elem, b1, c01);
-        
-        // Row 1
         a_elem = _mm256_set1_ps(a[1]);
         c10 = _mm256_fmadd_ps(a_elem, b0, c10);
         c11 = _mm256_fmadd_ps(a_elem, b1, c11);
-        
-        // Row 2
         a_elem = _mm256_set1_ps(a[2]);
         c20 = _mm256_fmadd_ps(a_elem, b0, c20);
         c21 = _mm256_fmadd_ps(a_elem, b1, c21);
-        
-        // Row 3
         a_elem = _mm256_set1_ps(a[3]);
         c30 = _mm256_fmadd_ps(a_elem, b0, c30);
         c31 = _mm256_fmadd_ps(a_elem, b1, c31);
-        
-        // Row 4
         a_elem = _mm256_set1_ps(a[4]);
         c40 = _mm256_fmadd_ps(a_elem, b0, c40);
         c41 = _mm256_fmadd_ps(a_elem, b1, c41);
-        
-        // Row 5
         a_elem = _mm256_set1_ps(a[5]);
         c50 = _mm256_fmadd_ps(a_elem, b0, c50);
         c51 = _mm256_fmadd_ps(a_elem, b1, c51);
         
-        a += MR;  // Advance to next column of packed A
+        // Iteration 1
+        b0 = _mm256_loadu_ps(b + NR);
+        b1 = _mm256_loadu_ps(b + NR + 8);
+        a_elem = _mm256_set1_ps(a[MR]);
+        c00 = _mm256_fmadd_ps(a_elem, b0, c00);
+        c01 = _mm256_fmadd_ps(a_elem, b1, c01);
+        a_elem = _mm256_set1_ps(a[MR + 1]);
+        c10 = _mm256_fmadd_ps(a_elem, b0, c10);
+        c11 = _mm256_fmadd_ps(a_elem, b1, c11);
+        a_elem = _mm256_set1_ps(a[MR + 2]);
+        c20 = _mm256_fmadd_ps(a_elem, b0, c20);
+        c21 = _mm256_fmadd_ps(a_elem, b1, c21);
+        a_elem = _mm256_set1_ps(a[MR + 3]);
+        c30 = _mm256_fmadd_ps(a_elem, b0, c30);
+        c31 = _mm256_fmadd_ps(a_elem, b1, c31);
+        a_elem = _mm256_set1_ps(a[MR + 4]);
+        c40 = _mm256_fmadd_ps(a_elem, b0, c40);
+        c41 = _mm256_fmadd_ps(a_elem, b1, c41);
+        a_elem = _mm256_set1_ps(a[MR + 5]);
+        c50 = _mm256_fmadd_ps(a_elem, b0, c50);
+        c51 = _mm256_fmadd_ps(a_elem, b1, c51);
+        
+        // Iteration 2
+        b0 = _mm256_loadu_ps(b + 2*NR);
+        b1 = _mm256_loadu_ps(b + 2*NR + 8);
+        a_elem = _mm256_set1_ps(a[2*MR]);
+        c00 = _mm256_fmadd_ps(a_elem, b0, c00);
+        c01 = _mm256_fmadd_ps(a_elem, b1, c01);
+        a_elem = _mm256_set1_ps(a[2*MR + 1]);
+        c10 = _mm256_fmadd_ps(a_elem, b0, c10);
+        c11 = _mm256_fmadd_ps(a_elem, b1, c11);
+        a_elem = _mm256_set1_ps(a[2*MR + 2]);
+        c20 = _mm256_fmadd_ps(a_elem, b0, c20);
+        c21 = _mm256_fmadd_ps(a_elem, b1, c21);
+        a_elem = _mm256_set1_ps(a[2*MR + 3]);
+        c30 = _mm256_fmadd_ps(a_elem, b0, c30);
+        c31 = _mm256_fmadd_ps(a_elem, b1, c31);
+        a_elem = _mm256_set1_ps(a[2*MR + 4]);
+        c40 = _mm256_fmadd_ps(a_elem, b0, c40);
+        c41 = _mm256_fmadd_ps(a_elem, b1, c41);
+        a_elem = _mm256_set1_ps(a[2*MR + 5]);
+        c50 = _mm256_fmadd_ps(a_elem, b0, c50);
+        c51 = _mm256_fmadd_ps(a_elem, b1, c51);
+        
+        // Iteration 3
+        b0 = _mm256_loadu_ps(b + 3*NR);
+        b1 = _mm256_loadu_ps(b + 3*NR + 8);
+        a_elem = _mm256_set1_ps(a[3*MR]);
+        c00 = _mm256_fmadd_ps(a_elem, b0, c00);
+        c01 = _mm256_fmadd_ps(a_elem, b1, c01);
+        a_elem = _mm256_set1_ps(a[3*MR + 1]);
+        c10 = _mm256_fmadd_ps(a_elem, b0, c10);
+        c11 = _mm256_fmadd_ps(a_elem, b1, c11);
+        a_elem = _mm256_set1_ps(a[3*MR + 2]);
+        c20 = _mm256_fmadd_ps(a_elem, b0, c20);
+        c21 = _mm256_fmadd_ps(a_elem, b1, c21);
+        a_elem = _mm256_set1_ps(a[3*MR + 3]);
+        c30 = _mm256_fmadd_ps(a_elem, b0, c30);
+        c31 = _mm256_fmadd_ps(a_elem, b1, c31);
+        a_elem = _mm256_set1_ps(a[3*MR + 4]);
+        c40 = _mm256_fmadd_ps(a_elem, b0, c40);
+        c41 = _mm256_fmadd_ps(a_elem, b1, c41);
+        a_elem = _mm256_set1_ps(a[3*MR + 5]);
+        c50 = _mm256_fmadd_ps(a_elem, b0, c50);
+        c51 = _mm256_fmadd_ps(a_elem, b1, c51);
+        
+        b += 4 * NR;
+        a += 4 * MR;
+    }
+    
+    // Handle remaining k iterations (0-3)
+    for (; p < k; p++)
+    {
+        b0 = _mm256_loadu_ps(b);
+        b1 = _mm256_loadu_ps(b + 8);
+        
+        a_elem = _mm256_set1_ps(a[0]);
+        c00 = _mm256_fmadd_ps(a_elem, b0, c00);
+        c01 = _mm256_fmadd_ps(a_elem, b1, c01);
+        a_elem = _mm256_set1_ps(a[1]);
+        c10 = _mm256_fmadd_ps(a_elem, b0, c10);
+        c11 = _mm256_fmadd_ps(a_elem, b1, c11);
+        a_elem = _mm256_set1_ps(a[2]);
+        c20 = _mm256_fmadd_ps(a_elem, b0, c20);
+        c21 = _mm256_fmadd_ps(a_elem, b1, c21);
+        a_elem = _mm256_set1_ps(a[3]);
+        c30 = _mm256_fmadd_ps(a_elem, b0, c30);
+        c31 = _mm256_fmadd_ps(a_elem, b1, c31);
+        a_elem = _mm256_set1_ps(a[4]);
+        c40 = _mm256_fmadd_ps(a_elem, b0, c40);
+        c41 = _mm256_fmadd_ps(a_elem, b1, c41);
+        a_elem = _mm256_set1_ps(a[5]);
+        c50 = _mm256_fmadd_ps(a_elem, b0, c50);
+        c51 = _mm256_fmadd_ps(a_elem, b1, c51);
+        
+        b += NR;
+        a += MR;
     }
     
     // Load old C values, apply alpha to accumulators, accumulate, store
@@ -176,6 +260,7 @@ static void AddDot6x16_fma(CBLAS_INDEX k, float *a, float *b, float *c, CBLAS_IN
 //------------------------------------------------------
 // 4x16 micro-kernel using AVX2+FMA
 // For remainder handling when 4 <= remaining_rows < 6
+// K-loop unrolled by 2 for better ILP
 //------------------------------------------------------
 static void AddDot4x16_fma(CBLAS_INDEX k, float *a, float *b, float *c, CBLAS_INDEX ldc, float alpha)
 {
@@ -194,29 +279,68 @@ static void AddDot4x16_fma(CBLAS_INDEX k, float *a, float *b, float *c, CBLAS_IN
     c20 = _mm256_setzero_ps(); c21 = _mm256_setzero_ps();
     c30 = _mm256_setzero_ps(); c31 = _mm256_setzero_ps();
     
-    for (CBLAS_INDEX p = 0; p < k; p++)
+    CBLAS_INDEX p = 0;
+    
+    // Unrolled by 2
+    for (; p + 2 <= k; p += 2)
     {
+        // Iteration 0
         b0 = _mm256_loadu_ps(b);
         b1 = _mm256_loadu_ps(b + 8);
-        b += NR;
-        
         a_elem = _mm256_set1_ps(a[0]);
         c00 = _mm256_fmadd_ps(a_elem, b0, c00);
         c01 = _mm256_fmadd_ps(a_elem, b1, c01);
-        
         a_elem = _mm256_set1_ps(a[1]);
         c10 = _mm256_fmadd_ps(a_elem, b0, c10);
         c11 = _mm256_fmadd_ps(a_elem, b1, c11);
-        
         a_elem = _mm256_set1_ps(a[2]);
         c20 = _mm256_fmadd_ps(a_elem, b0, c20);
         c21 = _mm256_fmadd_ps(a_elem, b1, c21);
-        
         a_elem = _mm256_set1_ps(a[3]);
         c30 = _mm256_fmadd_ps(a_elem, b0, c30);
         c31 = _mm256_fmadd_ps(a_elem, b1, c31);
         
-        a += 4;  // 4 rows packed
+        // Iteration 1
+        b0 = _mm256_loadu_ps(b + NR);
+        b1 = _mm256_loadu_ps(b + NR + 8);
+        a_elem = _mm256_set1_ps(a[4]);
+        c00 = _mm256_fmadd_ps(a_elem, b0, c00);
+        c01 = _mm256_fmadd_ps(a_elem, b1, c01);
+        a_elem = _mm256_set1_ps(a[5]);
+        c10 = _mm256_fmadd_ps(a_elem, b0, c10);
+        c11 = _mm256_fmadd_ps(a_elem, b1, c11);
+        a_elem = _mm256_set1_ps(a[6]);
+        c20 = _mm256_fmadd_ps(a_elem, b0, c20);
+        c21 = _mm256_fmadd_ps(a_elem, b1, c21);
+        a_elem = _mm256_set1_ps(a[7]);
+        c30 = _mm256_fmadd_ps(a_elem, b0, c30);
+        c31 = _mm256_fmadd_ps(a_elem, b1, c31);
+        
+        b += 2 * NR;
+        a += 2 * 4;
+    }
+    
+    // Handle remaining iteration
+    for (; p < k; p++)
+    {
+        b0 = _mm256_loadu_ps(b);
+        b1 = _mm256_loadu_ps(b + 8);
+        
+        a_elem = _mm256_set1_ps(a[0]);
+        c00 = _mm256_fmadd_ps(a_elem, b0, c00);
+        c01 = _mm256_fmadd_ps(a_elem, b1, c01);
+        a_elem = _mm256_set1_ps(a[1]);
+        c10 = _mm256_fmadd_ps(a_elem, b0, c10);
+        c11 = _mm256_fmadd_ps(a_elem, b1, c11);
+        a_elem = _mm256_set1_ps(a[2]);
+        c20 = _mm256_fmadd_ps(a_elem, b0, c20);
+        c21 = _mm256_fmadd_ps(a_elem, b1, c21);
+        a_elem = _mm256_set1_ps(a[3]);
+        c30 = _mm256_fmadd_ps(a_elem, b0, c30);
+        c31 = _mm256_fmadd_ps(a_elem, b1, c31);
+        
+        b += NR;
+        a += 4;
     }
     
     // Store results
@@ -476,10 +600,7 @@ static void PackMatrixA_6(CBLAS_INDEX k, CBLAS_INDEX m_rows, float *a, CBLAS_IND
 
 //------------------------------------------------------
 // InnerKernel - FMA implementation with 6x16 micro-kernel
-// GotoBLAS-style: pack A once per row-block, pack B for each col-block
-//------------------------------------------------------
-// InnerKernel - optimized inner kernel with 6x16 micro-kernel
-// GotoBLAS-style: pack A once per row-block, pack B for each col-block
+// Pack A once per row-block, pack B for each col-block
 //------------------------------------------------------
 static void InnerKernel_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, 
                             float* a, CBLAS_INDEX lda, 

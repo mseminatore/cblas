@@ -751,7 +751,7 @@ CBLAS_UNUSED static void PackMatrixB_8(CBLAS_INDEX k, CBLAS_INDEX n_cols, float 
 
 //------------------------------------------------------
 // InnerKernel - NEON implementation with 8x12 micro-kernel
-// GotoBLAS-style: pack A once per row-block, pack B for each col-block
+// Pack A once per row-block, pack B for each col-block
 //------------------------------------------------------
 static void InnerKernel_neon(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, 
                              float* a, CBLAS_INDEX lda, 
