@@ -57,10 +57,10 @@
 #define CBLAS_ENABLE_STATS
 
 // Default multi-threading threshold limits (used as fallback when auto-tuning is disabled)
-#define CBLAS_MT_DOT_DEFAULT    32768   // Lower threshold for better MT performance on memory-bound operations
-#define CBLAS_MT_AXPY_DEFAULT   32768   // Lower threshold for AXPY - memory-bound write operation
-#define CBLAS_MT_COPY_DEFAULT   16384   // Lower threshold for COPY - pure memory bandwidth operation
-#define CBLAS_MT_GER_DEFAULT    2048    // Lower threshold for GER - matrix operations benefit from earlier MT
+#define CBLAS_MT_DOT_DEFAULT    500000  // MT only helps for very large vectors (>500K elements)
+#define CBLAS_MT_AXPY_DEFAULT   500000  // MT only helps for very large vectors (>500K elements)
+#define CBLAS_MT_COPY_DEFAULT   500000  // MT only helps for very large vectors (also used by SCAL)
+#define CBLAS_MT_GER_DEFAULT    1000000000  // Effectively disabled - MT overhead exceeds benefit on modern CPUs
 #define CBLAS_MT_GEMM_DEFAULT   16384   // GEMM threshold: ~25×25×25, activate MT early for compute-intensive
 #define CBLAS_MT_GEMV_DEFAULT   65536   // Higher threshold for GEMV - memory-bound, MT overhead hurts small sizes
 
