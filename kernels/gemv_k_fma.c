@@ -10,15 +10,14 @@
 
 //------------------------------------------------------
 // Optimized single-precision row-wise dot product kernel (incx==1)
-// Computes one row of matrix-vector product using AVX and multi-accumulator unrolling
+// Computes one row of matrix-vector product using AVX2+FMA
 //------------------------------------------------------
-static void sgemv_row_dot_avx(float* a_row, float* x, CBLAS_INDEX n, float* result)
+static void sgemv_row_dot_fma(float* a_row, float* x, CBLAS_INDEX n, float* result)
 {
     CBLAS_INDEX i = 0;
     float sum = 0.0f;
 
-#if defined(__AVX2__)
-    // AVX2 path: Use 4 independent accumulators to hide latency
+    // FMA path: Use 4 independent accumulators to hide latency
     __m256 sum0 = _mm256_setzero_ps();
     __m256 sum1 = _mm256_setzero_ps();
     __m256 sum2 = _mm256_setzero_ps();
@@ -50,11 +49,10 @@ static void sgemv_row_dot_avx(float* a_row, float* x, CBLAS_INDEX n, float* resu
         __m256 a3 = _mm256_loadu_ps(a_row + i + 24);
         __m256 x3 = _mm256_loadu_ps(x + i + 24);
 
-        // AVX2 multiply-add (no FMA)
-        sum0 = _mm256_add_ps(sum0, _mm256_mul_ps(a0, x0));
-        sum1 = _mm256_add_ps(sum1, _mm256_mul_ps(a1, x1));
-        sum2 = _mm256_add_ps(sum2, _mm256_mul_ps(a2, x2));
-        sum3 = _mm256_add_ps(sum3, _mm256_mul_ps(a3, x3));
+        sum0 = _mm256_fmadd_ps(a0, x0, sum0);
+        sum1 = _mm256_fmadd_ps(a1, x1, sum1);
+        sum2 = _mm256_fmadd_ps(a2, x2, sum2);
+        sum3 = _mm256_fmadd_ps(a3, x3, sum3);
     }
 
     // Combine the 4 accumulators
@@ -65,8 +63,7 @@ static void sgemv_row_dot_avx(float* a_row, float* x, CBLAS_INDEX n, float* resu
     {
         __m256 a_vec = _mm256_loadu_ps(a_row + i);
         __m256 x_vec = _mm256_loadu_ps(x + i);
-
-        sum_avx = _mm256_add_ps(sum_avx, _mm256_mul_ps(a_vec, x_vec));
+        sum_avx = _mm256_fmadd_ps(a_vec, x_vec, sum_avx);
     }
 
     // Horizontal sum of AVX vector
@@ -74,7 +71,6 @@ static void sgemv_row_dot_avx(float* a_row, float* x, CBLAS_INDEX n, float* resu
     _mm256_storeu_ps(sum_array, sum_avx);
     sum = sum_array[0] + sum_array[1] + sum_array[2] + sum_array[3] +
           sum_array[4] + sum_array[5] + sum_array[6] + sum_array[7];
-#endif
 
     // Handle remaining elements
     for (; i < n; i++)
@@ -88,13 +84,12 @@ static void sgemv_row_dot_avx(float* a_row, float* x, CBLAS_INDEX n, float* resu
 //------------------------------------------------------
 // Optimized double-precision row-wise dot product kernel (incx==1)
 //------------------------------------------------------
-static void dgemv_row_dot_avx(double* a_row, double* x, CBLAS_INDEX n, double* result)
+static void dgemv_row_dot_fma(double* a_row, double* x, CBLAS_INDEX n, double* result)
 {
     CBLAS_INDEX i = 0;
     double sum = 0.0;
 
-#if defined(__AVX2__)
-    // AVX2 path: Use 4 independent accumulators
+    // FMA path: Use 4 independent accumulators
     __m256d sum0 = _mm256_setzero_pd();
     __m256d sum1 = _mm256_setzero_pd();
     __m256d sum2 = _mm256_setzero_pd();
@@ -125,11 +120,10 @@ static void dgemv_row_dot_avx(double* a_row, double* x, CBLAS_INDEX n, double* r
         __m256d a3 = _mm256_loadu_pd(a_row + i + 12);
         __m256d x3 = _mm256_loadu_pd(x + i + 12);
 
-        // AVX2 multiply-add (no FMA)
-        sum0 = _mm256_add_pd(sum0, _mm256_mul_pd(a0, x0));
-        sum1 = _mm256_add_pd(sum1, _mm256_mul_pd(a1, x1));
-        sum2 = _mm256_add_pd(sum2, _mm256_mul_pd(a2, x2));
-        sum3 = _mm256_add_pd(sum3, _mm256_mul_pd(a3, x3));
+        sum0 = _mm256_fmadd_pd(a0, x0, sum0);
+        sum1 = _mm256_fmadd_pd(a1, x1, sum1);
+        sum2 = _mm256_fmadd_pd(a2, x2, sum2);
+        sum3 = _mm256_fmadd_pd(a3, x3, sum3);
     }
 
     // Combine the 4 accumulators
@@ -140,15 +134,13 @@ static void dgemv_row_dot_avx(double* a_row, double* x, CBLAS_INDEX n, double* r
     {
         __m256d a_vec = _mm256_loadu_pd(a_row + i);
         __m256d x_vec = _mm256_loadu_pd(x + i);
-
-        sum_avx = _mm256_add_pd(sum_avx, _mm256_mul_pd(a_vec, x_vec));
+        sum_avx = _mm256_fmadd_pd(a_vec, x_vec, sum_avx);
     }
 
     // Horizontal sum
     double sum_array[4];
     _mm256_storeu_pd(sum_array, sum_avx);
     sum = sum_array[0] + sum_array[1] + sum_array[2] + sum_array[3];
-#endif
 
     // Handle remaining elements
     for (; i < n; i++)
@@ -160,9 +152,9 @@ static void dgemv_row_dot_avx(double* a_row, double* x, CBLAS_INDEX n, double* r
 }
 
 //------------------------------------------------------
-// Single-precision GEMV kernel (AVX/FMA)
+// Single-precision GEMV kernel (FMA)
 //------------------------------------------------------
-void sgemv_k_avx(cblas_args_t* args)
+void sgemv_k_fma(cblas_args_t* args)
 {
     float* a = (float*)args->a;
     float* x = (float*)args->x;
@@ -182,7 +174,7 @@ void sgemv_k_avx(cblas_args_t* args)
     {
         for (CBLAS_INDEX row = 0; row < m; row++)
         {
-            sgemv_row_dot_avx(&a[row * lda], x, n, &sum);
+            sgemv_row_dot_fma(&a[row * lda], x, n, &sum);
             y[row] = beta * y[row] + alpha * sum;
         }
     }
@@ -202,9 +194,9 @@ void sgemv_k_avx(cblas_args_t* args)
 }
 
 //------------------------------------------------------
-// Double-precision GEMV kernel (AVX/FMA)
+// Double-precision GEMV kernel (FMA)
 //------------------------------------------------------
-void dgemv_k_avx(cblas_args_t* args)
+void dgemv_k_fma(cblas_args_t* args)
 {
     double* a = (double*)args->a;
     double* x = (double*)args->x;
@@ -224,7 +216,7 @@ void dgemv_k_avx(cblas_args_t* args)
     {
         for (CBLAS_INDEX row = 0; row < m; row++)
         {
-            dgemv_row_dot_avx(&a[row * lda], x, n, &sum);
+            dgemv_row_dot_fma(&a[row * lda], x, n, &sum);
             y[row] = beta * y[row] + alpha * sum;
         }
     }

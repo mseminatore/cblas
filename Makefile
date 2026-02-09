@@ -130,21 +130,24 @@ nrm2_asum_rot_perf: $(LIBNAME) nrm2_asum_rot_perf.o
 # Per-file SIMD compile flags for x86-64 kernels
 # Only apply on x86-64, not on ARM64
 ifeq ($(ARCH), x86_64)
-# SSE kernels - works on all x86-64
+# SSE kernels - 128-bit, works on Sandy Bridge and later
 kernels/%_sse.o: kernels/%_sse.c $(DEPS)
 	$(CC) -c $(CFLAGS) -msse4.1 $(CPPFLAGS) $< -o $@
 
-# AVX kernels - Sandy Bridge and later
+# AVX kernels - 256-bit, requires AVX2 (Haswell and later)
+# Note: 256-bit __m256 requires AVX2, Sandy Bridge only has 128-bit AVX
 kernels/%_avx.o: kernels/%_avx.c $(DEPS)
-	$(CC) -c $(CFLAGS) -mavx $(CPPFLAGS) $< -o $@
+	$(CC) -c $(CFLAGS) -mavx2 $(CPPFLAGS) $< -o $@
 
-# FMA kernels - Haswell and later
+# FMA kernels - 256-bit + FMA (Haswell and later)
 kernels/%_fma.o: kernels/%_fma.c $(DEPS)
 	$(CC) -c $(CFLAGS) -mavx2 -mfma $(CPPFLAGS) $< -o $@
 
 # AVX512 kernels - Skylake-X and later
 kernels/%_avx512.o: kernels/%_avx512.c $(DEPS)
 	$(CC) -c $(CFLAGS) -mavx512f $(CPPFLAGS) $< -o $@
+
+# FMA kernels (TODO: none remaining, gemm.c FMA refactored)
 endif
 
 %.o: %.c $(DEPS)

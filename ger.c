@@ -100,44 +100,6 @@ CBLAS_UNUSED static void AddProd8x4_AVX(float* x, float* y, float* a, CBLAS_INDE
 #endif
 }
 
-#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
-
-//------------------------------------------------------
-// compute 8 cols x 4 rows product (FMA version)
-//------------------------------------------------------
-CBLAS_UNUSED static void AddProd8x4_AVX_fma(float* x, float* y, float* a, CBLAS_INDEX lda)
-{
-	__m256 x0, x1, x2, x3, y0, a0, a1, a2, a3;
-
-	// copy single FP to all 8 elements of vector
-	x0 = _mm256_broadcast_ss(x);
-	x1 = _mm256_broadcast_ss(x + 1);
-	x2 = _mm256_broadcast_ss(x + 2);
-	x3 = _mm256_broadcast_ss(x + 3);
-
-	y0 = _mm256_load_ps(y);
-
-	// load 4 rows of destination
-	a0 = _mm256_load_ps(a);
-	a1 = _mm256_load_ps(a + lda);
-	a2 = _mm256_load_ps(a + 2 * lda);
-	a3 = _mm256_load_ps(a + 3 * lda);
-
-	// compute 8x4 products using FMA
-	a0 = _mm256_fmadd_ps(x0, y0, a0);
-	a1 = _mm256_fmadd_ps(x1, y0, a1);
-	a2 = _mm256_fmadd_ps(x2, y0, a2);
-	a3 = _mm256_fmadd_ps(x3, y0, a3);
-
-	// store results
-	_mm256_store_ps(a, a0);
-	_mm256_store_ps(a + lda, a1);
-	_mm256_store_ps(a + 2 * lda, a2);
-	_mm256_store_ps(a + 3 * lda, a3);
-}
-
-#endif
-
 //------------------------------------------------------
 // compute 4 cols x 4 rows product
 //------------------------------------------------------
@@ -211,41 +173,7 @@ static void AddProd4x4_SIMD(float* x, float* y, float* a, CBLAS_INDEX lda)
 #endif
 }
 
-#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
-
-//------------------------------------------------------
-// compute 4 cols x 4 rows product (FMA version)
-//------------------------------------------------------
-static void AddProd4x4_SIMD_fma(float* x, float* y, float* a, CBLAS_INDEX lda)
-{
-	__m128 x0, x1, x2, x3, y0, a0, a1, a2, a3;
-
-	x0 = _mm_load_ps1(x);
-	x1 = _mm_load_ps1(x + 1);
-	x2 = _mm_load_ps1(x + 2);
-	x3 = _mm_load_ps1(x + 3);
-	
-	y0 = _mm_load_ps(y);
-	
-	a0 = _mm_loadu_ps(a);
-	a1 = _mm_loadu_ps(a + lda);
-	a2 = _mm_loadu_ps(a + 2 * lda);
-	a3 = _mm_loadu_ps(a + 3 * lda);
-
-	// compute 4x4 product using FMA
-	a0 = _mm_fmadd_ps(x0, y0, a0);
-	a1 = _mm_fmadd_ps(x1, y0, a1);
-	a2 = _mm_fmadd_ps(x2, y0, a2);
-	a3 = _mm_fmadd_ps(x3, y0, a3);
-
-	// store results
-	_mm_storeu_ps(a, a0);
-	_mm_storeu_ps(a + lda, a1);
-	_mm_storeu_ps(a + 2 * lda, a2);
-	_mm_storeu_ps(a + 3 * lda, a3);
-}
-
-#endif
+// Note: FMA version of AddProd4x4_SIMD is in kernels/ger_k_fma.c
 
 //------------------------------------------------------
 // compute 4 cols x 4 rows product
@@ -337,59 +265,7 @@ static void AddProd2x2_SIMD_d(double* x, double* y, double* a, CBLAS_INDEX lda)
 #endif
 }
 
-#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
-
-//------------------------------------------------------
-// Double-precision SIMD: compute 2 cols x 2 rows product (FMA version)
-//------------------------------------------------------
-static void AddProd2x2_SIMD_d_fma(double* x, double* y, double* a, CBLAS_INDEX lda)
-{
-	__m128d x0, x1, y0, a0, a1;
-
-	x0 = _mm_load_pd1(x);
-	x1 = _mm_load_pd1(x + 1);
-	
-	y0 = _mm_load_pd(y);
-	
-	a0 = _mm_loadu_pd(a);
-	a1 = _mm_loadu_pd(a + lda);
-
-	// compute 2x2 product using FMA
-	a0 = _mm_fmadd_pd(x0, y0, a0);
-	a1 = _mm_fmadd_pd(x1, y0, a1);
-
-	// store results
-	_mm_storeu_pd(a, a0);
-	_mm_storeu_pd(a + lda, a1);
-}
-
-//------------------------------------------------------
-// Double-precision AVX2: compute 4 cols x 2 rows product (FMA version)
-//------------------------------------------------------
-CBLAS_UNUSED static void AddProd4x2_AVX_d_fma(double* x, double* y, double* a, CBLAS_INDEX lda)
-{
-	__m256d x0, x1, y0, a0, a1;
-
-	// copy single double to all 4 elements of vector
-	x0 = _mm256_broadcast_sd(x);
-	x1 = _mm256_broadcast_sd(x + 1);
-
-	y0 = _mm256_load_pd(y);
-
-	// load 2 rows of destination
-	a0 = _mm256_load_pd(a);
-	a1 = _mm256_load_pd(a + lda);
-
-	// compute 4x2 products using FMA
-	a0 = _mm256_fmadd_pd(x0, y0, a0);
-	a1 = _mm256_fmadd_pd(x1, y0, a1);
-
-	// store results
-	_mm256_store_pd(a, a0);
-	_mm256_store_pd(a + lda, a1);
-}
-
-#endif
+// Note: FMA versions of AddProd2x2_SIMD_d and AddProd4x2_AVX_d are in kernels/ger_k_fma.c
 
 //------------------------------------------------------
 // Double-precision: optimized path for alpha == 1.0, 2x2 blocks
@@ -431,49 +307,7 @@ static void dger_row_noalpha2x2(CBLAS_INDEX m, CBLAS_INDEX n, double* x, CBLAS_I
 	}
 }
 
-#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
-
-//------------------------------------------------------
-// Double-precision FMA version: optimized path for alpha == 1.0, 2x2 blocks
-//------------------------------------------------------
-static void dger_row_noalpha2x2_fma(CBLAS_INDEX m, CBLAS_INDEX n, double* x, CBLAS_INDEX incx, double* y, CBLAS_INDEX incy, double* a, CBLAS_INDEX lda)
-{
-	double *xr, *yc, *ap;
-	CBLAS_INDEX col, row;
-
-	for (row = 0; row + 2 <= m; row += 2)
-	{
-		xr = &X(row);
-		yc = y;
-		ap = &A(0, row);
-
-		for (col = 0; col + 2 <= n; col += 2)
-		{
-			AddProd2x2_SIMD_d_fma(xr, yc, ap, lda);
-			yc += 2;
-			ap += 2;
-		}
-
-		// handle leftover cols for each of the 2 rows in this block
-		for (CBLAS_INDEX i = 0; i < 2; i++)
-		{
-			if (n - col == 1)
-			{
-				AddProd(*xr, Y(col), &A(col, row + i));
-			}
-			xr = &X(row + i + 1);
-		}
-	}
-
-	// handle leftover rows
-	if (m - row >= 1)
-	{
-		for (col = 0; col < n; col++)
-			AddProd(X(row), Y(col), &A(col, row));
-	}
-}
-
-#endif
+// Note: dger_row_noalpha2x2_fma is in kernels/ger_k_fma.c
 
 //------------------------------------------------------
 //
@@ -600,78 +434,7 @@ static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_IN
 	}
 }
 
-#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
-
-//------------------------------------------------------
-// FMA version of sger_row_noalpha4x4 with prefetching
-//------------------------------------------------------
-static void sger_row_noalpha4x4_fma(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_INDEX incx, float* y, CBLAS_INDEX incy, float* a, CBLAS_INDEX lda)
-{
-	float *xr, *yc, *ap;
-	CBLAS_INDEX col, row;
-	
-#if defined(CBLAS_PREFETCH)
-	const CBLAS_INDEX prefetch_distance = 64; // Prefetch 64 floats ahead (256 bytes)
-#endif
-
-	for (row = 0; row + 4 <= m; row += 4)
-	{
-		xr = &X(row);
-		yc = y;
-		ap = &A(0, row);
-
-		for (col = 0; col + 4 <= n; col += 4)
-		{
-#if defined(CBLAS_PREFETCH)
-			// Prefetch next block of matrix data
-			if (col + prefetch_distance < n) {
-				CBLAS_PREFETCH(ap + prefetch_distance, 1, 3);
-				CBLAS_PREFETCH(ap + lda + prefetch_distance, 1, 3);
-				CBLAS_PREFETCH(ap + 2*lda + prefetch_distance, 1, 3);
-				CBLAS_PREFETCH(ap + 3*lda + prefetch_distance, 1, 3);
-			}
-			// Prefetch y vector ahead
-			if (col + prefetch_distance < n) {
-				CBLAS_PREFETCH(yc + prefetch_distance, 0, 3);
-			}
-#endif
-			AddProd4x4_SIMD_fma(xr, yc, ap, lda);
-			yc += 4;
-			ap += 4;
-		}
-
-		// handle leftover cols handling each of the 4 rows in this block
-		for (CBLAS_INDEX i = 0; i < 4; i++)
-		{
-			switch (n - col)
-			{
-			case 3: AddProd(*xr, Y(col + 2), &A(col + 2, row + i));
-				CBLAS_FALLTHROUGH;
-			case 2: AddProd(*xr, Y(col + 1), &A(col + 1, row + i));
-				CBLAS_FALLTHROUGH;
-			case 1: AddProd(*xr, Y(col), &A(col, row + i));
-				CBLAS_FALLTHROUGH;
-			case 0:;	// do nothing!
-			}
-
-			xr++;
-		}
-	}
-
-	// handle leftover rows
-	switch (m - row)
-	{
-	case 3: for (col = 0; col < n; col++) AddProd(X(row + 2), Y(col), &A(col, row + 2));
-		CBLAS_FALLTHROUGH;
-	case 2: for (col = 0; col < n; col++) AddProd(X(row + 1), Y(col), &A(col, row + 1));
-		CBLAS_FALLTHROUGH;
-	case 1: for (col = 0; col < n; col++) AddProd(X(row), Y(col), &A(col, row));
-		CBLAS_FALLTHROUGH;
-	case 0:;	// do nothing!
-	}
-}
-
-#endif
+// Note: sger_row_noalpha4x4_fma is in kernels/ger_k_fma.c
 
 //------------------------------------------------------
 //
@@ -725,6 +488,7 @@ CBLAS_UNUSED static void sger_row_noalpha_plain(CBLAS_INDEX m, CBLAS_INDEX n, fl
 
 //------------------------------------------------------
 // GER kernel for multi-threading - single precision
+// Note: For FMA-optimized version, see kernels/ger_k_fma.c
 //------------------------------------------------------
 void sger_k(cblas_args_t* args)
 {
@@ -741,17 +505,7 @@ void sger_k(cblas_args_t* args)
 	// Use optimized path when alpha == 1.0
 	if (alpha == 1.0f)
 	{
-#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
-		// Use FMA version if CPU supports it
-		if (cpu_get_features() & CPU_x64_FMA3)
-		{
-			sger_row_noalpha4x4_fma(m, n, x, incx, y, incy, a, lda);
-		}
-		else
-#endif
-		{
-			sger_row_noalpha4x4(m, n, x, incx, y, incy, a, lda);
-		}
+		sger_row_noalpha4x4(m, n, x, incx, y, incy, a, lda);
 	}
 	else
 	{
@@ -788,6 +542,7 @@ void sger_k(cblas_args_t* args)
 
 //------------------------------------------------------
 // GER kernel for multi-threading - double precision
+// Note: For FMA-optimized version, see kernels/ger_k_fma.c
 //------------------------------------------------------
 void dger_k(cblas_args_t* args)
 {
@@ -804,17 +559,7 @@ void dger_k(cblas_args_t* args)
 	// Use optimized path when alpha == 1.0
 	if (alpha == 1.0)
 	{
-#if defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
-		// Use FMA version if CPU supports it
-		if (cpu_get_features() & CPU_x64_FMA3)
-		{
-			dger_row_noalpha2x2_fma(m, n, x, incx, y, incy, a, lda);
-		}
-		else
-#endif
-		{
-			dger_row_noalpha2x2(m, n, x, incx, y, incy, a, lda);
-		}
+		dger_row_noalpha2x2(m, n, x, incx, y, incy, a, lda);
 	}
 	else
 	{
