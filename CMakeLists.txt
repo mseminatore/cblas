@@ -141,7 +141,7 @@ if ((CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "
             kernels/swap_k_avx.c kernels/setv_k_avx.c kernels/rot_k_avx.c
             kernels/nrm2_k_avx.c kernels/scal_k_avx.c kernels/axpy_k_avx.c
             kernels/axpby_k_avx.c kernels/gemm_k_avx.c kernels/dgemm_k_avx.c
-            kernels/gemv_k_avx.c
+            kernels/gemv_k_avx.c kernels/ger_k.c
             PROPERTIES COMPILE_FLAGS "-mavx2"
         )
         # FMA kernels - 256-bit + FMA (Haswell+)
@@ -160,7 +160,7 @@ if ((CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "
             kernels/swap_k_avx.c kernels/setv_k_avx.c kernels/rot_k_avx.c
             kernels/nrm2_k_avx.c kernels/scal_k_avx.c kernels/axpy_k_avx.c
             kernels/axpby_k_avx.c kernels/gemm_k_avx.c kernels/dgemm_k_avx.c
-            kernels/gemv_k_avx.c
+            kernels/gemv_k_avx.c kernels/ger_k.c
             PROPERTIES COMPILE_FLAGS "/arch:AVX2"
         )
         # FMA/AVX2 kernels - 256-bit + FMA (Haswell+)

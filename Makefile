@@ -147,7 +147,9 @@ kernels/%_fma.o: kernels/%_fma.c $(DEPS)
 kernels/%_avx512.o: kernels/%_avx512.c $(DEPS)
 	$(CC) -c $(CFLAGS) -mavx512f $(CPPFLAGS) $< -o $@
 
-# FMA kernels (TODO: none remaining, gemm.c FMA refactored)
+# Mixed-SIMD kernels (contain both SSE and AVX code, need AVX2 for 256-bit)
+kernels/ger_k.o: kernels/ger_k.c $(DEPS)
+	$(CC) -c $(CFLAGS) -mavx2 $(CPPFLAGS) $< -o $@
 endif
 
 %.o: %.c $(DEPS)
