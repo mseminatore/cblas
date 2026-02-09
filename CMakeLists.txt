@@ -64,16 +64,17 @@ elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
 endif()
 
 # Add Intel specific compiler flags for x86_64 architecture
+# NOTE: We use per-file flags for SIMD kernels to support older CPUs
+# SSE kernels: -msse4.1 (works on all x86-64)
+# AVX kernels: -mavx (Sandy Bridge+)
+# FMA kernels: -mavx2 -mfma (Haswell+)
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
     if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "AppleClang" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx2 -mfma")
-        # add_compile_definitions(USE_INTEL_FMA)
+        # Base flags - no AVX for main library code
+        # SIMD-specific flags are set per-file below
     elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
-        # MSVC on x86_64: /arch:AVX2 enables AVX2 and FMA
-        # Note: MSVC doesn't define __AVX2__ automatically, so we define it ourselves
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /arch:AVX2")
-        # add_compile_definitions(USE_INTEL_FMA)
-        add_compile_definitions(__AVX2__)
+        # MSVC: Base code uses SSE2 (default for x64)
+        # Per-file flags set below for AVX/AVX2 kernels
     endif()
 endif()
 
@@ -115,6 +116,56 @@ add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c rot.c asum.c 
     ${CPUID_FILE}
     ${SERVER_FILE}
 )
+
+# Set per-file SIMD compile flags for x86-64 kernels
+# This ensures SSE kernels don't get AVX instructions, allowing older CPUs to work
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
+    if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "AppleClang" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+        # SSE kernels - compile with SSE4.1 only (works on all x86-64)
+        set_source_files_properties(
+            kernels/dot_k_sse.c kernels/asum_k_sse.c kernels/copy_k_sse.c 
+            kernels/swap_k_sse.c kernels/setv_k_sse.c kernels/rot_k_sse.c
+            kernels/nrm2_k_sse.c kernels/scal_k_sse.c kernels/axpy_k_sse.c
+            kernels/axpby_k_sse.c kernels/gemm_k_sse.c kernels/dgemm_k_sse.c
+            PROPERTIES COMPILE_FLAGS "-msse4.1"
+        )
+        # AVX kernels - compile with AVX only (Sandy Bridge+)
+        set_source_files_properties(
+            kernels/dot_k_avx.c kernels/asum_k_avx.c kernels/copy_k_avx.c
+            kernels/swap_k_avx.c kernels/setv_k_avx.c kernels/rot_k_avx.c
+            kernels/nrm2_k_avx.c kernels/scal_k_avx.c kernels/axpy_k_avx.c
+            kernels/axpby_k_avx.c kernels/gemm_k_avx.c kernels/dgemm_k_avx.c
+            kernels/gemv_k_avx.c
+            PROPERTIES COMPILE_FLAGS "-mavx"
+        )
+        # FMA kernels - compile with AVX2+FMA (Haswell+)
+        set_source_files_properties(
+            kernels/dot_k_fma.c kernels/dot_k_avx512.c
+            kernels/nrm2_k_fma.c kernels/axpy_k_fma.c kernels/axpby_k_fma.c
+            kernels/ger_k_fma.c kernels/gemm_k_fma.c kernels/dgemm_k_fma.c
+            PROPERTIES COMPILE_FLAGS "-mavx2 -mfma"
+        )
+    elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
+        # MSVC uses /arch flags - SSE2 is default for x64, no flag needed
+        # AVX kernels
+        set_source_files_properties(
+            kernels/dot_k_avx.c kernels/asum_k_avx.c kernels/copy_k_avx.c
+            kernels/swap_k_avx.c kernels/setv_k_avx.c kernels/rot_k_avx.c
+            kernels/nrm2_k_avx.c kernels/scal_k_avx.c kernels/axpy_k_avx.c
+            kernels/axpby_k_avx.c kernels/gemm_k_avx.c kernels/dgemm_k_avx.c
+            kernels/gemv_k_avx.c
+            PROPERTIES COMPILE_FLAGS "/arch:AVX"
+        )
+        # FMA/AVX2 kernels
+        set_source_files_properties(
+            kernels/dot_k_fma.c kernels/dot_k_avx512.c
+            kernels/nrm2_k_fma.c kernels/axpy_k_fma.c kernels/axpby_k_fma.c
+            kernels/ger_k_fma.c kernels/gemm_k_fma.c kernels/dgemm_k_fma.c
+            PROPERTIES COMPILE_FLAGS "/arch:AVX2"
+        )
+    endif()
+endif()
+
 #target_sources(cblas PUBLIC FILE_SET HEADERS FILES cblas.h)
 
 #

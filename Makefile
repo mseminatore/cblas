@@ -29,9 +29,11 @@ CBLAS_CHECK_INPUTS ?= 1
 CBLAS_USE_STATIC_BUFFERS ?= 1
 CBLAS_MAX_THREADS ?= 64
 
-# add Intel specific compiler flags
+# add Intel specific compiler flags - per-file basis for SIMD kernels
+# NOTE: We no longer set global AVX2 flags to support older CPUs
+# SSE kernels get -msse4.1, AVX kernels get -mavx, FMA kernels get -mavx2 -mfma
 ifeq ($(ARCH), x86_64)
-	CFLAGS += -mavx2 -mfma
+	# Per-file flags are set below using pattern rules
 endif
 
 # add ARM64 cpuid code
@@ -124,6 +126,23 @@ dot_threshold_tuning_large: $(LIBNAME) dot_threshold_tuning_large.o
 
 nrm2_asum_rot_perf: $(LIBNAME) nrm2_asum_rot_perf.o
 	$(CC) -o $@ $^ $(LFLAGS)
+
+# Per-file SIMD compile flags for x86-64 kernels
+# SSE kernels - works on all x86-64
+kernels/%_sse.o: kernels/%_sse.c $(DEPS)
+	$(CC) -c $(CFLAGS) -msse4.1 $(CPPFLAGS) $< -o $@
+
+# AVX kernels - Sandy Bridge and later
+kernels/%_avx.o: kernels/%_avx.c $(DEPS)
+	$(CC) -c $(CFLAGS) -mavx $(CPPFLAGS) $< -o $@
+
+# FMA kernels - Haswell and later
+kernels/%_fma.o: kernels/%_fma.c $(DEPS)
+	$(CC) -c $(CFLAGS) -mavx2 -mfma $(CPPFLAGS) $< -o $@
+
+# AVX512 kernels - Skylake-X and later
+kernels/%_avx512.o: kernels/%_avx512.c $(DEPS)
+	$(CC) -c $(CFLAGS) -mavx512f $(CPPFLAGS) $< -o $@
 
 %.o: %.c $(DEPS)
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@

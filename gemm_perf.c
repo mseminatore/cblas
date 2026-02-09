@@ -50,15 +50,66 @@ void test_gemm(void)
         printf("Testing size %d...", i);
         fflush(stdout);
 
+        // For small sizes, run multiple iterations to get stable timing
+        int iters = 1;
+        if (i <= 512) iters = 10;
+        if (i <= 128) iters = 100;
+        if (i <= 32) iters = 1000;
+        
         cbu_timer_get_time(&t1);
-
-        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1.0f, a, MAX_SIZE, b, MAX_SIZE, 1.0f, c, MAX_SIZE);
+        
+        for (int iter = 0; iter < iters; iter++) {
+            cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1.0f, a, MAX_SIZE, b, MAX_SIZE, 1.0f, c, MAX_SIZE);
+        }
 
         cbu_timer_get_time(&t2);
 
-        dt = cbu_timer_get_delta(&t1, &t2);
+        dt = cbu_timer_get_delta(&t1, &t2) / iters;
 
         printf(" %5.2f GFlops in %5.2fs\n", (float)2 * m * n * k / 1000000000 / dt, dt);
+    }
+    
+    // Also test with contiguous matrices (lda = n) to show cache-friendly case
+    printf("\nTesting with contiguous layout (lda=n):\n\n");
+    for (int i = 128; i <= 1024; i <<= 1)
+    {
+        m = n = k = i;
+        
+        printf("Testing size %d...", i);
+        fflush(stdout);
+
+        // Allocate contiguous matrices
+        float *a_cont = (float*)malloc((size_t)i * i * sizeof(float));
+        float *b_cont = (float*)malloc((size_t)i * i * sizeof(float));
+        float *c_cont = (float*)malloc((size_t)i * i * sizeof(float));
+        
+        if (!a_cont || !b_cont || !c_cont) {
+            printf("  allocation failed\n");
+            free(a_cont); free(b_cont); free(c_cont);
+            continue;
+        }
+        memset(a_cont, 0, (size_t)i * i * sizeof(float));
+        memset(b_cont, 0, (size_t)i * i * sizeof(float));
+        memset(c_cont, 0, (size_t)i * i * sizeof(float));
+
+        int iters = 10;
+        if (i <= 256) iters = 50;
+        
+        cbu_timer_get_time(&t1);
+        
+        for (int iter = 0; iter < iters; iter++) {
+            cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1.0f, a_cont, i, b_cont, i, 1.0f, c_cont, i);
+        }
+
+        cbu_timer_get_time(&t2);
+
+        dt = cbu_timer_get_delta(&t1, &t2) / iters;
+
+        printf(" %5.2f GFlops in %5.2fs\n", (float)2 * m * n * k / 1000000000 / dt, dt);
+        
+        free(a_cont);
+        free(b_cont);
+        free(c_cont);
     }
     
     // Free allocated memory

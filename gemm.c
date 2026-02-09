@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <math.h>
 
 //======================================================================
 // CACHE-BLOCKING STRATEGY FOR GEMM (General Matrix Multiply)
@@ -319,10 +320,45 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     
     if (mt_used)
     {
-        CBLAS_INDEX vert_tiles = m_use / cblas_gemm_mc + 1;
+        CBLAS_INDEX num_threads = cblas_get_num_threads();
+        
+        // For small matrices, use smaller tile sizes to improve parallelism
+        // Goal: have at least num_threads tiles for good load balancing
+        CBLAS_INDEX mc_use = cblas_gemm_mc;
+        CBLAS_INDEX nb_use = cblas_gemm_nb;
+        
+        // Calculate initial tile counts
+        CBLAS_INDEX vert_tiles = (m_use + mc_use - 1) / mc_use;
+        CBLAS_INDEX horiz_tiles = (n_use + nb_use - 1) / nb_use;
+        
+        // If we have too few tiles for good parallelism, use adaptive tiling
+        // Threshold: need at least num_threads/2 tiles for reasonable load balance
+        CBLAS_INDEX min_tiles_for_mt = (num_threads + 1) / 2;
+        if (vert_tiles * horiz_tiles < min_tiles_for_mt && m_use >= 256 && n_use >= 256)
+        {
+            // Use smaller tiles to create more parallel work
+            // Target: at least min_tiles_for_mt total tiles
+            CBLAS_INDEX target_tiles_per_dim = (CBLAS_INDEX)(sqrt((double)min_tiles_for_mt) + 0.5);
+            if (target_tiles_per_dim < 2) target_tiles_per_dim = 2;
+            
+            mc_use = (m_use + target_tiles_per_dim - 1) / target_tiles_per_dim;
+            nb_use = (n_use + target_tiles_per_dim - 1) / target_tiles_per_dim;
+            
+            // Ensure minimum tile size for kernel efficiency
+            CBLAS_INDEX min_tile = 64;
+            mc_use = MAX(mc_use, min_tile);
+            nb_use = MAX(nb_use, min_tile);
+            
+            // Recalculate tile counts
+            vert_tiles = (m_use + mc_use - 1) / mc_use;
+            horiz_tiles = (n_use + nb_use - 1) / nb_use;
+        }
+        
+        CBLAS_INDEX total_tiles = vert_tiles * horiz_tiles;
+        int use_2d_tiling = (horiz_tiles > 1);
 
-        work_queue_t *queue = (work_queue_t*)malloc(vert_tiles * sizeof(work_queue_t));
-        cblas_args_t *args = (cblas_args_t*)malloc(vert_tiles * sizeof(cblas_args_t));
+        work_queue_t *queue = (work_queue_t*)malloc(total_tiles * sizeof(work_queue_t));
+        cblas_args_t *args = (cblas_args_t*)malloc(total_tiles * sizeof(cblas_args_t));
         
         if (!queue || !args) {
             free(queue);
@@ -335,36 +371,73 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
             pb = MIN(k - p, cblas_gemm_kc);
             CBLAS_INDEX tile_count = 0;
             
-            for (CBLAS_INDEX row = 0; row < m_use; row += cblas_gemm_mc) 
+            if (use_2d_tiling)
             {
-                ib = MIN(m_use - row, cblas_gemm_mc);
+                // 2D tiling: parallelize on both rows and columns
+                for (CBLAS_INDEX row = 0; row < m_use; row += mc_use) 
+                {
+                    ib = MIN(m_use - row, mc_use);
+                    
+                    for (CBLAS_INDEX col = 0; col < n_use; col += nb_use)
+                    {
+                        CBLAS_INDEX jb = MIN(n_use - col, nb_use);
+                        
+                        args[tile_count].incx = 1;
+                        args[tile_count].incy = 1;
+                        args[tile_count].n = jb;  // Only process jb columns
+                        args[tile_count].lda = lda_use;
+                        args[tile_count].ldb = ldb_use;
+                        args[tile_count].ldc = ldc;
+                        args[tile_count].a = a_use + row * lda_use + p;
+                        args[tile_count].b = b_use + p * ldb_use + col;  // B offset by col
+                        args[tile_count].c = c + row * ldc + col;        // C offset by col
+                        args[tile_count].ib = ib;
+                        args[tile_count].pb = pb;
+                        args[tile_count].alpha_s = alpha;
+                        args[tile_count].beta_s = 1.0f;
+                        args[tile_count].thread_id = 0;
+                    
+                        queue[tile_count].finished = 0;
+                        queue[tile_count].args = &args[tile_count];
+                        queue[tile_count].kernel = blas_kernels.sgemm_k;
+                        queue[tile_count].next = &queue[tile_count + 1];
 
-                // Kernel uses A(col, row) = a[row * lda + col]
-                // For this tile: A starts at a_use[row * lda_use + p]
-                args[tile_count].incx = 1;
-                args[tile_count].incy = 1;
-                args[tile_count].n = n_use;
-                args[tile_count].lda = lda_use;
-                args[tile_count].ldb = ldb_use;
-                args[tile_count].ldc = ldc;
-                args[tile_count].a = a_use + row * lda_use + p;  // &A(p, row)
-                args[tile_count].b = b_use + p * ldb_use;        // &B(0, p)
-                args[tile_count].c = c + row * ldc;              // &C(0, row)
-                args[tile_count].ib = ib;
-                args[tile_count].pb = pb;
-                args[tile_count].alpha_s = alpha;
-                args[tile_count].beta_s = 1.0f;
-                args[tile_count].thread_id = 0;
-            
-                queue[tile_count].finished   = 0;
-                queue[tile_count].args       = &args[tile_count];
-                queue[tile_count].kernel     = blas_kernels.sgemm_k;
-                queue[tile_count].next       = &queue[tile_count + 1];
+                        tile_count++;
+                    }
+                }
+            }
+            else
+            {
+                // 1D tiling: parallelize on rows only (original behavior)
+                for (CBLAS_INDEX row = 0; row < m_use; row += mc_use) 
+                {
+                    ib = MIN(m_use - row, mc_use);
 
-                tile_count++;
+                    args[tile_count].incx = 1;
+                    args[tile_count].incy = 1;
+                    args[tile_count].n = n_use;
+                    args[tile_count].lda = lda_use;
+                    args[tile_count].ldb = ldb_use;
+                    args[tile_count].ldc = ldc;
+                    args[tile_count].a = a_use + row * lda_use + p;
+                    args[tile_count].b = b_use + p * ldb_use;
+                    args[tile_count].c = c + row * ldc;
+                    args[tile_count].ib = ib;
+                    args[tile_count].pb = pb;
+                    args[tile_count].alpha_s = alpha;
+                    args[tile_count].beta_s = 1.0f;
+                    args[tile_count].thread_id = 0;
+                
+                    queue[tile_count].finished = 0;
+                    queue[tile_count].args = &args[tile_count];
+                    queue[tile_count].kernel = blas_kernels.sgemm_k;
+                    queue[tile_count].next = &queue[tile_count + 1];
+
+                    tile_count++;
+                }
             }
 
-            assert(tile_count <= vert_tiles);
+            assert(tile_count <= total_tiles);
 
             queue[tile_count - 1].next = NULL;
 
