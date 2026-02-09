@@ -51,6 +51,7 @@ static void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, CBLAS_IN
 // Computes C[8x12] += alpha * A[8xk] * B[kx12]
 // Uses 24 float32x4_t registers for C (8 rows × 3 per row)
 // Uses vfmaq_laneq_f32 for efficient A element broadcasting
+// K-loop unrolled by 4 for better ILP
 //------------------------------------------------------
 static void AddDot8x12_neon(CBLAS_INDEX k, float *a, float *b, float *c, CBLAS_INDEX ldc, float alpha)
 {
@@ -79,59 +80,180 @@ static void AddDot8x12_neon(CBLAS_INDEX k, float *a, float *b, float *c, CBLAS_I
     c60 = vdupq_n_f32(0.0f); c61 = vdupq_n_f32(0.0f); c62 = vdupq_n_f32(0.0f);
     c70 = vdupq_n_f32(0.0f); c71 = vdupq_n_f32(0.0f); c72 = vdupq_n_f32(0.0f);
     
-    // Main loop over k dimension
-    for (CBLAS_INDEX p = 0; p < k; p++)
+    CBLAS_INDEX p = 0;
+    
+    // Main loop: unrolled by 4 for better ILP
+    // Process 4 k-iterations per loop to reduce overhead and improve pipelining
+    for (; p + 4 <= k; p += 4)
     {
-        // Load B row (12 floats from packed format)
-        b0 = vld1q_f32(b);      // B[p, 0:3]
-        b1 = vld1q_f32(b + 4);  // B[p, 4:7]
-        b2 = vld1q_f32(b + 8);  // B[p, 8:11]
-        b += NR;
+        // Iteration 0
+        b0 = vld1q_f32(b);
+        b1 = vld1q_f32(b + 4);
+        b2 = vld1q_f32(b + 8);
+        a0 = vld1q_f32(a);
+        a1 = vld1q_f32(a + 4);
         
-        // Load A column (8 floats from packed format)
-        a0 = vld1q_f32(a);      // A[0:3, p]
-        a1 = vld1q_f32(a + 4);  // A[4:7, p]
-        a += MR;
-        
-        // Row 0 - use lane 0 of a0
         c00 = vfmaq_laneq_f32(c00, b0, a0, 0);
         c01 = vfmaq_laneq_f32(c01, b1, a0, 0);
         c02 = vfmaq_laneq_f32(c02, b2, a0, 0);
-        
-        // Row 1 - use lane 1 of a0
         c10 = vfmaq_laneq_f32(c10, b0, a0, 1);
         c11 = vfmaq_laneq_f32(c11, b1, a0, 1);
         c12 = vfmaq_laneq_f32(c12, b2, a0, 1);
-        
-        // Row 2 - use lane 2 of a0
         c20 = vfmaq_laneq_f32(c20, b0, a0, 2);
         c21 = vfmaq_laneq_f32(c21, b1, a0, 2);
         c22 = vfmaq_laneq_f32(c22, b2, a0, 2);
-        
-        // Row 3 - use lane 3 of a0
         c30 = vfmaq_laneq_f32(c30, b0, a0, 3);
         c31 = vfmaq_laneq_f32(c31, b1, a0, 3);
         c32 = vfmaq_laneq_f32(c32, b2, a0, 3);
-        
-        // Row 4 - use lane 0 of a1
         c40 = vfmaq_laneq_f32(c40, b0, a1, 0);
         c41 = vfmaq_laneq_f32(c41, b1, a1, 0);
         c42 = vfmaq_laneq_f32(c42, b2, a1, 0);
-        
-        // Row 5 - use lane 1 of a1
         c50 = vfmaq_laneq_f32(c50, b0, a1, 1);
         c51 = vfmaq_laneq_f32(c51, b1, a1, 1);
         c52 = vfmaq_laneq_f32(c52, b2, a1, 1);
-        
-        // Row 6 - use lane 2 of a1
         c60 = vfmaq_laneq_f32(c60, b0, a1, 2);
         c61 = vfmaq_laneq_f32(c61, b1, a1, 2);
         c62 = vfmaq_laneq_f32(c62, b2, a1, 2);
-        
-        // Row 7 - use lane 3 of a1
         c70 = vfmaq_laneq_f32(c70, b0, a1, 3);
         c71 = vfmaq_laneq_f32(c71, b1, a1, 3);
         c72 = vfmaq_laneq_f32(c72, b2, a1, 3);
+        
+        // Iteration 1
+        b0 = vld1q_f32(b + NR);
+        b1 = vld1q_f32(b + NR + 4);
+        b2 = vld1q_f32(b + NR + 8);
+        a0 = vld1q_f32(a + MR);
+        a1 = vld1q_f32(a + MR + 4);
+        
+        c00 = vfmaq_laneq_f32(c00, b0, a0, 0);
+        c01 = vfmaq_laneq_f32(c01, b1, a0, 0);
+        c02 = vfmaq_laneq_f32(c02, b2, a0, 0);
+        c10 = vfmaq_laneq_f32(c10, b0, a0, 1);
+        c11 = vfmaq_laneq_f32(c11, b1, a0, 1);
+        c12 = vfmaq_laneq_f32(c12, b2, a0, 1);
+        c20 = vfmaq_laneq_f32(c20, b0, a0, 2);
+        c21 = vfmaq_laneq_f32(c21, b1, a0, 2);
+        c22 = vfmaq_laneq_f32(c22, b2, a0, 2);
+        c30 = vfmaq_laneq_f32(c30, b0, a0, 3);
+        c31 = vfmaq_laneq_f32(c31, b1, a0, 3);
+        c32 = vfmaq_laneq_f32(c32, b2, a0, 3);
+        c40 = vfmaq_laneq_f32(c40, b0, a1, 0);
+        c41 = vfmaq_laneq_f32(c41, b1, a1, 0);
+        c42 = vfmaq_laneq_f32(c42, b2, a1, 0);
+        c50 = vfmaq_laneq_f32(c50, b0, a1, 1);
+        c51 = vfmaq_laneq_f32(c51, b1, a1, 1);
+        c52 = vfmaq_laneq_f32(c52, b2, a1, 1);
+        c60 = vfmaq_laneq_f32(c60, b0, a1, 2);
+        c61 = vfmaq_laneq_f32(c61, b1, a1, 2);
+        c62 = vfmaq_laneq_f32(c62, b2, a1, 2);
+        c70 = vfmaq_laneq_f32(c70, b0, a1, 3);
+        c71 = vfmaq_laneq_f32(c71, b1, a1, 3);
+        c72 = vfmaq_laneq_f32(c72, b2, a1, 3);
+        
+        // Iteration 2
+        b0 = vld1q_f32(b + 2*NR);
+        b1 = vld1q_f32(b + 2*NR + 4);
+        b2 = vld1q_f32(b + 2*NR + 8);
+        a0 = vld1q_f32(a + 2*MR);
+        a1 = vld1q_f32(a + 2*MR + 4);
+        
+        c00 = vfmaq_laneq_f32(c00, b0, a0, 0);
+        c01 = vfmaq_laneq_f32(c01, b1, a0, 0);
+        c02 = vfmaq_laneq_f32(c02, b2, a0, 0);
+        c10 = vfmaq_laneq_f32(c10, b0, a0, 1);
+        c11 = vfmaq_laneq_f32(c11, b1, a0, 1);
+        c12 = vfmaq_laneq_f32(c12, b2, a0, 1);
+        c20 = vfmaq_laneq_f32(c20, b0, a0, 2);
+        c21 = vfmaq_laneq_f32(c21, b1, a0, 2);
+        c22 = vfmaq_laneq_f32(c22, b2, a0, 2);
+        c30 = vfmaq_laneq_f32(c30, b0, a0, 3);
+        c31 = vfmaq_laneq_f32(c31, b1, a0, 3);
+        c32 = vfmaq_laneq_f32(c32, b2, a0, 3);
+        c40 = vfmaq_laneq_f32(c40, b0, a1, 0);
+        c41 = vfmaq_laneq_f32(c41, b1, a1, 0);
+        c42 = vfmaq_laneq_f32(c42, b2, a1, 0);
+        c50 = vfmaq_laneq_f32(c50, b0, a1, 1);
+        c51 = vfmaq_laneq_f32(c51, b1, a1, 1);
+        c52 = vfmaq_laneq_f32(c52, b2, a1, 1);
+        c60 = vfmaq_laneq_f32(c60, b0, a1, 2);
+        c61 = vfmaq_laneq_f32(c61, b1, a1, 2);
+        c62 = vfmaq_laneq_f32(c62, b2, a1, 2);
+        c70 = vfmaq_laneq_f32(c70, b0, a1, 3);
+        c71 = vfmaq_laneq_f32(c71, b1, a1, 3);
+        c72 = vfmaq_laneq_f32(c72, b2, a1, 3);
+        
+        // Iteration 3
+        b0 = vld1q_f32(b + 3*NR);
+        b1 = vld1q_f32(b + 3*NR + 4);
+        b2 = vld1q_f32(b + 3*NR + 8);
+        a0 = vld1q_f32(a + 3*MR);
+        a1 = vld1q_f32(a + 3*MR + 4);
+        
+        c00 = vfmaq_laneq_f32(c00, b0, a0, 0);
+        c01 = vfmaq_laneq_f32(c01, b1, a0, 0);
+        c02 = vfmaq_laneq_f32(c02, b2, a0, 0);
+        c10 = vfmaq_laneq_f32(c10, b0, a0, 1);
+        c11 = vfmaq_laneq_f32(c11, b1, a0, 1);
+        c12 = vfmaq_laneq_f32(c12, b2, a0, 1);
+        c20 = vfmaq_laneq_f32(c20, b0, a0, 2);
+        c21 = vfmaq_laneq_f32(c21, b1, a0, 2);
+        c22 = vfmaq_laneq_f32(c22, b2, a0, 2);
+        c30 = vfmaq_laneq_f32(c30, b0, a0, 3);
+        c31 = vfmaq_laneq_f32(c31, b1, a0, 3);
+        c32 = vfmaq_laneq_f32(c32, b2, a0, 3);
+        c40 = vfmaq_laneq_f32(c40, b0, a1, 0);
+        c41 = vfmaq_laneq_f32(c41, b1, a1, 0);
+        c42 = vfmaq_laneq_f32(c42, b2, a1, 0);
+        c50 = vfmaq_laneq_f32(c50, b0, a1, 1);
+        c51 = vfmaq_laneq_f32(c51, b1, a1, 1);
+        c52 = vfmaq_laneq_f32(c52, b2, a1, 1);
+        c60 = vfmaq_laneq_f32(c60, b0, a1, 2);
+        c61 = vfmaq_laneq_f32(c61, b1, a1, 2);
+        c62 = vfmaq_laneq_f32(c62, b2, a1, 2);
+        c70 = vfmaq_laneq_f32(c70, b0, a1, 3);
+        c71 = vfmaq_laneq_f32(c71, b1, a1, 3);
+        c72 = vfmaq_laneq_f32(c72, b2, a1, 3);
+        
+        b += 4 * NR;
+        a += 4 * MR;
+    }
+    
+    // Handle remaining k iterations (0-3)
+    for (; p < k; p++)
+    {
+        b0 = vld1q_f32(b);
+        b1 = vld1q_f32(b + 4);
+        b2 = vld1q_f32(b + 8);
+        a0 = vld1q_f32(a);
+        a1 = vld1q_f32(a + 4);
+        
+        c00 = vfmaq_laneq_f32(c00, b0, a0, 0);
+        c01 = vfmaq_laneq_f32(c01, b1, a0, 0);
+        c02 = vfmaq_laneq_f32(c02, b2, a0, 0);
+        c10 = vfmaq_laneq_f32(c10, b0, a0, 1);
+        c11 = vfmaq_laneq_f32(c11, b1, a0, 1);
+        c12 = vfmaq_laneq_f32(c12, b2, a0, 1);
+        c20 = vfmaq_laneq_f32(c20, b0, a0, 2);
+        c21 = vfmaq_laneq_f32(c21, b1, a0, 2);
+        c22 = vfmaq_laneq_f32(c22, b2, a0, 2);
+        c30 = vfmaq_laneq_f32(c30, b0, a0, 3);
+        c31 = vfmaq_laneq_f32(c31, b1, a0, 3);
+        c32 = vfmaq_laneq_f32(c32, b2, a0, 3);
+        c40 = vfmaq_laneq_f32(c40, b0, a1, 0);
+        c41 = vfmaq_laneq_f32(c41, b1, a1, 0);
+        c42 = vfmaq_laneq_f32(c42, b2, a1, 0);
+        c50 = vfmaq_laneq_f32(c50, b0, a1, 1);
+        c51 = vfmaq_laneq_f32(c51, b1, a1, 1);
+        c52 = vfmaq_laneq_f32(c52, b2, a1, 1);
+        c60 = vfmaq_laneq_f32(c60, b0, a1, 2);
+        c61 = vfmaq_laneq_f32(c61, b1, a1, 2);
+        c62 = vfmaq_laneq_f32(c62, b2, a1, 2);
+        c70 = vfmaq_laneq_f32(c70, b0, a1, 3);
+        c71 = vfmaq_laneq_f32(c71, b1, a1, 3);
+        c72 = vfmaq_laneq_f32(c72, b2, a1, 3);
+        
+        b += NR;
+        a += MR;
     }
     
     // Load old C, apply alpha, accumulate, store
@@ -228,6 +350,7 @@ static void AddDot8x12_neon(CBLAS_INDEX k, float *a, float *b, float *c, CBLAS_I
 
 //------------------------------------------------------
 // 4x12 micro-kernel for remainder handling (4 <= rows < 8)
+// K-loop unrolled by 2 for better ILP
 //------------------------------------------------------
 static void AddDot4x12_neon(CBLAS_INDEX k, float *a, float *b, float *c, CBLAS_INDEX ldc, float alpha)
 {
@@ -245,31 +368,76 @@ static void AddDot4x12_neon(CBLAS_INDEX k, float *a, float *b, float *c, CBLAS_I
     c20 = vdupq_n_f32(0.0f); c21 = vdupq_n_f32(0.0f); c22 = vdupq_n_f32(0.0f);
     c30 = vdupq_n_f32(0.0f); c31 = vdupq_n_f32(0.0f); c32 = vdupq_n_f32(0.0f);
     
-    for (CBLAS_INDEX p = 0; p < k; p++)
+    CBLAS_INDEX p = 0;
+    
+    // Unrolled by 2
+    for (; p + 2 <= k; p += 2)
     {
+        // Iteration 0
         b0 = vld1q_f32(b);
         b1 = vld1q_f32(b + 4);
         b2 = vld1q_f32(b + 8);
-        b += NR;
-        
         a0 = vld1q_f32(a);
-        a += 4;
         
         c00 = vfmaq_laneq_f32(c00, b0, a0, 0);
         c01 = vfmaq_laneq_f32(c01, b1, a0, 0);
         c02 = vfmaq_laneq_f32(c02, b2, a0, 0);
-        
         c10 = vfmaq_laneq_f32(c10, b0, a0, 1);
         c11 = vfmaq_laneq_f32(c11, b1, a0, 1);
         c12 = vfmaq_laneq_f32(c12, b2, a0, 1);
-        
         c20 = vfmaq_laneq_f32(c20, b0, a0, 2);
         c21 = vfmaq_laneq_f32(c21, b1, a0, 2);
         c22 = vfmaq_laneq_f32(c22, b2, a0, 2);
-        
         c30 = vfmaq_laneq_f32(c30, b0, a0, 3);
         c31 = vfmaq_laneq_f32(c31, b1, a0, 3);
         c32 = vfmaq_laneq_f32(c32, b2, a0, 3);
+        
+        // Iteration 1
+        b0 = vld1q_f32(b + NR);
+        b1 = vld1q_f32(b + NR + 4);
+        b2 = vld1q_f32(b + NR + 8);
+        a0 = vld1q_f32(a + 4);
+        
+        c00 = vfmaq_laneq_f32(c00, b0, a0, 0);
+        c01 = vfmaq_laneq_f32(c01, b1, a0, 0);
+        c02 = vfmaq_laneq_f32(c02, b2, a0, 0);
+        c10 = vfmaq_laneq_f32(c10, b0, a0, 1);
+        c11 = vfmaq_laneq_f32(c11, b1, a0, 1);
+        c12 = vfmaq_laneq_f32(c12, b2, a0, 1);
+        c20 = vfmaq_laneq_f32(c20, b0, a0, 2);
+        c21 = vfmaq_laneq_f32(c21, b1, a0, 2);
+        c22 = vfmaq_laneq_f32(c22, b2, a0, 2);
+        c30 = vfmaq_laneq_f32(c30, b0, a0, 3);
+        c31 = vfmaq_laneq_f32(c31, b1, a0, 3);
+        c32 = vfmaq_laneq_f32(c32, b2, a0, 3);
+        
+        b += 2 * NR;
+        a += 2 * 4;
+    }
+    
+    // Handle remaining iteration
+    for (; p < k; p++)
+    {
+        b0 = vld1q_f32(b);
+        b1 = vld1q_f32(b + 4);
+        b2 = vld1q_f32(b + 8);
+        a0 = vld1q_f32(a);
+        
+        c00 = vfmaq_laneq_f32(c00, b0, a0, 0);
+        c01 = vfmaq_laneq_f32(c01, b1, a0, 0);
+        c02 = vfmaq_laneq_f32(c02, b2, a0, 0);
+        c10 = vfmaq_laneq_f32(c10, b0, a0, 1);
+        c11 = vfmaq_laneq_f32(c11, b1, a0, 1);
+        c12 = vfmaq_laneq_f32(c12, b2, a0, 1);
+        c20 = vfmaq_laneq_f32(c20, b0, a0, 2);
+        c21 = vfmaq_laneq_f32(c21, b1, a0, 2);
+        c22 = vfmaq_laneq_f32(c22, b2, a0, 2);
+        c30 = vfmaq_laneq_f32(c30, b0, a0, 3);
+        c31 = vfmaq_laneq_f32(c31, b1, a0, 3);
+        c32 = vfmaq_laneq_f32(c32, b2, a0, 3);
+        
+        b += NR;
+        a += 4;
     }
     
     float32x4_t c_old0, c_old1, c_old2;
