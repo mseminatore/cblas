@@ -808,6 +808,13 @@ static void cblas_compute_gemm_block_sizes(void)
         cblas_gemm_mc = 256;
         cblas_gemm_kc = 256;
         cblas_gemm_nb = 512;
+    } else if (l2_cache_kb >= 1024) {
+        // Intel 12th Gen+ / AMD Zen3+ with 1MB+ L2: use moderate defaults
+        // Allow adaptive sizing per-call based on matrix size
+        // mc=192, kc=256, nb=384: Total = (192*256 + 256*384)*4 = 577 KB
+        cblas_gemm_mc = 192;
+        cblas_gemm_kc = 256;
+        cblas_gemm_nb = 384;
     } else if (l2_cache_kb >= 512) {
         // Intel/AMD with 512KB+ L2: optimize for L2 cache
         // mc=192, kc=256, nb=384: Total = (192*256 + 256*384)*4 = 577 KB

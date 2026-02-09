@@ -332,19 +332,28 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         CBLAS_INDEX horiz_tiles = (n_use + nb_use - 1) / nb_use;
         
         // If we have too few tiles for good parallelism, use adaptive tiling
-        // Threshold: need at least num_threads/2 tiles for reasonable load balance
-        CBLAS_INDEX min_tiles_for_mt = (num_threads + 1) / 2;
-        if (vert_tiles * horiz_tiles < min_tiles_for_mt && m_use >= 256 && n_use >= 256)
+        // Only activate for matrices that naturally create very few tiles
+        // and are in the "medium" size range where parallelism matters most
+        CBLAS_INDEX min_tiles_for_mt = num_threads;  // Want at least 1 tile per thread
+        CBLAS_INDEX natural_tiles = vert_tiles * horiz_tiles;
+        
+        // Only use adaptive tiling if:
+        // 1. We have very few natural tiles (< num_threads)
+        // 2. Matrix is large enough to benefit from MT (m*n > 4*MT_threshold)
+        // 3. Matrix is not too small (at least 256 in each dimension)
+        if (natural_tiles < min_tiles_for_mt && 
+            (size_t)m_use * n_use > 4 * CBLAS_MT_GEMM &&
+            m_use >= 256 && n_use >= 256)
         {
             // Use smaller tiles to create more parallel work
-            // Target: at least min_tiles_for_mt total tiles
+            // Target: at least num_threads total tiles
             CBLAS_INDEX target_tiles_per_dim = (CBLAS_INDEX)(sqrt((double)min_tiles_for_mt) + 0.5);
             if (target_tiles_per_dim < 2) target_tiles_per_dim = 2;
             
             mc_use = (m_use + target_tiles_per_dim - 1) / target_tiles_per_dim;
             nb_use = (n_use + target_tiles_per_dim - 1) / target_tiles_per_dim;
             
-            // Ensure minimum tile size for kernel efficiency
+            // Ensure minimum tile size for kernel efficiency (64 is micro-kernel friendly)
             CBLAS_INDEX min_tile = 64;
             mc_use = MAX(mc_use, min_tile);
             nb_use = MAX(nb_use, min_tile);
