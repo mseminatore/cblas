@@ -128,6 +128,8 @@ nrm2_asum_rot_perf: $(LIBNAME) nrm2_asum_rot_perf.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 # Per-file SIMD compile flags for x86-64 kernels
+# Only apply on x86-64, not on ARM64
+ifeq ($(ARCH), x86_64)
 # SSE kernels - works on all x86-64
 kernels/%_sse.o: kernels/%_sse.c $(DEPS)
 	$(CC) -c $(CFLAGS) -msse4.1 $(CPPFLAGS) $< -o $@
@@ -143,6 +145,7 @@ kernels/%_fma.o: kernels/%_fma.c $(DEPS)
 # AVX512 kernels - Skylake-X and later
 kernels/%_avx512.o: kernels/%_avx512.c $(DEPS)
 	$(CC) -c $(CFLAGS) -mavx512f $(CPPFLAGS) $< -o $@
+endif
 
 %.o: %.c $(DEPS)
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
