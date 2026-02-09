@@ -203,3 +203,4 @@ install(FILES platform/cpuid.h platform/simd.h platform/threading.h DESTINATION 
 
 # cmake --build . --config Release
 # cmake --install . --prefix c:\opt\cblas -v
+# cmake --install . --prefix /opt/cblas -v
