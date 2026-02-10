@@ -12,17 +12,6 @@
 #define A(col, row) a[(row) * lda + (col)]
 
 //------------------------------------------------------
-// compute 4 cols by 1 row product
-//------------------------------------------------------
-static void AddProd4x1(float x, float *y, float *a)
-{
-	*a += x * *y;
-	*(a + 1) += x * *(y + 1);
-	*(a + 2) += x * *(y + 2);
-	*(a + 3) += x * *(y + 3);
-}
-
-//------------------------------------------------------
 // compute 4 cols x 4 rows product
 //------------------------------------------------------
 static void AddProd4x4_SIMD(float* x, float* y, float* a, CBLAS_INDEX lda)
