@@ -16,15 +16,15 @@ Ubuntu Linux (gcc), and Raspbian OS (gcc).
 The library supports SIMD and multi-threading for performance. However, not 
 all functions have been optimized to take advantage 
 of these features. The primary focus for SIMD and Multi-threading work will be
-on the level-3 functions, followed by level-2, etc.
+on level-3 functions like GEMM, followed by level-2, etc.
 
-> It is a not yet fully realized goal that advanced SIMD instructions 
-> (AVX, AVX2, NEON, FMA) will be leveraged if they are available for a given
-> platform. SIMD support is a work in progress.
+> All supported BLAS functions now use advanced SIMD instructions 
+> (SSE, AVX, AVX2, NEON, FMA) with CPU feature identification and dynamic
+> kernel dispatch. If you encounter errors please report the issue.
 
 This project started as a basic implementation of the BLAS
 routines that were required for my [libann](https://www.github.com/mseminatore/ann) neural
-networking library. Curiosity about maximizing performance evolved the project
+networking library. Curiosity about maximizing performance evolved this project
 into an exploratory playground for deep optimization on modern CPU architectures.
 
 If you are curious to learn more about how BLAS-like libraries can be optimized
