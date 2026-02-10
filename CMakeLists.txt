@@ -14,6 +14,7 @@ configure_file(cblas_config.h.in cblas_config.h @ONLY)
 
 # Add the binary directory to include path so generated config header can be found
 include_directories(${PROJECT_BINARY_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/tests)
 
 # testing
 enable_testing()
@@ -179,80 +180,82 @@ endif()
 #
 # add the executables
 #
-add_executable(blas_test test_main.c test.c)
+# Tests
+add_executable(blas_test tests/test_main.c tests/test.c)
 target_link_libraries(blas_test cblas ${MATH_LIB})
 
-add_executable(blas_stress test_main.c test_stress.c)
+add_executable(blas_stress tests/test_main.c tests/test_stress.c)
 target_link_libraries(blas_stress cblas ${MATH_LIB})
 
-add_executable(gemm_perf gemm_perf.c)
-target_link_libraries(gemm_perf cblas ${MATH_LIB})
-
-add_executable(dgemm_perf dgemm_perf.c)
-target_link_libraries(dgemm_perf cblas ${MATH_LIB})
-
-add_executable(ger_perf ger_perf.c)
-target_link_libraries(ger_perf cblas ${MATH_LIB})
-
-add_executable(dger_perf dger_perf.c)
-target_link_libraries(dger_perf cblas ${MATH_LIB})
-
-add_executable(gemv_perf gemv_perf.c)
-target_link_libraries(gemv_perf cblas ${MATH_LIB})
-
-add_executable(dot_perf dot_perf.c)
-target_link_libraries(dot_perf cblas ${MATH_LIB})
-
-add_executable(axpy_perf axpy_perf.c)
-target_link_libraries(axpy_perf cblas ${MATH_LIB})
-
-add_executable(copy_perf copy_perf.c)
-target_link_libraries(copy_perf cblas ${MATH_LIB})
-
-add_executable(dot_threshold_tuning dot_threshold_tuning.c)
-target_link_libraries(dot_threshold_tuning cblas ${MATH_LIB})
-
-add_executable(nrm2_asum_rot_perf nrm2_asum_rot_perf.c)
-target_link_libraries(nrm2_asum_rot_perf cblas ${MATH_LIB})
-
-add_executable(mem_perf mem_perf.c)
-target_link_libraries(mem_perf cblas ${MATH_LIB})
-
-add_executable(win_test test_main.c win_test.c)
+add_executable(win_test tests/test_main.c tests/win_test.c)
 target_link_libraries(win_test cblas ${MATH_LIB})
 
-add_executable(test_strided test_main.c test_strided.c)
+add_executable(test_strided tests/test_main.c tests/test_strided.c)
 target_link_libraries(test_strided cblas ${MATH_LIB})
 
-add_executable(test_stats test_stats.c)
+add_executable(test_stats tests/test_stats.c)
 target_link_libraries(test_stats cblas ${MATH_LIB})
 
-add_executable(test_threshold test_threshold.c)
+add_executable(test_threshold tests/test_threshold.c)
 target_link_libraries(test_threshold cblas ${MATH_LIB})
 
-add_executable(test_dot_threshold test_dot_threshold.c)
+add_executable(test_dot_threshold tests/test_dot_threshold.c)
 target_link_libraries(test_dot_threshold cblas ${MATH_LIB})
 
 find_package(Threads)
 
-add_executable(test_concurrent test_main.c test_concurrent.c)
+add_executable(test_concurrent tests/test_main.c tests/test_concurrent.c)
 if(Threads_FOUND)
     target_link_libraries(test_concurrent cblas ${MATH_LIB} Threads::Threads)
 else()
     target_link_libraries(test_concurrent cblas ${MATH_LIB} pthread)
 endif()
 
-add_executable(test_mt_debug test_mt_debug.c)
+add_executable(test_mt_debug tests/test_mt_debug.c)
 target_link_libraries(test_mt_debug cblas ${MATH_LIB})
 
-add_executable(test_level2_mt test_main.c test_level2_mt.c)
+add_executable(test_level2_mt tests/test_main.c tests/test_level2_mt.c)
 target_link_libraries(test_level2_mt cblas ${MATH_LIB})
 
-add_executable(test_autotune test_main.c test_autotune.c)
+add_executable(test_autotune tests/test_main.c tests/test_autotune.c)
 target_link_libraries(test_autotune cblas ${MATH_LIB})
 
-add_executable(test_gemm_accuracy test_main.c test_gemm_accuracy.c)
+add_executable(test_gemm_accuracy tests/test_main.c tests/test_gemm_accuracy.c)
 target_link_libraries(test_gemm_accuracy cblas ${MATH_LIB})
+
+# Benchmarks
+add_executable(gemm_perf benchmarks/gemm_perf.c)
+target_link_libraries(gemm_perf cblas ${MATH_LIB})
+
+add_executable(dgemm_perf benchmarks/dgemm_perf.c)
+target_link_libraries(dgemm_perf cblas ${MATH_LIB})
+
+add_executable(ger_perf benchmarks/ger_perf.c)
+target_link_libraries(ger_perf cblas ${MATH_LIB})
+
+add_executable(dger_perf benchmarks/dger_perf.c)
+target_link_libraries(dger_perf cblas ${MATH_LIB})
+
+add_executable(gemv_perf benchmarks/gemv_perf.c)
+target_link_libraries(gemv_perf cblas ${MATH_LIB})
+
+add_executable(dot_perf benchmarks/dot_perf.c)
+target_link_libraries(dot_perf cblas ${MATH_LIB})
+
+add_executable(axpy_perf benchmarks/axpy_perf.c)
+target_link_libraries(axpy_perf cblas ${MATH_LIB})
+
+add_executable(copy_perf benchmarks/copy_perf.c)
+target_link_libraries(copy_perf cblas ${MATH_LIB})
+
+add_executable(dot_threshold_tuning benchmarks/dot_threshold_tuning.c)
+target_link_libraries(dot_threshold_tuning cblas ${MATH_LIB})
+
+add_executable(nrm2_asum_rot_perf benchmarks/nrm2_asum_rot_perf.c)
+target_link_libraries(nrm2_asum_rot_perf cblas ${MATH_LIB})
+
+add_executable(mem_perf benchmarks/mem_perf.c)
+target_link_libraries(mem_perf cblas ${MATH_LIB})
 
 # install targets
 install(TARGETS cblas DESTINATION lib)

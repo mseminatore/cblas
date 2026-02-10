@@ -14,11 +14,11 @@ OBJS = swap.o dot.o copy.o axpy.o scal.o axpby.o asum.o nrm2.o rot.o ger.o \
 	kernels/axpy_k_sse.o kernels/axpy_k_avx.o kernels/axpy_k_fma.o kernels/axpy_k_neon.o \
 	kernels/axpby_k_sse.o kernels/axpby_k_avx.o kernels/axpby_k_fma.o kernels/axpby_k_neon.o \
 	kernels/ger_k.o kernels/ger_k_neon.o kernels/ger_k_fma.o \
-	kernels/gemv_k.o kernels/gemv_k_avx.o kernels/gemv_k_neon.o \
+	kernels/gemv_k.o kernels/gemv_k_avx.o kernels/gemv_k_fma.o kernels/gemv_k_neon.o \
 	kernels/gemm_k.o kernels/gemm_k_sse.o kernels/gemm_k_avx.o kernels/gemm_k_fma.o kernels/gemm_k_neon.o \
 	kernels/dgemm_k_sse.o kernels/dgemm_k_avx.o kernels/dgemm_k_fma.o kernels/dgemm_k_neon.o
-DEPS = cblas.h cblas_config.h test.h platform/threading.h platform/simd.h platform/cpuid.h
-CFLAGS += -g -O2 -Wall -Wextra -Wpedantic -I. #-DNDEBUG
+DEPS = cblas.h cblas_config.h tests/test.h platform/threading.h platform/simd.h platform/cpuid.h
+CFLAGS += -g -O2 -Wall -Wextra -Wpedantic -I. -Itests #-DNDEBUG
 LIBNAME = libcblas.a
 LFLAGS += -L. -lcblas -lm
 
@@ -61,70 +61,78 @@ cblas_config.h: cblas_config.h.in Makefile
 $(LIBNAME): $(OBJS)
 	ar rcs $(LIBNAME) $(OBJS)
 
-blas_stress: $(LIBNAME) test_main.o test_stress.o
+# Tests
+blas_stress: $(LIBNAME) tests/test_main.o tests/test_stress.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-blas_test: $(LIBNAME) test_main.o test.o
+blas_test: $(LIBNAME) tests/test_main.o tests/test.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-test_strided: $(LIBNAME) test_main.o test_strided.o
+test_strided: $(LIBNAME) tests/test_main.o tests/test_strided.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-test_stats: $(LIBNAME) test_stats.o
+test_stats: $(LIBNAME) tests/test_stats.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-test_overhead: $(LIBNAME) test_overhead.o
+test_overhead: $(LIBNAME) tests/test_overhead.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-test_threshold: $(LIBNAME) test_threshold.o
+test_threshold: $(LIBNAME) tests/test_threshold.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-test_dot_threshold: $(LIBNAME) test_dot_threshold.o
+test_dot_threshold: $(LIBNAME) tests/test_dot_threshold.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-test_concurrent: $(LIBNAME) test_main.o test_concurrent.o
+test_concurrent: $(LIBNAME) tests/test_main.o tests/test_concurrent.o
 	$(CC) -o $@ $^ $(LFLAGS) -lpthread
 
-test_mt_debug: $(LIBNAME) test_mt_debug.o
+test_mt_debug: $(LIBNAME) tests/test_mt_debug.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-test_level2_mt: $(LIBNAME) test_main.o test_level2_mt.o
+test_level2_mt: $(LIBNAME) tests/test_main.o tests/test_level2_mt.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-test_autotune: $(LIBNAME) test_main.o test_autotune.o
+test_autotune: $(LIBNAME) tests/test_main.o tests/test_autotune.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-test_gemm_accuracy: $(LIBNAME) test_main.o test_gemm_accuracy.o
+test_gemm_accuracy: $(LIBNAME) tests/test_main.o tests/test_gemm_accuracy.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-gemm_perf: $(LIBNAME) gemm_perf.o
+# Benchmarks
+gemm_perf: $(LIBNAME) benchmarks/gemm_perf.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-dgemm_perf: $(LIBNAME) dgemm_perf.o
+dgemm_perf: $(LIBNAME) benchmarks/dgemm_perf.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-ger_perf: $(LIBNAME) ger_perf.o
+ger_perf: $(LIBNAME) benchmarks/ger_perf.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-dger_perf: $(LIBNAME) dger_perf.o
+dger_perf: $(LIBNAME) benchmarks/dger_perf.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-dot_perf: $(LIBNAME) dot_perf.o
+dot_perf: $(LIBNAME) benchmarks/dot_perf.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-axpy_perf: $(LIBNAME) axpy_perf.o
+axpy_perf: $(LIBNAME) benchmarks/axpy_perf.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-copy_perf: $(LIBNAME) copy_perf.o
+copy_perf: $(LIBNAME) benchmarks/copy_perf.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-dot_threshold_tuning: $(LIBNAME) dot_threshold_tuning.o
+dot_threshold_tuning: $(LIBNAME) benchmarks/dot_threshold_tuning.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-dot_threshold_tuning_large: $(LIBNAME) dot_threshold_tuning_large.o
+dot_threshold_tuning_large: $(LIBNAME) benchmarks/dot_threshold_tuning_large.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
-nrm2_asum_rot_perf: $(LIBNAME) nrm2_asum_rot_perf.o
+nrm2_asum_rot_perf: $(LIBNAME) benchmarks/nrm2_asum_rot_perf.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
+gemv_perf: $(LIBNAME) benchmarks/gemv_perf.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
+mem_perf: $(LIBNAME) benchmarks/mem_perf.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 # Per-file SIMD compile flags for x86-64 kernels
@@ -152,6 +160,13 @@ kernels/ger_k.o: kernels/ger_k.c $(DEPS)
 	$(CC) -c $(CFLAGS) -mavx2 $(CPPFLAGS) $< -o $@
 endif
 
+# Pattern rules for subdirectories
+tests/%.o: tests/%.c $(DEPS)
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+benchmarks/%.o: benchmarks/%.c $(DEPS)
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+
 %.o: %.c $(DEPS)
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
@@ -166,8 +181,9 @@ test: all
 	./blas_test
 
 clean:
-	rm -f $(TARGET) $(OBJS) $(LIBNAME) test_main.o test.o test_stress.o blas_stress blas_test.o blas_test test_threshold.o test_threshold test_dot_threshold.o test_dot_threshold test_concurrent.o test_concurrent gemm_perf.o gemm_perf dgemm_perf.o dgemm_perf ger_perf.o ger_perf dger_perf.o dger_perf dot_perf.o dot_perf axpy_perf.o axpy_perf copy_perf.o copy_perf dot_threshold_tuning.o dot_threshold_tuning dot_threshold_tuning_large.o dot_threshold_tuning_large nrm2_asum_rot_perf.o nrm2_asum_rot_perf cblas_config.h test_strided.o test_strided test_stats.o test_stats test_autotune.o test_autotune test_gemm_accuracy.o test_gemm_accuracy
-
-
-gemv_perf: $(LIBNAME) gemv_perf.o
-	$(CC) -o $@ $^ $(LFLAGS)
+	rm -f $(TARGET) $(OBJS) $(LIBNAME) cblas_config.h
+	rm -f tests/*.o benchmarks/*.o
+	rm -f blas_test blas_stress test_strided test_stats test_overhead test_threshold
+	rm -f test_dot_threshold test_concurrent test_mt_debug test_level2_mt test_autotune test_gemm_accuracy
+	rm -f gemm_perf dgemm_perf ger_perf dger_perf dot_perf axpy_perf copy_perf gemv_perf mem_perf
+	rm -f dot_threshold_tuning dot_threshold_tuning_large nrm2_asum_rot_perf
