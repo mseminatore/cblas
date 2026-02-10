@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, self-hosted, windows-latest]
+        os: [ubuntu-latest, macos-latest, ubuntu-24.04-arm, windows-latest]
         
     steps:
     - uses: actions/checkout@v3
