@@ -6,19 +6,21 @@ This document describes which BLAS operations support multi-threading and their 
 
 | Level | Operation | File | Threshold Macro | Default Value | Activation Condition |
 |-------|-----------|------|-----------------|---------------|----------------------|
-| **Level 1** | `dot` (sdot/ddot) | dot.c | `CBLAS_MT_DOT` | 32768 | `n > threshold` |
-| **Level 1** | `axpy` (saxpy/daxpy) | axpy.c | `CBLAS_MT_AXPY` | 32768 | `n > threshold` |
-| **Level 1** | `copy` (scopy/dcopy) | copy.c | `CBLAS_MT_COPY` | 16384 | `n > threshold` |
-| **Level 1** | `swap` (sswap/dswap) | swap.c | `CBLAS_MT_COPY` | 16384 | `n > threshold` |
-| **Level 2** | `ger` (sger/dger) | ger.c | `CBLAS_MT_GER` | 2048 | `m*n > threshold` |
-| **Level 2** | `gemv` (sgemv/dgemv) | gemv.c | `CBLAS_MT_GEMV` | 4096 | `m*n > threshold` |
-| **Level 3** | `gemm` (sgemm/dgemm) | gemm.c | `CBLAS_MT_GEMM` | 4096 | `m*n*k > threshold` |
+| **Level 1** | `dot` (sdot/ddot) | dot.c | `CBLAS_MT_DOT` | 500000 | `n > threshold` |
+| **Level 1** | `axpy` (saxpy/daxpy) | axpy.c | `CBLAS_MT_AXPY` | 500000 | `n > threshold` |
+| **Level 1** | `copy` (scopy/dcopy) | copy.c | `CBLAS_MT_COPY` | 500000 | `n > threshold` |
+| **Level 1** | `swap` (sswap/dswap) | swap.c | `CBLAS_MT_COPY` | 500000 | `n > threshold` |
+| **Level 1** | `scal` (sscal/dscal) | scal.c | `CBLAS_MT_COPY` | 500000 | `n > threshold` |
+| **Level 2** | `ger` (sger/dger) | ger.c | `CBLAS_MT_GER` | 1000000000 | `m*n > threshold` (effectively disabled) |
+| **Level 2** | `gemv` (sgemv/dgemv) | gemv.c | `CBLAS_MT_GEMV` | 65536 | `m*n > threshold` |
+| **Level 3** | `gemm` (sgemm/dgemm) | gemm.c | `CBLAS_MT_GEMM` | 16384 | `m*n*k > threshold` |
+
+**Note on thresholds**: Level-1 operations (DOT, AXPY, COPY, SCAL, SWAP) are memory-bound. Testing shows MT overhead exceeds benefits until ~500K elements on modern CPUs. GER (rank-1 update) showed MT slowdowns at all tested sizes, so it's effectively disabled with a very high threshold.
 
 ## Non-Multi-Threaded Operations
 
 The following Level-1 operations are **not** multi-threaded due to low compute intensity:
 
-- `scal` / `dscal` - Vector scaling
 - `asum` / `dasum` - Sum of absolute values
 - `nrm2` / `dnrm2` - Euclidean norm
 - `rot` / `drot` - Givens rotation

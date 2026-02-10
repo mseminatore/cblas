@@ -160,11 +160,11 @@ CBLAS_AUTO_TUNE=1 ./your_program
 
 When enabled, you'll see output like:
 ```
-CBLAS: Auto-tuning MT thresholds for 4 threads...
-  Calibrating DOT threshold... 65536
-  Calibrating COPY threshold... 32768
-  Calibrating AXPY threshold... 65536
-  GER/GEMV/GEMM thresholds (heuristic): 8192
+CBLAS: Auto-tuning MT thresholds for 12 threads...
+  Calibrating DOT threshold... 524288
+  Calibrating COPY threshold... 524288
+  Calibrating AXPY threshold... 524288
+  GER/GEMV/GEMM thresholds (heuristic): 16384
 CBLAS: Auto-tuning complete.
 ```
 
@@ -174,12 +174,14 @@ The library includes the following default thresholds (in number of elements):
 
 Operation | Default Threshold | Description
 --------- | ----------------- | -----------
-DOT | 32768 | Dot product (vector-vector)
-AXPY | 32768 | Vector addition with scaling
-COPY | 16384 | Vector copy
-GER | 2048 | General rank-1 update (matrix)
-GEMV | 4096 | Matrix-vector multiplication
-GEMM | 4096 | Matrix-matrix multiplication
+DOT | 500000 | Dot product (vector-vector)
+AXPY | 500000 | Vector addition with scaling
+COPY | 500000 | Vector copy (also used by SCAL)
+GER | 1000000000 | General rank-1 update (effectively disabled)
+GEMV | 65536 | Matrix-vector multiplication
+GEMM | 16384 | Matrix-matrix multiplication (m×n×k)
+
+**Note on Level-1 thresholds**: Testing shows that multi-threading overhead exceeds benefits for memory-bound Level-1 operations (DOT, AXPY, COPY, SCAL) until vector sizes reach ~500K elements on modern CPUs. The GER (rank-1 update) operation showed MT slowdowns at all tested sizes, so it's effectively disabled.
 
 Auto-tuning will adjust these values based on your hardware. On systems with:
 - **Few cores (1-2)**: Thresholds typically increase (more work needed to benefit from MT)
