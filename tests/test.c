@@ -1808,9 +1808,7 @@ static void test_gemm_accuracy(void)
 {
 	SUITE("gemm accuracy vs reference");
 
-	// TODO: Fix sgemm accuracy issues - currently produces incorrect results
-	// Enable sgemm tests once the underlying issue is fixed
-#if 0
+	// sgemm accuracy tests
 	// Test small square matrices with random values
 	COMMENT("sgemm accuracy 8x8");
 	{
@@ -1876,7 +1874,6 @@ static void test_gemm_accuracy(void)
 
 		free(A); free(B); free(C_ref); free(C_opt);
 	}
-#endif
 
 	// dgemm accuracy tests (these work correctly)
 	COMMENT("dgemm accuracy 8x8");

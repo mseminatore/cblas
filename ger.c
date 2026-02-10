@@ -16,88 +16,10 @@
 //------------------------------------------------------
 static void AddProd4x1(float x, float *y, float *a)
 {
-#if 0
-
-#if defined(__aarch64__)
-	float32x4_t xr, yr, ar;
-
-	// load and dup x
-	xr = vld1q_dup_f32(&x);
-
-	// load 4 floats of Y and A
-	yr = vld1q_f32(y);
-	ar = vld1q_f32(a);
-	
-	// A += x * y
-	ar = vfmaq_f32(ar, xr, yr);
-	
-	// store 4 floats
-	vst1q_f32(a, ar);
-#else
-	__m128 xr, yr, ar;
-
-	// load and dup x
-	xr = _mm_load_ps1(&x);
-
-	// load 4 floats of Y and A
-	yr = _mm_load_ps(y);
-	ar = _mm_load_ps(a);
-
-	// A += x * y
-	ar = _mm_fmadd_ps(ar, xr, yr);	// A += x * y using FMA
-	// ar = _mm_add_ps(ar, _mm_mul_ps(xr, yr));	// A += x * y using non-FMA
-
-	// store 4 floats
-	_mm_store_ps(a, ar);
-#endif
-
-#else
 	*a += x * *y;
 	*(a + 1) += x * *(y + 1);
 	*(a + 2) += x * *(y + 2);
 	*(a + 3) += x * *(y + 3);
-#endif
-}
-
-//------------------------------------------------------
-// compute 8 cols x 4 rows product (non-FMA version)
-//------------------------------------------------------
-CBLAS_UNUSED static void AddProd8x4_AVX(float* x, float* y, float* a, CBLAS_INDEX lda)
-{
-#if defined(__aarch64__)
-	(void)x;
-	(void)y;
-	(void)a;
-	(void)lda;
-#else
-	__m256 x0, x1, x2, x3, y0, a0, a1, a2, a3;
-
-	// copy single FP to all 8 elements of vector
-	x0 = _mm256_broadcast_ss(x);
-	x1 = _mm256_broadcast_ss(x + 1);
-	x2 = _mm256_broadcast_ss(x + 2);
-	x3 = _mm256_broadcast_ss(x + 3);
-
-	y0 = _mm256_load_ps(y);
-
-	// load 4 rows of destination
-	a0 = _mm256_load_ps(a);
-	a1 = _mm256_load_ps(a + lda);
-	a2 = _mm256_load_ps(a + 2 * lda);
-	a3 = _mm256_load_ps(a + 3 * lda);
-
-	// compute 8x4 products (non-FMA)
-	a0 = _mm256_add_ps(a0, _mm256_mul_ps(x0, y0));
-	a1 = _mm256_add_ps(a1, _mm256_mul_ps(x1, y0));
-	a2 = _mm256_add_ps(a2, _mm256_mul_ps(x2, y0));
-	a3 = _mm256_add_ps(a3, _mm256_mul_ps(x3, y0));
-
-	// store results
-	_mm256_store_ps(a, a0);
-	_mm256_store_ps(a + lda, a1);
-	_mm256_store_ps(a + 2 * lda, a2);
-	_mm256_store_ps(a + 3 * lda, a3);
-#endif
 }
 
 //------------------------------------------------------
@@ -174,45 +96,6 @@ static void AddProd4x4_SIMD(float* x, float* y, float* a, CBLAS_INDEX lda)
 }
 
 // Note: FMA version of AddProd4x4_SIMD is in kernels/ger_k_fma.c
-
-//------------------------------------------------------
-// compute 4 cols x 4 rows product
-//------------------------------------------------------
-CBLAS_UNUSED static void AddProd4x4(float* x, float* y, float* a, CBLAS_INDEX lda)
-{
-	// first row
-	*a = *x * *y;
-	*(a + 1) = *x * *(y + 1);
-	*(a + 2) = *x * *(y + 2);
-	*(a + 3) = *x * *(y + 3);
-
-	a += lda;
-	x++;
-
-	// second row
-	*a = *x * *y;
-	*(a + 1) = *x * *(y + 1);
-	*(a + 2) = *x * *(y + 2);
-	*(a + 3) = *x * *(y + 3);
-
-	a += lda;
-	x++;
-
-	// third row
-	*a = *x * *y;
-	*(a + 1) = *x * *(y + 1);
-	*(a + 2) = *x * *(y + 2);
-	*(a + 3) = *x * *(y + 3);
-
-	a += lda;
-	x++;
-
-	// fourth row
-	*a = *x * *y;
-	*(a + 1) = *x * *(y + 1);
-	*(a + 2) = *x * *(y + 2);
-	*(a + 3) = *x * *(y + 3);
-}
 
 //------------------------------------------------------
 // Double-precision SIMD: compute 2 cols x 2 rows product
@@ -310,66 +193,6 @@ static void dger_row_noalpha2x2(CBLAS_INDEX m, CBLAS_INDEX n, double* x, CBLAS_I
 // Note: dger_row_noalpha2x2_fma is in kernels/ger_k_fma.c
 
 //------------------------------------------------------
-//
-//------------------------------------------------------
-CBLAS_UNUSED static void sger_row_noalpha8x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_INDEX incx, float* y, CBLAS_INDEX incy, float* a, CBLAS_INDEX lda)
-{
-	float* xr, * yc, * ap;
-	CBLAS_INDEX col, row;
-
-	for (row = 0; row + 4 <= m; row += 4)
-	{
-		xr = &X(row);
-		yc = y;
-		ap = &A(0, row);
-
-		for (col = 0; col + 8 <= n; col += 8)
-		{
-			AddProd8x4_AVX(xr, yc, ap, lda);
-			yc += 8;
-			ap += 8;
-		}
-
-		// handle leftover cols handling each of the 4 rows in this block
-		for (CBLAS_INDEX i = 0; i < 4; i++)
-		{
-			switch (n - col)
-			{
-			case 7: AddProd(*xr, Y(col + 6), &A(col + 6, row + i));
-				CBLAS_FALLTHROUGH;
-			case 6: AddProd(*xr, Y(col + 5), &A(col + 5, row + i));
-				CBLAS_FALLTHROUGH;
-			case 5: AddProd(*xr, Y(col + 4), &A(col + 4, row + i));
-				CBLAS_FALLTHROUGH;
-			case 4: AddProd(*xr, Y(col + 3), &A(col + 3, row + i));
-				CBLAS_FALLTHROUGH;
-			case 3: AddProd(*xr, Y(col + 2), &A(col + 2, row + i));
-				CBLAS_FALLTHROUGH;
-			case 2: AddProd(*xr, Y(col + 1), &A(col + 1, row + i));
-				CBLAS_FALLTHROUGH;
-			case 1: AddProd(*xr, Y(col), &A(col, row + i));
-				CBLAS_FALLTHROUGH;
-			case 0:;	// do nothing!
-			}
-
-			xr = &X(row + i);
-		}
-	}
-
-	// handle leftover rows
-	switch (m - row)
-	{
-	case 3: for (col = 0; col < n; col++) AddProd(X(row + 2), Y(col), &A(col, row + 2));
-		CBLAS_FALLTHROUGH;
-	case 2: for (col = 0; col < n; col++) AddProd(X(row + 1), Y(col), &A(col, row + 1));
-		CBLAS_FALLTHROUGH;
-	case 1: for (col = 0; col < n; col++) AddProd(X(row), Y(col), &A(col, row));
-		CBLAS_FALLTHROUGH;
-	case 0:;	// do nothing!
-	}
-}
-
-//------------------------------------------------------
 // Non-FMA version with prefetching
 //------------------------------------------------------
 static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_INDEX incx, float* y, CBLAS_INDEX incy, float* a, CBLAS_INDEX lda)
@@ -435,56 +258,6 @@ static void sger_row_noalpha4x4(CBLAS_INDEX m, CBLAS_INDEX n, float* x, CBLAS_IN
 }
 
 // Note: sger_row_noalpha4x4_fma is in kernels/ger_k_fma.c
-
-//------------------------------------------------------
-//
-//------------------------------------------------------
-CBLAS_UNUSED static void sger_row_noalpha(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda)
-{
-	register float xr;
-	float *yc, *ap;
-	CBLAS_INDEX col;
-
-	for (CBLAS_INDEX row = 0; row < m; row++)
-	{
-		xr = X(row);
-		yc = y;
-		ap = &A(0, row);
-
-		for (col = 0; col + 4 <= n; col += 4)
-		{
-			AddProd4x1(xr, yc, ap);
-			yc += 4;
-			ap += 4;
-		}
-
-		// handle leftover cols
-		switch (n - col)
-		{
-		case 3: AddProd(xr, Y(col + 2), &A(col + 2, row));
-		case 2: AddProd(xr, Y(col + 1), &A(col + 1, row));
-		case 1: AddProd(xr, Y(col), &A(col, row));
-		case 0: ;	// do nothing!
-		}
-	}
-}
-
-//------------------------------------------------------
-// 
-//------------------------------------------------------
-CBLAS_UNUSED static void sger_row_noalpha_plain(CBLAS_INDEX m, CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *a, CBLAS_INDEX lda)
-{
-	(void)incx;
-	(void)incy;
-	(void)lda;
-	for (CBLAS_INDEX row = 0; row < m; row++)
-	{
-		for (CBLAS_INDEX col = 0; col < n; col++)
-		{
-			a[row * n + col] += x[row] * y[col];
-		}
-	}
-}
 
 //------------------------------------------------------
 // GER kernel for multi-threading - single precision
