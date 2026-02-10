@@ -94,7 +94,7 @@ void cblas_scopy(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
     CBLAS_STATS_START();
 
 #ifdef MT_ENABLED
-    int mt_used = (n > CBLAS_MT_COPY) ? 1 : 0;
+    int mt_used = (n > CBLAS_MT_COPY && cblas_get_num_threads() > 1) ? 1 : 0;
 #else
 	int mt_used = 0;
 #endif
@@ -135,7 +135,7 @@ void cblas_dcopy(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IN
     CBLAS_STATS_START();
 
 #ifdef MT_ENABLED
-    int mt_used = (n > CBLAS_MT_COPY) ? 1 : 0;
+    int mt_used = (n > CBLAS_MT_COPY && cblas_get_num_threads() > 1) ? 1 : 0;
 #else
     int mt_used = 0;
 #endif

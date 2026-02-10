@@ -103,7 +103,7 @@ void cblas_saxpy(CBLAS_INDEX n, float alpha, float *x, CBLAS_INDEX incx, float *
     CBLAS_STATS_START();
 
 #ifdef MT_ENABLED
-    int mt_used = (n > CBLAS_MT_AXPY) ? 1 : 0;
+    int mt_used = (n > CBLAS_MT_AXPY && cblas_get_num_threads() > 1) ? 1 : 0;
 #else
     int mt_used = 0;
 #endif
@@ -145,7 +145,7 @@ void cblas_daxpy(CBLAS_INDEX n, double alpha, double *x, CBLAS_INDEX incx, doubl
     CBLAS_STATS_START();
 
 #ifdef MT_ENABLED
-    int mt_used = (n > CBLAS_MT_AXPY) ? 1 : 0;
+    int mt_used = (n > CBLAS_MT_AXPY && cblas_get_num_threads() > 1) ? 1 : 0;
 #else
     int mt_used = 0;
 #endif

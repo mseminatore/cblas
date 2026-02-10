@@ -90,7 +90,7 @@ void cblas_ssetv(CBLAS_INDEX n, float *x, float v)
     CBLAS_STATS_START();
 
 #ifdef MT_ENABLED
-    int mt_used = (n > CBLAS_MT_COPY) ? 1 : 0;
+    int mt_used = (n > CBLAS_MT_COPY && cblas_get_num_threads() > 1) ? 1 : 0;
 #else
     int mt_used = 0;
 #endif
@@ -124,7 +124,7 @@ void cblas_dsetv(CBLAS_INDEX n, double *x, double v)
     CBLAS_STATS_START();
 
 #ifdef MT_ENABLED
-    int mt_used = (n > CBLAS_MT_COPY) ? 1 : 0;
+    int mt_used = (n > CBLAS_MT_COPY && cblas_get_num_threads() > 1) ? 1 : 0;
 #else
     int mt_used = 0;
 #endif

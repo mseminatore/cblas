@@ -57,7 +57,7 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
     CBLAS_STATS_START();
 
 #if defined(MT_ENABLED)
-    int mt_used = (m * n > CBLAS_MT_GEMV) ? 1 : 0;
+    int mt_used = (m * n > CBLAS_MT_GEMV && cblas_get_num_threads() > 1) ? 1 : 0;
     
     // Multi-threaded path for NoTrans case with RowMajor or Trans case with ColMajor
     if (mt_used && ((trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor)) && blas_kernels.sgemv_k != NULL)
@@ -162,7 +162,7 @@ void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
     CBLAS_STATS_START();
 
 #if defined(MT_ENABLED)
-    int mt_used = (m * n > CBLAS_MT_GEMV) ? 1 : 0;
+    int mt_used = (m * n > CBLAS_MT_GEMV && cblas_get_num_threads() > 1) ? 1 : 0;
     
     // Multi-threaded path for NoTrans case with RowMajor or Trans case with ColMajor
     if (mt_used && ((trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor)) && blas_kernels.dgemv_k != NULL)

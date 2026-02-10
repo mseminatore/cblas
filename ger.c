@@ -609,7 +609,7 @@ void cblas_sger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, float alpha, 
 		return;
 
 #if defined(MT_ENABLED)
-    int mt_used = (m * n > CBLAS_MT_GER) ? 1 : 0;
+    int mt_used = (m * n > CBLAS_MT_GER && cblas_get_num_threads() > 1) ? 1 : 0;
     
     if (mt_used && layout == CblasRowMajor && blas_kernels.sger_k != NULL)
     {
@@ -717,7 +717,7 @@ void cblas_dger(CBLAS_LAYOUT layout, CBLAS_INDEX m, CBLAS_INDEX n, double alpha,
 		return;
 
 #if defined(MT_ENABLED)
-    int mt_used = (m * n > CBLAS_MT_GER) ? 1 : 0;
+    int mt_used = (m * n > CBLAS_MT_GER && cblas_get_num_threads() > 1) ? 1 : 0;
     
     if (mt_used && layout == CblasRowMajor && blas_kernels.dger_k != NULL)
     {

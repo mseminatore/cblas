@@ -316,7 +316,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     CBLAS_INDEX pb, ib;
 
 #if defined(MT_ENABLED)
-    int mt_used = (m_use * n_use * k > CBLAS_MT_GEMM) ? 1 : 0;
+    int mt_used = (m_use * n_use * k > CBLAS_MT_GEMM && cblas_get_num_threads() > 1) ? 1 : 0;
     
     if (mt_used)
     {

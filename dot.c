@@ -17,7 +17,7 @@ float cblas_sdot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDE
     CBLAS_STATS_START();
 
 #if defined(MT_ENABLED)
-    int mt_used = (n > CBLAS_MT_DOT) ? 1 : 0;
+    int mt_used = (n > CBLAS_MT_DOT && cblas_get_num_threads() > 1) ? 1 : 0;
 #else
     int mt_used = 0;
 #endif
@@ -72,7 +72,7 @@ double cblas_ddot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_I
     CBLAS_STATS_START();
 
 #if defined(MT_ENABLED)
-    int mt_used = (n > CBLAS_MT_DOT) ? 1 : 0;
+    int mt_used = (n > CBLAS_MT_DOT && cblas_get_num_threads() > 1) ? 1 : 0;
 #else
     int mt_used = 0;
 #endif

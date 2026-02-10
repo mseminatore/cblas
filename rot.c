@@ -134,7 +134,7 @@ void cblas_srot(CBLAS_INDEX n, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX
     CBLAS_STATS_START();
 
 #ifdef MT_ENABLED
-    int mt_used = (n > CBLAS_MT_COPY) ? 1 : 0;
+    int mt_used = (n > CBLAS_MT_COPY && cblas_get_num_threads() > 1) ? 1 : 0;
 #else
     int mt_used = 0;
 #endif
@@ -179,7 +179,7 @@ void cblas_drot(CBLAS_INDEX n, double *x, CBLAS_INDEX incx, double *y, CBLAS_IND
     CBLAS_STATS_START();
 
 #ifdef MT_ENABLED
-    int mt_used = (n > CBLAS_MT_COPY) ? 1 : 0;
+    int mt_used = (n > CBLAS_MT_COPY && cblas_get_num_threads() > 1) ? 1 : 0;
 #else
     int mt_used = 0;
 #endif

@@ -16,7 +16,7 @@ float cblas_snrm2(CBLAS_INDEX n, float *x, CBLAS_INDEX incx)
     CBLAS_STATS_START();
 
 #if defined(MT_ENABLED)
-    int mt_used = (n > CBLAS_MT_DOT) ? 1 : 0;
+    int mt_used = (n > CBLAS_MT_DOT && cblas_get_num_threads() > 1) ? 1 : 0;
 #else
     int mt_used = 0;
 #endif
@@ -69,7 +69,7 @@ double cblas_dnrm2(CBLAS_INDEX n, double *x, CBLAS_INDEX incx)
     CBLAS_STATS_START();
 
 #if defined(MT_ENABLED)
-    int mt_used = (n > CBLAS_MT_DOT) ? 1 : 0;
+    int mt_used = (n > CBLAS_MT_DOT && cblas_get_num_threads() > 1) ? 1 : 0;
 #else
     int mt_used = 0;
 #endif
