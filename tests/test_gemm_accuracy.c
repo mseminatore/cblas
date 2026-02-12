@@ -188,8 +188,161 @@ static int run_dgemm_accuracy_test(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
 }
 
 //------------------------------------------------------
-// Small matrix tests (below blocking thresholds)
+// Transpose-aware naive reference GEMM
+// C = alpha * op(A) * op(B) + beta * C (row-major)
 //------------------------------------------------------
+static void naive_sgemm_trans(CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb,
+                              CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
+                              float alpha, const float* A, CBLAS_INDEX lda,
+                              const float* B, CBLAS_INDEX ldb,
+                              float beta, float* C, CBLAS_INDEX ldc)
+{
+	for (CBLAS_INDEX i = 0; i < m; i++) {
+		for (CBLAS_INDEX j = 0; j < n; j++) {
+			C[i * ldc + j] *= beta;
+		}
+	}
+	for (CBLAS_INDEX i = 0; i < m; i++) {
+		for (CBLAS_INDEX j = 0; j < n; j++) {
+			float sum = 0.0f;
+			for (CBLAS_INDEX p = 0; p < k; p++) {
+				float a_val = (transa == CblasNoTrans) ? A[i * lda + p] : A[p * lda + i];
+				float b_val = (transb == CblasNoTrans) ? B[p * ldb + j] : B[j * ldb + p];
+				sum += a_val * b_val;
+			}
+			C[i * ldc + j] += alpha * sum;
+		}
+	}
+}
+
+static void naive_dgemm_trans(CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb,
+                              CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
+                              double alpha, const double* A, CBLAS_INDEX lda,
+                              const double* B, CBLAS_INDEX ldb,
+                              double beta, double* C, CBLAS_INDEX ldc)
+{
+	for (CBLAS_INDEX i = 0; i < m; i++) {
+		for (CBLAS_INDEX j = 0; j < n; j++) {
+			C[i * ldc + j] *= beta;
+		}
+	}
+	for (CBLAS_INDEX i = 0; i < m; i++) {
+		for (CBLAS_INDEX j = 0; j < n; j++) {
+			double sum = 0.0;
+			for (CBLAS_INDEX p = 0; p < k; p++) {
+				double a_val = (transa == CblasNoTrans) ? A[i * lda + p] : A[p * lda + i];
+				double b_val = (transb == CblasNoTrans) ? B[p * ldb + j] : B[j * ldb + p];
+				sum += a_val * b_val;
+			}
+			C[i * ldc + j] += alpha * sum;
+		}
+	}
+}
+
+//------------------------------------------------------
+// Test helper: run sgemm accuracy test with transpose
+// A is stored as rows_a × cols_a, B as rows_b × cols_b
+//------------------------------------------------------
+static int run_sgemm_trans_test(CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb,
+                                CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
+                                float alpha, float beta, unsigned int seed)
+{
+	// Storage dimensions depend on transpose flags
+	// NoTrans: A is m×k, Trans: A is k×m (stored)
+	CBLAS_INDEX rows_a = (transa == CblasNoTrans) ? m : k;
+	CBLAS_INDEX cols_a = (transa == CblasNoTrans) ? k : m;
+	CBLAS_INDEX rows_b = (transb == CblasNoTrans) ? k : n;
+	CBLAS_INDEX cols_b = (transb == CblasNoTrans) ? n : k;
+	CBLAS_INDEX lda = cols_a;
+	CBLAS_INDEX ldb = cols_b;
+
+	float* A = malloc(rows_a * cols_a * sizeof(float));
+	float* B = malloc(rows_b * cols_b * sizeof(float));
+	float* C_ref = malloc(m * n * sizeof(float));
+	float* C_opt = malloc(m * n * sizeof(float));
+
+	if (!A || !B || !C_ref || !C_opt) {
+		free(A); free(B); free(C_ref); free(C_opt);
+		return 0;
+	}
+
+	fill_random_smatrix(A, rows_a, cols_a, seed);
+	fill_random_smatrix(B, rows_b, cols_b, seed + 1);
+	fill_random_smatrix(C_ref, m, n, seed + 2);
+	memcpy(C_opt, C_ref, m * n * sizeof(float));
+
+	naive_sgemm_trans(transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C_ref, n);
+	cblas_sgemm(CblasRowMajor, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C_opt, n);
+
+	float max_diff = 0.0f;
+	float max_rel_err = 0.0f;
+	for (CBLAS_INDEX i = 0; i < m * n; i++) {
+		float diff = fabsf(C_ref[i] - C_opt[i]);
+		if (diff > max_diff) max_diff = diff;
+		if (fabsf(C_ref[i]) > 1e-10f) {
+			float rel = diff / fabsf(C_ref[i]);
+			if (rel > max_rel_err) max_rel_err = rel;
+		}
+	}
+
+	float abs_eps = k * 1e-5f;
+	int result = (max_diff < abs_eps);
+
+	if (!result) {
+		const char* ta = (transa == CblasTrans) ? "T" : "N";
+		const char* tb = (transb == CblasTrans) ? "T" : "N";
+		printf("\n    [DEBUG] sgemm %s%s %dx%dx%d: max_diff=%.2e, max_rel_err=%.2e (eps=%.2e)\n",
+			ta, tb, (int)m, (int)n, (int)k, max_diff, max_rel_err, abs_eps);
+	}
+
+	free(A); free(B); free(C_ref); free(C_opt);
+	return result;
+}
+
+//------------------------------------------------------
+// Test helper: run dgemm accuracy test with transpose
+//------------------------------------------------------
+static int run_dgemm_trans_test(CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb,
+                                CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
+                                double alpha, double beta, unsigned int seed)
+{
+	CBLAS_INDEX rows_a = (transa == CblasNoTrans) ? m : k;
+	CBLAS_INDEX cols_a = (transa == CblasNoTrans) ? k : m;
+	CBLAS_INDEX rows_b = (transb == CblasNoTrans) ? k : n;
+	CBLAS_INDEX cols_b = (transb == CblasNoTrans) ? n : k;
+	CBLAS_INDEX lda = cols_a;
+	CBLAS_INDEX ldb = cols_b;
+
+	double* A = malloc(rows_a * cols_a * sizeof(double));
+	double* B = malloc(rows_b * cols_b * sizeof(double));
+	double* C_ref = malloc(m * n * sizeof(double));
+	double* C_opt = malloc(m * n * sizeof(double));
+
+	if (!A || !B || !C_ref || !C_opt) {
+		free(A); free(B); free(C_ref); free(C_opt);
+		return 0;
+	}
+
+	fill_random_dmatrix(A, rows_a, cols_a, seed);
+	fill_random_dmatrix(B, rows_b, cols_b, seed + 1);
+	fill_random_dmatrix(C_ref, m, n, seed + 2);
+	memcpy(C_opt, C_ref, m * n * sizeof(double));
+
+	naive_dgemm_trans(transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C_ref, n);
+	cblas_dgemm(CblasRowMajor, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C_opt, n);
+
+	double eps = k * 1e-10;
+	int result = equal_darray_relaxed(C_ref, C_opt, m * n, eps);
+
+	if (!result) {
+		const char* ta = (transa == CblasTrans) ? "T" : "N";
+		const char* tb = (transb == CblasTrans) ? "T" : "N";
+		printf("\n    [DEBUG] dgemm %s%s %dx%dx%d FAILED\n", ta, tb, (int)m, (int)n, (int)k);
+	}
+
+	free(A); free(B); free(C_ref); free(C_opt);
+	return result;
+}
 static void test_small_matrices(void)
 {
 	SUITE("Small matrix accuracy (below blocking)");
@@ -350,6 +503,141 @@ static void test_scaling(void)
 }
 
 //------------------------------------------------------
+// Transpose tests: TransA only (TN)
+//------------------------------------------------------
+static void test_transpose_TN(void)
+{
+	SUITE("Transpose TN accuracy (A^T * B)");
+
+#if TEST_SGEMM_ACCURACY
+	COMMENT("sgemm TN 3x3x3");
+	TEST(run_sgemm_trans_test(CblasTrans, CblasNoTrans, 3, 3, 3, 1.0f, 0.0f, 9000));
+
+	COMMENT("sgemm TN 7x7x7");
+	TEST(run_sgemm_trans_test(CblasTrans, CblasNoTrans, 7, 7, 7, 1.0f, 0.0f, 9001));
+
+	COMMENT("sgemm TN 31x31x31");
+	TEST(run_sgemm_trans_test(CblasTrans, CblasNoTrans, 31, 31, 31, 1.0f, 0.0f, 9002));
+
+	COMMENT("sgemm TN 64x64x64");
+	TEST(run_sgemm_trans_test(CblasTrans, CblasNoTrans, 64, 64, 64, 1.0f, 0.0f, 9003));
+
+	COMMENT("sgemm TN 127x127x127");
+	TEST(run_sgemm_trans_test(CblasTrans, CblasNoTrans, 127, 127, 127, 1.0f, 0.0f, 9004));
+
+	COMMENT("sgemm TN 128x128x128");
+	TEST(run_sgemm_trans_test(CblasTrans, CblasNoTrans, 128, 128, 128, 1.0f, 0.0f, 9005));
+
+	COMMENT("sgemm TN 257x257x257");
+	TEST(run_sgemm_trans_test(CblasTrans, CblasNoTrans, 257, 257, 257, 1.0f, 0.0f, 9006));
+
+	COMMENT("sgemm TN non-square 128x32x64");
+	TESTEX("TN non-square", run_sgemm_trans_test(CblasTrans, CblasNoTrans, 128, 32, 64, 1.0f, 0.0f, 9007));
+
+	COMMENT("sgemm TN alpha=2.0 beta=0.5");
+	TESTEX("TN scaling", run_sgemm_trans_test(CblasTrans, CblasNoTrans, 64, 64, 64, 2.0f, 0.5f, 9008));
+#endif
+
+	COMMENT("dgemm TN 64x64x64");
+	TEST(run_dgemm_trans_test(CblasTrans, CblasNoTrans, 64, 64, 64, 1.0, 0.0, 9100));
+
+	COMMENT("dgemm TN 127x127x127");
+	TEST(run_dgemm_trans_test(CblasTrans, CblasNoTrans, 127, 127, 127, 1.0, 0.0, 9101));
+
+	COMMENT("dgemm TN 257x257x257");
+	TEST(run_dgemm_trans_test(CblasTrans, CblasNoTrans, 257, 257, 257, 1.0, 0.0, 9102));
+}
+
+//------------------------------------------------------
+// Transpose tests: TransB only (NT)
+//------------------------------------------------------
+static void test_transpose_NT(void)
+{
+	SUITE("Transpose NT accuracy (A * B^T)");
+
+#if TEST_SGEMM_ACCURACY
+	COMMENT("sgemm NT 3x3x3");
+	TEST(run_sgemm_trans_test(CblasNoTrans, CblasTrans, 3, 3, 3, 1.0f, 0.0f, 9200));
+
+	COMMENT("sgemm NT 7x7x7");
+	TEST(run_sgemm_trans_test(CblasNoTrans, CblasTrans, 7, 7, 7, 1.0f, 0.0f, 9201));
+
+	COMMENT("sgemm NT 31x31x31");
+	TEST(run_sgemm_trans_test(CblasNoTrans, CblasTrans, 31, 31, 31, 1.0f, 0.0f, 9202));
+
+	COMMENT("sgemm NT 64x64x64");
+	TEST(run_sgemm_trans_test(CblasNoTrans, CblasTrans, 64, 64, 64, 1.0f, 0.0f, 9203));
+
+	COMMENT("sgemm NT 127x127x127");
+	TEST(run_sgemm_trans_test(CblasNoTrans, CblasTrans, 127, 127, 127, 1.0f, 0.0f, 9204));
+
+	COMMENT("sgemm NT 128x128x128");
+	TEST(run_sgemm_trans_test(CblasNoTrans, CblasTrans, 128, 128, 128, 1.0f, 0.0f, 9205));
+
+	COMMENT("sgemm NT 257x257x257");
+	TEST(run_sgemm_trans_test(CblasNoTrans, CblasTrans, 257, 257, 257, 1.0f, 0.0f, 9206));
+
+	COMMENT("sgemm NT non-square 16x256x128");
+	TESTEX("NT non-square", run_sgemm_trans_test(CblasNoTrans, CblasTrans, 16, 256, 128, 1.0f, 0.0f, 9207));
+
+	COMMENT("sgemm NT alpha=0.5 beta=1.0");
+	TESTEX("NT scaling", run_sgemm_trans_test(CblasNoTrans, CblasTrans, 64, 64, 64, 0.5f, 1.0f, 9208));
+#endif
+
+	COMMENT("dgemm NT 64x64x64");
+	TEST(run_dgemm_trans_test(CblasNoTrans, CblasTrans, 64, 64, 64, 1.0, 0.0, 9300));
+
+	COMMENT("dgemm NT 127x127x127");
+	TEST(run_dgemm_trans_test(CblasNoTrans, CblasTrans, 127, 127, 127, 1.0, 0.0, 9301));
+
+	COMMENT("dgemm NT 257x257x257");
+	TEST(run_dgemm_trans_test(CblasNoTrans, CblasTrans, 257, 257, 257, 1.0, 0.0, 9302));
+}
+
+//------------------------------------------------------
+// Transpose tests: Both transposed (TT)
+//------------------------------------------------------
+static void test_transpose_TT(void)
+{
+	SUITE("Transpose TT accuracy (A^T * B^T)");
+
+#if TEST_SGEMM_ACCURACY
+	COMMENT("sgemm TT 3x3x3");
+	TEST(run_sgemm_trans_test(CblasTrans, CblasTrans, 3, 3, 3, 1.0f, 0.0f, 9400));
+
+	COMMENT("sgemm TT 7x7x7");
+	TEST(run_sgemm_trans_test(CblasTrans, CblasTrans, 7, 7, 7, 1.0f, 0.0f, 9401));
+
+	COMMENT("sgemm TT 31x31x31");
+	TEST(run_sgemm_trans_test(CblasTrans, CblasTrans, 31, 31, 31, 1.0f, 0.0f, 9402));
+
+	COMMENT("sgemm TT 64x64x64");
+	TEST(run_sgemm_trans_test(CblasTrans, CblasTrans, 64, 64, 64, 1.0f, 0.0f, 9403));
+
+	COMMENT("sgemm TT 127x127x127");
+	TEST(run_sgemm_trans_test(CblasTrans, CblasTrans, 127, 127, 127, 1.0f, 0.0f, 9404));
+
+	COMMENT("sgemm TT 257x257x257");
+	TEST(run_sgemm_trans_test(CblasTrans, CblasTrans, 257, 257, 257, 1.0f, 0.0f, 9405));
+
+	COMMENT("sgemm TT non-square 65x63x127");
+	TESTEX("TT non-square", run_sgemm_trans_test(CblasTrans, CblasTrans, 65, 63, 127, 1.0f, 0.0f, 9406));
+
+	COMMENT("sgemm TT alpha=-1.0 beta=1.0");
+	TESTEX("TT scaling", run_sgemm_trans_test(CblasTrans, CblasTrans, 64, 64, 64, -1.0f, 1.0f, 9407));
+#endif
+
+	COMMENT("dgemm TT 64x64x64");
+	TEST(run_dgemm_trans_test(CblasTrans, CblasTrans, 64, 64, 64, 1.0, 0.0, 9500));
+
+	COMMENT("dgemm TT 127x127x127");
+	TEST(run_dgemm_trans_test(CblasTrans, CblasTrans, 127, 127, 127, 1.0, 0.0, 9501));
+
+	COMMENT("dgemm TT 257x257x257");
+	TEST(run_dgemm_trans_test(CblasTrans, CblasTrans, 257, 257, 257, 1.0, 0.0, 9502));
+}
+
+//------------------------------------------------------
 // Main test runner
 //------------------------------------------------------
 int test_main(int argc, char* argv[])
@@ -367,6 +655,9 @@ int test_main(int argc, char* argv[])
 	test_large_blocks();
 	test_nonsquare_matrices();
 	test_scaling();
+	test_transpose_TN();
+	test_transpose_NT();
+	test_transpose_TT();
 
 	cblas_shutdown();
 

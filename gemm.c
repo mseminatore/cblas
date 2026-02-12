@@ -276,42 +276,18 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         return;
     }
 
-    // Check for transpose - currently only NoTrans/NoTrans is optimized
-    if (transa_use != CblasNoTrans || transb_use != CblasNoTrans)
-    {
-        // Reference implementation with transpose support
-        // Row-major: C[i,j] = c[i * ldc + j]
-        // C = alpha * op(A) * op(B) + C  (beta already applied)
-        for (CBLAS_INDEX i = 0; i < m_use; i++)
-        {
-            for (CBLAS_INDEX j = 0; j < n_use; j++)
-            {
-                float sum = 0.0f;
-                for (CBLAS_INDEX p = 0; p < k; p++)
-                {
-                    // A is m_use x k (notrans) or k x m_use (trans)
-                    // Row-major: A[i,p] = a[i*lda+p] (notrans), A^T[i,p] = a[p*lda+i] (trans)
-                    float a_val = (transa_use == CblasNoTrans) 
-                        ? a_use[i * lda_use + p]
-                        : a_use[p * lda_use + i];
-                    
-                    // B is k x n_use (notrans) or n_use x k (trans)
-                    // Row-major: B[p,j] = b[p*ldb+j] (notrans), B^T[p,j] = b[j*ldb+p] (trans)
-                    float b_val = (transb_use == CblasNoTrans)
-                        ? b_use[p * ldb_use + j]
-                        : b_use[j * ldb_use + p];
-                    
-                    sum += a_val * b_val;
-                }
-                c[i * ldc + j] += alpha * sum;
-            }
-        }
-        CBLAS_STATS_END("sgemm", m * n * k, 0);
-        return;
-    }
-
-    // NoTrans/NoTrans case - use optimized kernels
-    // The kernels use row-major convention: A(col, row) = a[row * lda + col]
+    // All transpose combinations now use optimized cache-blocked kernels
+    // Transpose is handled by transpose-aware packing in the kernels
+    
+    // Compute strides for tile pointer arithmetic based on transpose flags
+    // NoTrans A: tile at logical A[row,p] = a_use[row*lda + p], row_stride=lda, col_stride=1
+    // Trans A:   tile at logical A[row,p] = a_use[p*lda + row], row_stride=1, col_stride=lda
+    int is_notrans_a = (transa_use == CblasNoTrans);
+    int is_notrans_b = (transb_use == CblasNoTrans);
+    CBLAS_INDEX a_row_stride = is_notrans_a ? lda_use : 1;
+    CBLAS_INDEX a_col_stride = is_notrans_a ? 1 : lda_use;
+    CBLAS_INDEX b_row_stride = is_notrans_b ? ldb_use : 1;
+    CBLAS_INDEX b_col_stride = is_notrans_b ? 1 : ldb_use;
     
     CBLAS_INDEX pb, ib;
 
@@ -397,13 +373,15 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
                         args[tile_count].lda = lda_use;
                         args[tile_count].ldb = ldb_use;
                         args[tile_count].ldc = ldc;
-                        args[tile_count].a = a_use + row * lda_use + p;
-                        args[tile_count].b = b_use + p * ldb_use + col;  // B offset by col
-                        args[tile_count].c = c + row * ldc + col;        // C offset by col
+                        args[tile_count].a = a_use + row * a_row_stride + p * a_col_stride;
+                        args[tile_count].b = b_use + p * b_row_stride + col * b_col_stride;
+                        args[tile_count].c = c + row * ldc + col;
                         args[tile_count].ib = ib;
                         args[tile_count].pb = pb;
                         args[tile_count].alpha_s = alpha;
                         args[tile_count].beta_s = 1.0f;
+                        args[tile_count].transa = transa_use;
+                        args[tile_count].transb = transb_use;
                         args[tile_count].thread_id = 0;
                     
                         queue[tile_count].finished = 0;
@@ -428,13 +406,15 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
                     args[tile_count].lda = lda_use;
                     args[tile_count].ldb = ldb_use;
                     args[tile_count].ldc = ldc;
-                    args[tile_count].a = a_use + row * lda_use + p;
-                    args[tile_count].b = b_use + p * ldb_use;
+                    args[tile_count].a = a_use + row * a_row_stride + p * a_col_stride;
+                    args[tile_count].b = b_use + p * b_row_stride;
                     args[tile_count].c = c + row * ldc;
                     args[tile_count].ib = ib;
                     args[tile_count].pb = pb;
                     args[tile_count].alpha_s = alpha;
                     args[tile_count].beta_s = 1.0f;
+                    args[tile_count].transa = transa_use;
+                    args[tile_count].transb = transb_use;
                     args[tile_count].thread_id = 0;
                 
                     queue[tile_count].finished = 0;
@@ -468,6 +448,8 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         st_args.ldc = ldc;
         st_args.alpha_s = alpha;
         st_args.beta_s = 1.0f;
+        st_args.transa = transa_use;
+        st_args.transb = transb_use;
         st_args.thread_id = 0;
         
         for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
@@ -478,10 +460,9 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
             {
                 ib = MIN(m_use - row, cblas_gemm_mc);
                 
-                // Kernel uses A(col, row) = a[row * lda + col]
-                st_args.a = a_use + row * lda_use + p;  // &A(p, row)
-                st_args.b = b_use + p * ldb_use;        // &B(0, p)
-                st_args.c = c + row * ldc;              // &C(0, row)
+                st_args.a = a_use + row * a_row_stride + p * a_col_stride;
+                st_args.b = b_use + p * b_row_stride;
+                st_args.c = c + row * ldc;
                 st_args.ib = ib;
                 st_args.pb = pb;
                 
@@ -502,6 +483,8 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     st_args.ldc = ldc;
     st_args.alpha_s = alpha;
     st_args.beta_s = 1.0f;
+    st_args.transa = transa_use;
+    st_args.transb = transb_use;
     st_args.thread_id = 0;
     
     for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
@@ -511,8 +494,8 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         {
             ib = MIN(m_use - row, cblas_gemm_mc);
             
-            st_args.a = a_use + row * lda_use + p;
-            st_args.b = b_use + p * ldb_use;
+            st_args.a = a_use + row * a_row_stride + p * a_col_stride;
+            st_args.b = b_use + p * b_row_stride;
             st_args.c = c + row * ldc;
             st_args.ib = ib;
             st_args.pb = pb;
@@ -652,36 +635,14 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         return;
     }
 
-    // Check for transpose - fall back to reference implementation
-    if (transa_use != CblasNoTrans || transb_use != CblasNoTrans)
-    {
-        // Row-major reference: C[i,j] = c[i * ldc + j]
-        for (CBLAS_INDEX i = 0; i < m_use; i++)
-        {
-            for (CBLAS_INDEX j = 0; j < n_use; j++)
-            {
-                double sum = 0.0;
-                for (CBLAS_INDEX p = 0; p < k; p++)
-                {
-                    double a_val = (transa_use == CblasNoTrans) 
-                        ? a_use[i * lda_use + p]
-                        : a_use[p * lda_use + i];
-                    
-                    double b_val = (transb_use == CblasNoTrans)
-                        ? b_use[p * ldb_use + j]
-                        : b_use[j * ldb_use + p];
-                    
-                    sum += a_val * b_val;
-                }
-                c[i * ldc + j] += alpha * sum;
-            }
-        }
-        CBLAS_STATS_END("dgemm", m * n * k, mt_used);
-        return;
-    }
+    // All transpose combinations now use optimized cache-blocked kernels
+    // Transpose is handled by transpose-aware packing in the kernels
+    int nota_d = (transa_use == CblasNoTrans);
+    int notb_d = (transb_use == CblasNoTrans);
+    CBLAS_INDEX a_row_stride_d = nota_d ? lda_use : 1;
+    CBLAS_INDEX a_col_stride_d = nota_d ? 1 : lda_use;
+    CBLAS_INDEX b_row_stride_d = notb_d ? ldb_use : 1;
 
-    // NoTrans/NoTrans case - use optimized kernels
-    // Kernels use row-major: A(col, row) = a[row * lda + col]
     CBLAS_INDEX pb, ib;
     cblas_args_t st_args;
     
@@ -691,6 +652,8 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     st_args.ldc = ldc;
     st_args.alpha_d = alpha;
     st_args.beta_d = 1.0;
+    st_args.transa = transa_use;
+    st_args.transb = transb_use;
     st_args.thread_id = 0;
     
     CBLAS_INDEX mc_d = cblas_gemm_mc;
@@ -703,9 +666,8 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         {
             ib = MIN(m_use - row, mc_d);
             
-            // Row-major kernel: a + row * lda + p = &A(p, row)
-            st_args.a = a_use + row * lda_use + p;
-            st_args.b = b_use + p * ldb_use;
+            st_args.a = (double*)a_use + row * a_row_stride_d + p * a_col_stride_d;
+            st_args.b = (double*)b_use + p * b_row_stride_d;
             st_args.c = c + row * ldc;
             st_args.ib = ib;
             st_args.pb = pb;

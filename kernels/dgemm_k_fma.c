@@ -269,6 +269,26 @@ static void PackMatrixB_8_d(CBLAS_INDEX k, CBLAS_INDEX n_cols, double *b, CBLAS_
 }
 
 //------------------------------------------------------
+// PackMatrixB_8_d_trans - Pack k×8 panel of B from transposed storage
+// When B is transposed, logical B[p, col+c] = b[c*ldb + p]
+//------------------------------------------------------
+static void PackMatrixB_8_d_trans(CBLAS_INDEX k, CBLAS_INDEX n_cols, double *b, CBLAS_INDEX ldb, double *b_to)
+{
+    for (CBLAS_INDEX j = 0; j < k; j++)
+    {
+        CBLAS_INDEX col;
+        for (col = 0; col < n_cols && col < NR_D; col++) {
+            b_to[col] = b[col * ldb + j];
+        }
+        for (; col < NR_D; col++) {
+            b_to[col] = 0.0;
+        }
+        
+        b_to += NR_D;
+    }
+}
+
+//------------------------------------------------------
 // PackMatrixA_6_d - Copy a 6×k panel of A into contiguous memory
 // Packing format: For each column p of A, store 6 consecutive rows
 //------------------------------------------------------
@@ -306,6 +326,32 @@ static void PackMatrixA_6_d(CBLAS_INDEX k, CBLAS_INDEX m_rows, double *a, CBLAS_
 }
 
 //------------------------------------------------------
+// PackMatrixA_6_d_trans - Pack 6×k panel of A from transposed storage
+// When A is transposed, logical A[row+r, p] = a[p*lda + r]
+//------------------------------------------------------
+static void PackMatrixA_6_d_trans(CBLAS_INDEX k, CBLAS_INDEX m_rows, double *a, CBLAS_INDEX lda, double *a_to)
+{
+    for (CBLAS_INDEX i = 0; i < k; i++)
+    {
+        double *a_col = a + i * lda;
+        
+        if (i + 8 < k) {
+            CBLAS_PREFETCH(a + (i + 8) * lda, 0, 3);
+        }
+        
+        for (CBLAS_INDEX r = 0; r < MR_D; r++) {
+            if (r < m_rows) {
+                a_to[r] = a_col[r];
+            } else {
+                a_to[r] = 0.0;
+            }
+        }
+        
+        a_to += MR_D;
+    }
+}
+
+//------------------------------------------------------
 // InnerKernel - FMA implementation with 6x8 micro-kernel for dgemm
 // GotoBLAS-style: pack A once per row-block, pack B for each col-block
 //------------------------------------------------------
@@ -313,7 +359,8 @@ static void InnerKernel_dgemm_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
                                   double* a, CBLAS_INDEX lda, 
                                   double* b, CBLAS_INDEX ldb, 
                                   double* c, CBLAS_INDEX ldc,
-                                  double alpha, int thread_id)
+                                  double alpha, int thread_id,
+                                  CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb)
 {
     cblas_gemm_buffer_t* buf = cblas_get_gemm_buffer(thread_id);
     double* packedA;
@@ -334,19 +381,32 @@ static void InnerKernel_dgemm_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         }
     }
 
+    int transA = (transa == CblasTrans);
+    int transB = (transb == CblasTrans);
+    CBLAS_INDEX a_row_stride = transA ? 1 : lda;
+    CBLAS_INDEX a_col_stride = transA ? lda : 1;
+    CBLAS_INDEX b_row_stride = transB ? 1 : ldb;
+    CBLAS_INDEX b_col_stride = transB ? ldb : 1;
+
     CBLAS_INDEX row, col;
 
     // Main loop: 6 rows at a time
     for (row = 0; row + MR_D <= m; row += MR_D)
     {
         // Pack this 6×k panel of A once per row iteration
-        PackMatrixA_6_d(k, MR_D, &A(0, row), lda, packedA);
+        if (transA)
+            PackMatrixA_6_d_trans(k, MR_D, a + row * a_row_stride, lda, packedA);
+        else
+            PackMatrixA_6_d(k, MR_D, a + row * a_row_stride, lda, packedA);
 
         // Process 8 columns at a time
         for (col = 0; col + NR_D <= n; col += NR_D)
         {
             // Pack this k×8 panel of B
-            PackMatrixB_8_d(k, NR_D, &B(col, 0), ldb, packedB);
+            if (transB)
+                PackMatrixB_8_d_trans(k, NR_D, b + col * b_col_stride, ldb, packedB);
+            else
+                PackMatrixB_8_d(k, NR_D, b + col * b_col_stride, ldb, packedB);
             
             // Call 6x8 micro-kernel
             AddDot6x8_dgemm_fma(k, packedA, packedB, &C(col, row), ldc, alpha);
@@ -355,7 +415,7 @@ static void InnerKernel_dgemm_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         // Handle leftover columns (< 8) - use scalar fallback
         for (; col < n; col++) {
             for (CBLAS_INDEX r = 0; r < MR_D; r++) {
-                AddDot_d(k, &A(0, row + r), 1, &B(col, 0), ldb, &C(col, row + r), alpha);
+                AddDot_d(k, a + (row + r) * a_row_stride, a_col_stride, b + col * b_col_stride, b_row_stride, &C(col, row + r), alpha);
             }
         }
     }
@@ -364,7 +424,7 @@ static void InnerKernel_dgemm_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
     CBLAS_INDEX remaining_rows = m - row;
     for (CBLAS_INDEX r = 0; r < remaining_rows; r++) {
         for (col = 0; col < n; col++) {
-            AddDot_d(k, &A(0, row + r), 1, &B(col, 0), ldb, &C(col, row + r), alpha);
+            AddDot_d(k, a + (row + r) * a_row_stride, a_col_stride, b + col * b_col_stride, b_row_stride, &C(col, row + r), alpha);
         }
     }
     
@@ -383,7 +443,8 @@ void dgemm_k_fma(cblas_args_t* args)
                           (double*)args->a, args->lda, 
                           (double*)args->b, args->ldb, 
                           (double*)args->c, args->ldc,
-                          args->alpha_d, args->thread_id);
+                          args->alpha_d, args->thread_id,
+                          args->transa, args->transb);
 }
 
 #endif // x86_64

@@ -132,6 +132,34 @@ static void PackMatrixB(CBLAS_INDEX k, float *b, CBLAS_INDEX ldb, float *b_to)
 }
 
 //------------------------------------------------------
+// PackMatrixB_trans - Pack k×4 panel of B from transposed storage
+// B^T[p,j] = b[j*ldb+p], so column j of logical B is row j of stored b
+//------------------------------------------------------
+static void PackMatrixB_trans(CBLAS_INDEX k, float *b, CBLAS_INDEX ldb, float *b_to)
+{
+    // b points to logical B[0, col_start] in transposed storage
+    // Logical B[p, col+c] = b[c*ldb + p]
+    float *col0 = b;
+    float *col1 = b + ldb;
+    float *col2 = b + 2 * ldb;
+    float *col3 = b + 3 * ldb;
+
+    for (CBLAS_INDEX p = 0; p < k; p++)
+    {
+        if (p + 8 < k) {
+            CBLAS_PREFETCH(col0 + 8, 0, 3);
+        }
+
+        *b_to       = col0[p];
+        *(b_to + 1) = col1[p];
+        *(b_to + 2) = col2[p];
+        *(b_to + 3) = col3[p];
+
+        b_to += 4;
+    }
+}
+
+//------------------------------------------------------
 // PackMatrixA - Copy a 4×k panel of A into contiguous memory
 //------------------------------------------------------
 static void PackMatrixA(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
@@ -158,14 +186,41 @@ static void PackMatrixA(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
 }
 
 //------------------------------------------------------
+// PackMatrixA_trans - Pack 4×k panel of A from transposed storage
+// A^T[i,p] = a[p*lda+i], so row i of logical A is column i of stored a
+//------------------------------------------------------
+static void PackMatrixA_trans(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
+{
+    // a points to logical A[row_start, 0] in transposed storage
+    // Logical A[row+r, p] = a[p*lda + r]
+    for (CBLAS_INDEX p = 0; p < k; p++)
+    {
+        float *a_col = a + p * lda;
+
+        if (p + 8 < k) {
+            CBLAS_PREFETCH(a + (p + 8) * lda, 0, 3);
+        }
+
+        *a_to       = a_col[0];
+        *(a_to + 1) = a_col[1];
+        *(a_to + 2) = a_col[2];
+        *(a_to + 3) = a_col[3];
+
+        a_to += 4;
+    }
+}
+
+//------------------------------------------------------
 // InnerKernel - base scalar implementation
 // Correct GotoBLAS-style packing: pack once per mc×kc tile, then iterate
+// Supports all transpose combinations via transpose-aware packing
 //------------------------------------------------------
 static void InnerKernel_base(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k, 
                              float* a, CBLAS_INDEX lda, 
                              float* b, CBLAS_INDEX ldb, 
                              float* c, CBLAS_INDEX ldc,
-                             float alpha, int thread_id)
+                             float alpha, int thread_id,
+                             CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb)
 {
     cblas_gemm_buffer_t* buf = cblas_get_gemm_buffer(thread_id);
     float* packedA;
@@ -186,17 +241,42 @@ static void InnerKernel_base(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         }
     }
 
+    int transA = (transa == CblasTrans);
+    int transB = (transb == CblasTrans);
+
+    // Strides for accessing logical elements:
+    // Logical A[i,p]: NoTrans = a[i*lda+p] (row_stride=lda, col_stride=1)
+    //                 Trans   = a[p*lda+i] (row_stride=1, col_stride=lda)
+    CBLAS_INDEX a_row_stride = transA ? 1 : lda;
+    CBLAS_INDEX a_col_stride = transA ? lda : 1;
+    // Logical B[p,j]: NoTrans = b[p*ldb+j] (row_stride=ldb, col_stride=1)
+    //                 Trans   = b[j*ldb+p] (row_stride=1, col_stride=ldb)
+    CBLAS_INDEX b_row_stride = transB ? 1 : ldb;
+    CBLAS_INDEX b_col_stride = transB ? ldb : 1;
+
     CBLAS_INDEX row, col;
 
     for (row = 0; row + 4 <= m; row += 4)
     {
+        // Pointer to logical A[row, 0]
+        float *a_row = a + row * a_row_stride;
+
         // Pack this 4×k panel of A once
-        PackMatrixA(k, &A(0, row), lda, packedA);
+        if (transA)
+            PackMatrixA_trans(k, a_row, lda, packedA);
+        else
+            PackMatrixA(k, a_row, lda, packedA);
 
         for (col = 0; col + 4 <= n; col += 4)
         {
+            // Pointer to logical B[0, col]
+            float *b_col = b + col * b_col_stride;
+
             // Pack each 4-column panel of B for this iteration
-            PackMatrixB(k, &B(col, 0), ldb, packedB);
+            if (transB)
+                PackMatrixB_trans(k, b_col, ldb, packedB);
+            else
+                PackMatrixB(k, b_col, ldb, packedB);
 
             AddDot4x4_base(k, packedA, 4, packedB, 4, &C(col, row), ldc, alpha);
         }
@@ -205,22 +285,22 @@ static void InnerKernel_base(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         switch(n - col)
         {
             case 3:     
-                AddDot(k, &A(0, row), 1, &B(col + 2, 0), ldb, &C(col + 2, row), alpha);
-                AddDot(k, &A(0, row+1), 1, &B(col + 2, 0), ldb, &C(col + 2, row+1), alpha);
-                AddDot(k, &A(0, row+2), 1, &B(col + 2, 0), ldb, &C(col + 2, row+2), alpha);
-                AddDot(k, &A(0, row+3), 1, &B(col + 2, 0), ldb, &C(col + 2, row+3), alpha);
+                AddDot(k, a + (row)   * a_row_stride, a_col_stride, b + (col+2) * b_col_stride, b_row_stride, &C(col + 2, row), alpha);
+                AddDot(k, a + (row+1) * a_row_stride, a_col_stride, b + (col+2) * b_col_stride, b_row_stride, &C(col + 2, row+1), alpha);
+                AddDot(k, a + (row+2) * a_row_stride, a_col_stride, b + (col+2) * b_col_stride, b_row_stride, &C(col + 2, row+2), alpha);
+                AddDot(k, a + (row+3) * a_row_stride, a_col_stride, b + (col+2) * b_col_stride, b_row_stride, &C(col + 2, row+3), alpha);
                 CBLAS_FALLTHROUGH;
             case 2:
-                AddDot(k, &A(0, row), 1, &B(col + 1, 0), ldb, &C(col + 1, row), alpha);
-                AddDot(k, &A(0, row+1), 1, &B(col + 1, 0), ldb, &C(col + 1, row+1), alpha);
-                AddDot(k, &A(0, row+2), 1, &B(col + 1, 0), ldb, &C(col + 1, row+2), alpha);
-                AddDot(k, &A(0, row+3), 1, &B(col + 1, 0), ldb, &C(col + 1, row+3), alpha);
+                AddDot(k, a + (row)   * a_row_stride, a_col_stride, b + (col+1) * b_col_stride, b_row_stride, &C(col + 1, row), alpha);
+                AddDot(k, a + (row+1) * a_row_stride, a_col_stride, b + (col+1) * b_col_stride, b_row_stride, &C(col + 1, row+1), alpha);
+                AddDot(k, a + (row+2) * a_row_stride, a_col_stride, b + (col+1) * b_col_stride, b_row_stride, &C(col + 1, row+2), alpha);
+                AddDot(k, a + (row+3) * a_row_stride, a_col_stride, b + (col+1) * b_col_stride, b_row_stride, &C(col + 1, row+3), alpha);
                 CBLAS_FALLTHROUGH;
             case 1:
-                AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row), alpha);
-                AddDot(k, &A(0, row+1), 1, &B(col, 0), ldb, &C(col, row+1), alpha);
-                AddDot(k, &A(0, row+2), 1, &B(col, 0), ldb, &C(col, row+2), alpha);
-                AddDot(k, &A(0, row+3), 1, &B(col, 0), ldb, &C(col, row+3), alpha);
+                AddDot(k, a + (row)   * a_row_stride, a_col_stride, b + col * b_col_stride, b_row_stride, &C(col, row), alpha);
+                AddDot(k, a + (row+1) * a_row_stride, a_col_stride, b + col * b_col_stride, b_row_stride, &C(col, row+1), alpha);
+                AddDot(k, a + (row+2) * a_row_stride, a_col_stride, b + col * b_col_stride, b_row_stride, &C(col, row+2), alpha);
+                AddDot(k, a + (row+3) * a_row_stride, a_col_stride, b + col * b_col_stride, b_row_stride, &C(col, row+3), alpha);
                 CBLAS_FALLTHROUGH;
             case 0: ;
         }
@@ -229,11 +309,11 @@ static void InnerKernel_base(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
     // handle leftover rows
     switch(m - row)
     {
-        case 3: for (col = 0; col < n; col++) AddDot(k, &A(0, row + 2), 1, &B(col, 0), ldb, &C(col, row + 2), alpha);
+        case 3: for (col = 0; col < n; col++) AddDot(k, a + (row+2) * a_row_stride, a_col_stride, b + col * b_col_stride, b_row_stride, &C(col, row + 2), alpha);
             CBLAS_FALLTHROUGH;
-        case 2: for (col = 0; col < n; col++) AddDot(k, &A(0, row + 1), 1, &B(col, 0), ldb, &C(col, row + 1), alpha);
+        case 2: for (col = 0; col < n; col++) AddDot(k, a + (row+1) * a_row_stride, a_col_stride, b + col * b_col_stride, b_row_stride, &C(col, row + 1), alpha);
             CBLAS_FALLTHROUGH;
-        case 1: for (col = 0; col < n; col++) AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row), alpha);
+        case 1: for (col = 0; col < n; col++) AddDot(k, a + (row) * a_row_stride, a_col_stride, b + col * b_col_stride, b_row_stride, &C(col, row), alpha);
             CBLAS_FALLTHROUGH;
         case 0: ;
     }
@@ -253,7 +333,8 @@ void sgemm_k_base(cblas_args_t* args)
                      args->a, args->lda, 
                      args->b, args->ldb,
                      args->c, args->ldc,
-                     args->alpha_s, args->thread_id);
+                     args->alpha_s, args->thread_id,
+                     args->transa, args->transb);
 }
 
 //------------------------------------------------------
@@ -282,7 +363,8 @@ static void InnerKernel_dgemm_base(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
                                    double* a, CBLAS_INDEX lda, 
                                    double* b, CBLAS_INDEX ldb, 
                                    double* c, CBLAS_INDEX ldc,
-                                   double alpha)
+                                   double alpha,
+                                   CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb)
 {
     // Redefine macros for double
     #undef A
@@ -292,13 +374,21 @@ static void InnerKernel_dgemm_base(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
     #define B(col, row) b[((row) * ldb + (col))]
     #define C(col, row) c[((row) * ldc + (col))]
 
+    int transA = (transa == CblasTrans);
+    int transB = (transb == CblasTrans);
+
+    CBLAS_INDEX a_row_stride = transA ? 1 : lda;
+    CBLAS_INDEX a_col_stride = transA ? lda : 1;
+    CBLAS_INDEX b_row_stride = transB ? 1 : ldb;
+    CBLAS_INDEX b_col_stride = transB ? ldb : 1;
+
     CBLAS_INDEX row, col;
 
     for (row = 0; row < m; row++)
     {
         for (col = 0; col < n; col++)
         {
-            AddDot_d(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row), alpha);
+            AddDot_d(k, a + row * a_row_stride, a_col_stride, b + col * b_col_stride, b_row_stride, &C(col, row), alpha);
         }
     }
 }
@@ -312,5 +402,6 @@ void dgemm_k_base(cblas_args_t* args)
                            (double*)args->a, args->lda, 
                            (double*)args->b, args->ldb,
                            (double*)args->c, args->ldc,
-                           args->alpha_d);
+                           args->alpha_d,
+                           args->transa, args->transb);
 }
