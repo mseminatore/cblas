@@ -111,9 +111,9 @@ add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c rot.c asum.c 
     kernels/scal_k.c kernels/scal_k_sse.c kernels/scal_k_avx.c kernels/scal_k_avx512.c kernels/scal_k_neon.c
     kernels/axpy_k_sse.c kernels/axpy_k_avx.c kernels/axpy_k_fma.c kernels/axpy_k_avx512.c kernels/axpy_k_neon.c
     kernels/axpby_k_sse.c kernels/axpby_k_avx.c kernels/axpby_k_fma.c kernels/axpby_k_neon.c
-    kernels/ger_k.c kernels/ger_k_neon.c kernels/ger_k_fma.c
+    kernels/ger_k.c kernels/ger_k_neon.c kernels/ger_k_fma.c kernels/ger_k_avx512.c
     kernels/gemv_k.c kernels/gemv_k_avx.c kernels/gemv_k_fma.c kernels/gemv_k_neon.c
-    kernels/gemm_k.c kernels/gemm_k_sse.c kernels/gemm_k_avx.c kernels/gemm_k_fma.c kernels/gemm_k_neon.c
+    kernels/gemm_k.c kernels/gemm_k_sse.c kernels/gemm_k_avx.c kernels/gemm_k_fma.c kernels/gemm_k_avx512.c kernels/gemm_k_neon.c
     kernels/dgemm_k_sse.c kernels/dgemm_k_avx.c kernels/dgemm_k_fma.c kernels/dgemm_k_neon.c
     ${CPUID_FILE}
     ${SERVER_FILE}
@@ -158,6 +158,7 @@ if ((CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "
         # Requires -mfma for FMA intrinsics used in AVX cleanup loops
         set_source_files_properties(
             kernels/dot_k_avx512.c kernels/axpy_k_avx512.c kernels/scal_k_avx512.c
+            kernels/ger_k_avx512.c kernels/gemm_k_avx512.c
             PROPERTIES COMPILE_FLAGS "-mavx512f -mfma"
         )
     elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
@@ -182,6 +183,7 @@ if ((CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "
         # AVX-512 kernels - 512-bit registers (Skylake-X+)
         set_source_files_properties(
             kernels/dot_k_avx512.c kernels/axpy_k_avx512.c kernels/scal_k_avx512.c
+            kernels/ger_k_avx512.c kernels/gemm_k_avx512.c
             PROPERTIES COMPILE_FLAGS "/arch:AVX512"
         )
     endif()
