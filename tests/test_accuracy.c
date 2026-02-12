@@ -67,7 +67,7 @@ static float naive_sdot(CBLAS_INDEX n, const float* x, const float* y)
     return sum;
 }
 
-static double naive_ddot(CBLAS_INDEX n, const double* x, const double* y)
+CBLAS_UNUSED static double naive_ddot(CBLAS_INDEX n, const double* x, const double* y)
 {
     double sum = 0.0;
     for (CBLAS_INDEX i = 0; i < n; i++) {
