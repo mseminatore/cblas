@@ -154,9 +154,10 @@ if ((CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "
             PROPERTIES COMPILE_FLAGS "-mavx2 -mfma"
         )
         # AVX-512 kernels - 512-bit registers (Skylake-X+)
+        # Requires -mfma for FMA intrinsics used in AVX cleanup loops
         set_source_files_properties(
             kernels/dot_k_avx512.c kernels/axpy_k_avx512.c kernels/scal_k_avx512.c
-            PROPERTIES COMPILE_FLAGS "-mavx512f"
+            PROPERTIES COMPILE_FLAGS "-mavx512f -mfma"
         )
     elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
         # MSVC uses /arch flags - SSE2 is default for x64, no flag needed
