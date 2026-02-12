@@ -404,6 +404,19 @@ static void init_blas_kernels(void)
 			blas_kernels.sger_k = sger_k_fma;
 			blas_kernels.dger_k = dger_k_fma;
 		}
+
+		// AVX-512 kernels - require AVX-512F instruction support
+		// These provide 16-wide SIMD operations (512-bit registers)
+		if (cpu_features & CPU_AVX512)
+		{
+			// Level-1 AVX-512 kernels
+			blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc_avx512;
+			blas_kernels.ddot_k_noinc = cblas_ddot_k_noinc_avx512;
+			blas_kernels.saxpy_k_noinc = cblas_saxpy_k_noinc_avx512;
+			blas_kernels.daxpy_k_noinc = cblas_daxpy_k_noinc_avx512;
+			blas_kernels.sscal_k_noinc = cblas_sscal_k_noinc_avx512;
+			blas_kernels.dscal_k_noinc = cblas_dscal_k_noinc_avx512;
+		}
 	}
 }
 
