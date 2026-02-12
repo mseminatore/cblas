@@ -107,8 +107,8 @@ add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c rot.c asum.c 
     kernels/setv_k_sse.c kernels/setv_k_avx.c kernels/setv_k_neon.c
     kernels/rot_k_sse.c kernels/rot_k_avx.c kernels/rot_k_neon.c
     kernels/nrm2_k.c kernels/nrm2_k_sse.c kernels/nrm2_k_avx.c kernels/nrm2_k_fma.c kernels/nrm2_k_neon.c
-    kernels/scal_k.c kernels/scal_k_sse.c kernels/scal_k_avx.c kernels/scal_k_neon.c
-    kernels/axpy_k_sse.c kernels/axpy_k_avx.c kernels/axpy_k_fma.c kernels/axpy_k_neon.c
+    kernels/scal_k.c kernels/scal_k_sse.c kernels/scal_k_avx.c kernels/scal_k_avx512.c kernels/scal_k_neon.c
+    kernels/axpy_k_sse.c kernels/axpy_k_avx.c kernels/axpy_k_fma.c kernels/axpy_k_avx512.c kernels/axpy_k_neon.c
     kernels/axpby_k_sse.c kernels/axpby_k_avx.c kernels/axpby_k_fma.c kernels/axpby_k_neon.c
     kernels/ger_k.c kernels/ger_k_neon.c kernels/ger_k_fma.c
     kernels/gemv_k.c kernels/gemv_k_avx.c kernels/gemv_k_fma.c kernels/gemv_k_neon.c
@@ -148,10 +148,15 @@ if ((CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "
         # FMA kernels - 256-bit + FMA (Haswell+)
         set_source_files_properties(
             kernels/gemv_k_fma.c
-            kernels/dot_k_fma.c kernels/dot_k_avx512.c
+            kernels/dot_k_fma.c
             kernels/nrm2_k_fma.c kernels/axpy_k_fma.c kernels/axpby_k_fma.c
             kernels/ger_k_fma.c kernels/gemm_k_fma.c kernels/dgemm_k_fma.c
             PROPERTIES COMPILE_FLAGS "-mavx2 -mfma"
+        )
+        # AVX-512 kernels - 512-bit registers (Skylake-X+)
+        set_source_files_properties(
+            kernels/dot_k_avx512.c kernels/axpy_k_avx512.c kernels/scal_k_avx512.c
+            PROPERTIES COMPILE_FLAGS "-mavx512f"
         )
     elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
         # MSVC uses /arch flags - SSE2 is default for x64, no flag needed
@@ -167,10 +172,15 @@ if ((CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "
         # FMA/AVX2 kernels - 256-bit + FMA (Haswell+)
         set_source_files_properties(
             kernels/gemv_k_fma.c
-            kernels/dot_k_fma.c kernels/dot_k_avx512.c
+            kernels/dot_k_fma.c
             kernels/nrm2_k_fma.c kernels/axpy_k_fma.c kernels/axpby_k_fma.c
             kernels/ger_k_fma.c kernels/gemm_k_fma.c kernels/dgemm_k_fma.c
             PROPERTIES COMPILE_FLAGS "/arch:AVX2"
+        )
+        # AVX-512 kernels - 512-bit registers (Skylake-X+)
+        set_source_files_properties(
+            kernels/dot_k_avx512.c kernels/axpy_k_avx512.c kernels/scal_k_avx512.c
+            PROPERTIES COMPILE_FLAGS "/arch:AVX512"
         )
     endif()
 endif()
