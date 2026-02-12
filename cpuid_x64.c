@@ -416,6 +416,14 @@ static void init_blas_kernels(void)
 			blas_kernels.daxpy_k_noinc = cblas_daxpy_k_noinc_avx512;
 			blas_kernels.sscal_k_noinc = cblas_sscal_k_noinc_avx512;
 			blas_kernels.dscal_k_noinc = cblas_dscal_k_noinc_avx512;
+
+			// Level-2 AVX-512 kernels
+			blas_kernels.sger_k = sger_k_avx512;
+			blas_kernels.dger_k = dger_k_avx512;
+
+			// Level-3 AVX-512 kernels
+			blas_kernels.sgemm_k = sgemm_k_avx512;
+			blas_kernels.dgemm_k = dgemm_k_avx512;
 		}
 	}
 }
