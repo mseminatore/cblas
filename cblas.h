@@ -500,6 +500,10 @@ typedef struct
     float  alpha_s, beta_s;   // single-precision
     double alpha_d, beta_d;   // double-precision
     
+    // Transpose flags for GEMM packing (set by dispatcher)
+    CBLAS_TRANSPOSE transa;  // transpose flag for A
+    CBLAS_TRANSPOSE transb;  // transpose flag for B
+
     // Thread ID for accessing pre-allocated buffers (set by dispatcher, -1 if unknown)
     int thread_id;
 } cblas_args_t;

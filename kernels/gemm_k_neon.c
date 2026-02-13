@@ -631,6 +631,24 @@ static void PackMatrixA_8(CBLAS_INDEX k, CBLAS_INDEX m_rows, float *a, CBLAS_IND
 }
 
 //------------------------------------------------------
+// PackMatrixA_8_trans - Pack 8×k panel of A from transposed storage
+// When A is transposed, logical A[row+r, p] = a[p*lda + r]
+//------------------------------------------------------
+static void PackMatrixA_8_trans(CBLAS_INDEX k, CBLAS_INDEX m_rows, float *a, CBLAS_INDEX lda, float *a_to)
+{
+    for (CBLAS_INDEX i = 0; i < k; i++)
+    {
+        float *a_col = a + i * lda;
+        
+        for (CBLAS_INDEX r = 0; r < MR; r++) {
+            a_to[r] = (r < m_rows) ? a_col[r] : 0.0f;
+        }
+        
+        a_to += MR;
+    }
+}
+
+//------------------------------------------------------
 // PackMatrixA_4 - Copy a 4×k panel of A into contiguous memory
 // For 4x12 remainder kernel
 //------------------------------------------------------
@@ -646,6 +664,24 @@ static void PackMatrixA_4(CBLAS_INDEX k, CBLAS_INDEX m_rows, float *a, CBLAS_IND
         for (CBLAS_INDEX r = 0; r < 4; r++) {
             a_to[r] = a_ptrs[r] ? *a_ptrs[r]++ : 0.0f;
         }
+        a_to += 4;
+    }
+}
+
+//------------------------------------------------------
+// PackMatrixA_4_trans - Pack 4×k panel of A from transposed storage
+// When A is transposed, logical A[row+r, p] = a[p*lda + r]
+//------------------------------------------------------
+static void PackMatrixA_4_trans(CBLAS_INDEX k, CBLAS_INDEX m_rows, float *a, CBLAS_INDEX lda, float *a_to)
+{
+    for (CBLAS_INDEX i = 0; i < k; i++)
+    {
+        float *a_col = a + i * lda;
+        
+        for (CBLAS_INDEX r = 0; r < 4; r++) {
+            a_to[r] = (r < m_rows) ? a_col[r] : 0.0f;
+        }
+        
         a_to += 4;
     }
 }
@@ -719,6 +755,26 @@ static void PackMatrixB_12(CBLAS_INDEX k, CBLAS_INDEX n_cols, float *b, CBLAS_IN
 }
 
 //------------------------------------------------------
+// PackMatrixB_12_trans - Pack k×12 panel of B from transposed storage
+// When B is transposed, logical B[p, col+c] = b[c*ldb + p]
+//------------------------------------------------------
+static void PackMatrixB_12_trans(CBLAS_INDEX k, CBLAS_INDEX n_cols, float *b, CBLAS_INDEX ldb, float *b_to)
+{
+    for (CBLAS_INDEX j = 0; j < k; j++)
+    {
+        CBLAS_INDEX col;
+        for (col = 0; col < n_cols && col < NR; col++) {
+            b_to[col] = b[col * ldb + j];
+        }
+        for (; col < NR; col++) {
+            b_to[col] = 0.0f;
+        }
+        
+        b_to += NR;
+    }
+}
+
+//------------------------------------------------------
 // PackMatrixB_8 - Copy a k×8 panel of B (kept for potential future use)
 //------------------------------------------------------
 CBLAS_UNUSED static void PackMatrixB_8(CBLAS_INDEX k, CBLAS_INDEX n_cols, float *b, CBLAS_INDEX ldb, float *b_to)
@@ -757,7 +813,8 @@ static void InnerKernel_neon(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
                              float* a, CBLAS_INDEX lda, 
                              float* b, CBLAS_INDEX ldb, 
                              float* c, CBLAS_INDEX ldc,
-                             float alpha, int thread_id)
+                             float alpha, int thread_id,
+                             CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb)
 {
     cblas_gemm_buffer_t* buf = cblas_get_gemm_buffer(thread_id);
     float* packedA;
@@ -778,19 +835,32 @@ static void InnerKernel_neon(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         }
     }
 
+    int transA = (transa == CblasTrans);
+    int transB = (transb == CblasTrans);
+    CBLAS_INDEX a_row_stride = transA ? 1 : lda;
+    CBLAS_INDEX a_col_stride = transA ? lda : 1;
+    CBLAS_INDEX b_row_stride = transB ? 1 : ldb;
+    CBLAS_INDEX b_col_stride = transB ? ldb : 1;
+
     CBLAS_INDEX row, col;
 
     // Main loop: 8 rows at a time with 8x12 kernel
     for (row = 0; row + MR <= m; row += MR)
     {
         // Pack this 8×k panel of A once per row iteration
-        PackMatrixA_8(k, MR, &A(0, row), lda, packedA);
+        if (transA)
+            PackMatrixA_8_trans(k, MR, a + row * a_row_stride, lda, packedA);
+        else
+            PackMatrixA_8(k, MR, a + row * a_row_stride, lda, packedA);
 
         // Process 12 columns at a time
         for (col = 0; col + NR <= n; col += NR)
         {
             // Pack this k×12 panel of B
-            PackMatrixB_12(k, NR, &B(col, 0), ldb, packedB);
+            if (transB)
+                PackMatrixB_12_trans(k, NR, b + col * b_col_stride, ldb, packedB);
+            else
+                PackMatrixB_12(k, NR, b + col * b_col_stride, ldb, packedB);
             
             // Call 8x12 micro-kernel
             AddDot8x12_neon(k, packedA, packedB, &C(col, row), ldc, alpha);
@@ -799,7 +869,7 @@ static void InnerKernel_neon(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         // Handle leftover columns (< 12) - use scalar fallback
         for (; col < n; col++) {
             for (CBLAS_INDEX r = 0; r < MR; r++) {
-                AddDot(k, &A(0, row + r), 1, &B(col, 0), ldb, &C(col, row + r), alpha);
+                AddDot(k, a + (row + r) * a_row_stride, a_col_stride, b + col * b_col_stride, b_row_stride, &C(col, row + r), alpha);
             }
         }
     }
@@ -810,18 +880,24 @@ static void InnerKernel_neon(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
     // Use 4x12 kernel for 4-7 remaining rows
     if (remaining_rows >= 4)
     {
-        PackMatrixA_4(k, 4, &A(0, row), lda, packedA);
+        if (transA)
+            PackMatrixA_4_trans(k, 4, a + row * a_row_stride, lda, packedA);
+        else
+            PackMatrixA_4(k, 4, a + row * a_row_stride, lda, packedA);
         
         for (col = 0; col + NR <= n; col += NR)
         {
-            PackMatrixB_12(k, NR, &B(col, 0), ldb, packedB);
+            if (transB)
+                PackMatrixB_12_trans(k, NR, b + col * b_col_stride, ldb, packedB);
+            else
+                PackMatrixB_12(k, NR, b + col * b_col_stride, ldb, packedB);
             AddDot4x12_neon(k, packedA, packedB, &C(col, row), ldc, alpha);
         }
         
         // Leftover columns
         for (; col < n; col++) {
             for (CBLAS_INDEX r = 0; r < 4; r++) {
-                AddDot(k, &A(0, row + r), 1, &B(col, 0), ldb, &C(col, row + r), alpha);
+                AddDot(k, a + (row + r) * a_row_stride, a_col_stride, b + col * b_col_stride, b_row_stride, &C(col, row + r), alpha);
             }
         }
         row += 4;
@@ -832,7 +908,7 @@ static void InnerKernel_neon(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
     for (; row < m; row++)
     {
         for (col = 0; col < n; col++) {
-            AddDot(k, &A(0, row), 1, &B(col, 0), ldb, &C(col, row), alpha);
+            AddDot(k, a + row * a_row_stride, a_col_stride, b + col * b_col_stride, b_row_stride, &C(col, row), alpha);
         }
     }
     
@@ -851,7 +927,8 @@ void sgemm_k_neon(cblas_args_t* args)
                      args->a, args->lda, 
                      args->b, args->ldb, 
                      args->c, args->ldc,
-                     args->alpha_s, args->thread_id);
+                     args->alpha_s, args->thread_id,
+                     args->transa, args->transb);
 }
 
 #endif // ARM64 NEON

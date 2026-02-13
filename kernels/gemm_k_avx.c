@@ -119,6 +119,52 @@ static void AddDot4x8_avx(CBLAS_INDEX k, float *a, float *b, float *c, CBLAS_IND
 }
 
 //------------------------------------------------------
+// PackMatrixA_4_trans - Pack 4×k panel of A from transposed storage
+// When A is transposed, logical A[row+r, p] = a[p*lda + r]
+//------------------------------------------------------
+static void PackMatrixA_4_trans(CBLAS_INDEX k, CBLAS_INDEX m_rows, float *a, CBLAS_INDEX lda, float *a_to)
+{
+    for (CBLAS_INDEX i = 0; i < k; i++)
+    {
+        float *a_col = a + i * lda;
+        
+        if (i + 8 < k) {
+            CBLAS_PREFETCH(a + (i + 8) * lda, 0, 3);
+        }
+        
+        for (CBLAS_INDEX r = 0; r < MR; r++) {
+            if (r < m_rows) {
+                a_to[r] = a_col[r];
+            } else {
+                a_to[r] = 0.0f;
+            }
+        }
+        
+        a_to += MR;
+    }
+}
+
+//------------------------------------------------------
+// PackMatrixB_8_trans - Pack k×8 panel of B from transposed storage
+// When B is transposed, logical B[p, col+c] = b[c*ldb + p]
+//------------------------------------------------------
+static void PackMatrixB_8_trans(CBLAS_INDEX k, CBLAS_INDEX n_cols, float *b, CBLAS_INDEX ldb, float *b_to)
+{
+    for (CBLAS_INDEX j = 0; j < k; j++)
+    {
+        CBLAS_INDEX col;
+        for (col = 0; col < n_cols && col < NR; col++) {
+            b_to[col] = b[col * ldb + j];
+        }
+        for (; col < NR; col++) {
+            b_to[col] = 0.0f;
+        }
+        
+        b_to += NR;
+    }
+}
+
+//------------------------------------------------------
 // PackMatrixB_8 - Copy a k×8 panel of B into contiguous memory
 // Packing format: For each row p of B, store 8 consecutive columns
 //------------------------------------------------------
@@ -195,7 +241,8 @@ static void InnerKernel_avx(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
                             float* a, CBLAS_INDEX lda, 
                             float* b, CBLAS_INDEX ldb, 
                             float* c, CBLAS_INDEX ldc,
-                            float alpha, int thread_id)
+                            float alpha, int thread_id,
+                            CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb)
 {
     cblas_gemm_buffer_t* buf = cblas_get_gemm_buffer(thread_id);
     float* packedA;
@@ -216,19 +263,32 @@ static void InnerKernel_avx(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         }
     }
 
+    int transA = (transa == CblasTrans);
+    int transB = (transb == CblasTrans);
+    CBLAS_INDEX a_row_stride = transA ? 1 : lda;
+    CBLAS_INDEX a_col_stride = transA ? lda : 1;
+    CBLAS_INDEX b_row_stride = transB ? 1 : ldb;
+    CBLAS_INDEX b_col_stride = transB ? ldb : 1;
+
     CBLAS_INDEX row, col;
 
     // Main loop: 4 rows at a time
     for (row = 0; row + MR <= m; row += MR)
     {
         // Pack this 4×k panel of A once per row iteration
-        PackMatrixA_4(k, MR, &A(0, row), lda, packedA);
+        if (transA)
+            PackMatrixA_4_trans(k, MR, a + row * a_row_stride, lda, packedA);
+        else
+            PackMatrixA_4(k, MR, a + row * a_row_stride, lda, packedA);
 
         // Process 8 columns at a time
         for (col = 0; col + NR <= n; col += NR)
         {
             // Pack this k×8 panel of B
-            PackMatrixB_8(k, NR, &B(col, 0), ldb, packedB);
+            if (transB)
+                PackMatrixB_8_trans(k, NR, b + col * b_col_stride, ldb, packedB);
+            else
+                PackMatrixB_8(k, NR, b + col * b_col_stride, ldb, packedB);
             
             // Call 4x8 micro-kernel
             AddDot4x8_avx(k, packedA, packedB, &C(col, row), ldc, alpha);
@@ -237,7 +297,7 @@ static void InnerKernel_avx(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         // Handle leftover columns (< 8) - use scalar fallback
         for (; col < n; col++) {
             for (CBLAS_INDEX r = 0; r < MR; r++) {
-                AddDot(k, &A(0, row + r), 1, &B(col, 0), ldb, &C(col, row + r), alpha);
+                AddDot(k, a + (row + r) * a_row_stride, a_col_stride, b + col * b_col_stride, b_row_stride, &C(col, row + r), alpha);
             }
         }
     }
@@ -246,7 +306,7 @@ static void InnerKernel_avx(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
     CBLAS_INDEX remaining_rows = m - row;
     for (CBLAS_INDEX r = 0; r < remaining_rows; r++) {
         for (col = 0; col < n; col++) {
-            AddDot(k, &A(0, row + r), 1, &B(col, 0), ldb, &C(col, row + r), alpha);
+            AddDot(k, a + (row + r) * a_row_stride, a_col_stride, b + col * b_col_stride, b_row_stride, &C(col, row + r), alpha);
         }
     }
     
@@ -265,7 +325,8 @@ void sgemm_k_avx(cblas_args_t* args)
                     args->a, args->lda, 
                     args->b, args->ldb, 
                     args->c, args->ldc,
-                    args->alpha_s, args->thread_id);
+                    args->alpha_s, args->thread_id,
+                    args->transa, args->transb);
 }
 
 #endif // x86_64

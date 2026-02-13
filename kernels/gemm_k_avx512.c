@@ -236,6 +236,24 @@ static void PackMatrixA_avx512(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *
 }
 
 //------------------------------------------------------
+// Pack A panel from transposed storage (MR_512 × kc)
+// When A is transposed, logical A[row+r, p] = a[p*lda + r]
+//------------------------------------------------------
+static void PackMatrixA_avx512_trans(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *packedA)
+{
+    for (CBLAS_INDEX j = 0; j < k; j++)
+    {
+        float *a_col = a + j * lda;
+        *packedA++ = a_col[0];
+        *packedA++ = a_col[1];
+        *packedA++ = a_col[2];
+        *packedA++ = a_col[3];
+        *packedA++ = a_col[4];
+        *packedA++ = a_col[5];
+    }
+}
+
+//------------------------------------------------------
 // Pack B panel into contiguous memory (kc × NR_512)
 // Use AVX-512 for vectorized packing
 //------------------------------------------------------
@@ -253,6 +271,22 @@ static void PackMatrixB_avx512(CBLAS_INDEX k, float *b, CBLAS_INDEX ldb, float *
 }
 
 //------------------------------------------------------
+// Pack B panel from transposed storage (kc × NR_512)
+// When B is transposed, logical B[p, col+c] = b[c*ldb + p]
+//------------------------------------------------------
+static void PackMatrixB_avx512_trans(CBLAS_INDEX k, float *b, CBLAS_INDEX ldb, float *packedB)
+{
+    for (CBLAS_INDEX i = 0; i < k; i++)
+    {
+        for (CBLAS_INDEX c = 0; c < NR_512; c++)
+        {
+            packedB[c] = b[c * ldb + i];
+        }
+        packedB += NR_512;
+    }
+}
+
+//------------------------------------------------------
 // Inner kernel: multiply mc×kc panel of A by kc×nc panel of B
 //------------------------------------------------------
 static void InnerKernel_avx512(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
@@ -260,20 +294,36 @@ static void InnerKernel_avx512(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
                                float *b, CBLAS_INDEX ldb,
                                float *c, CBLAS_INDEX ldc,
                                float alpha, int first_time,
-                               float *packedA, float *packedB)
+                               float *packedA, float *packedB,
+                               CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb)
 {
     CBLAS_INDEX i, j;
+    
+    int transA = (transa == CblasTrans);
+    int transB = (transb == CblasTrans);
+    CBLAS_INDEX a_row_stride = transA ? 1 : lda;
+    CBLAS_INDEX a_col_stride = transA ? lda : 1;
+    CBLAS_INDEX b_row_stride = transB ? 1 : ldb;
+    CBLAS_INDEX b_col_stride = transB ? ldb : 1;
     
     // Pack B on first use
     for (j = 0; j + NR_512 <= n; j += NR_512)
     {
         if (first_time)
-            PackMatrixB_avx512(k, &B(j, 0), ldb, &packedB[j * k]);
+        {
+            if (transB)
+                PackMatrixB_avx512_trans(k, b + j * b_col_stride, ldb, &packedB[j * k]);
+            else
+                PackMatrixB_avx512(k, b + j * b_col_stride, ldb, &packedB[j * k]);
+        }
     }
     
     for (i = 0; i + MR_512 <= m; i += MR_512)
     {
-        PackMatrixA_avx512(k, &A(0, i), lda, packedA);
+        if (transA)
+            PackMatrixA_avx512_trans(k, a + i * a_row_stride, lda, packedA);
+        else
+            PackMatrixA_avx512(k, a + i * a_row_stride, lda, packedA);
         
         for (j = 0; j + NR_512 <= n; j += NR_512)
         {
@@ -285,7 +335,7 @@ static void InnerKernel_avx512(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         {
             for (CBLAS_INDEX ii = 0; ii < MR_512; ii++)
             {
-                AddDot_avx512(k, packedA + ii, MR_512, &B(j, 0), ldb, &C(j, i + ii), alpha);
+                AddDot_avx512(k, packedA + ii, MR_512, b + j * b_col_stride, b_row_stride, &C(j, i + ii), alpha);
             }
         }
     }
@@ -295,7 +345,7 @@ static void InnerKernel_avx512(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
     {
         for (j = 0; j < n; j++)
         {
-            AddDot_avx512(k, &A(0, i), 1, &B(j, 0), ldb, &C(j, i), alpha);
+            AddDot_avx512(k, a + i * a_row_stride, a_col_stride, b + j * b_col_stride, b_row_stride, &C(j, i), alpha);
         }
     }
 }
@@ -316,6 +366,11 @@ void sgemm_k_avx512(cblas_args_t* args)
     CBLAS_INDEX ldc = args->ldc;
     float alpha = *(float*)args->alpha;
     float beta = *(float*)args->beta;
+    CBLAS_TRANSPOSE transa = args->transa;
+    CBLAS_TRANSPOSE transb = args->transb;
+    
+    int transA = (transa == CblasTrans);
+    int transB = (transb == CblasTrans);
     
     // Apply beta scaling to C
     if (beta != 1.0f)
@@ -359,12 +414,16 @@ void sgemm_k_avx512(cblas_args_t* args)
             {
                 CBLAS_INDEX ib = (i + mc <= m) ? mc : (m - i);
                 
+                float *a_tile = transA ? (a + p * lda + i) : (a + i * lda + p);
+                float *b_tile = transB ? (b + j * ldb + p) : (b + p * ldb + j);
+                
                 InnerKernel_avx512(ib, jb, pb,
-                                   &A(p, i), lda,
-                                   &B(j, p), ldb,
+                                   a_tile, lda,
+                                   b_tile, ldb,
                                    &C(j, i), ldc,
                                    alpha, (i == 0),
-                                   packedA, packedB);
+                                   packedA, packedB,
+                                   transa, transb);
             }
         }
     }
@@ -467,6 +526,22 @@ static void PackMatrixA_avx512_d(CBLAS_INDEX k, double *a, CBLAS_INDEX lda, doub
     }
 }
 
+//------------------------------------------------------
+// Pack A panel from transposed storage for DGEMM (MR_512_D × kc)
+// When A is transposed, logical A[row+r, p] = a[p*lda + r]
+//------------------------------------------------------
+static void PackMatrixA_avx512_d_trans(CBLAS_INDEX k, double *a, CBLAS_INDEX lda, double *packedA)
+{
+    for (CBLAS_INDEX j = 0; j < k; j++)
+    {
+        double *a_col = a + j * lda;
+        *packedA++ = a_col[0];
+        *packedA++ = a_col[1];
+        *packedA++ = a_col[2];
+        *packedA++ = a_col[3];
+    }
+}
+
 static void PackMatrixB_avx512_d(CBLAS_INDEX k, double *b, CBLAS_INDEX ldb, double *packedB)
 {
     for (CBLAS_INDEX i = 0; i < k; i++)
@@ -476,6 +551,22 @@ static void PackMatrixB_avx512_d(CBLAS_INDEX k, double *b, CBLAS_INDEX ldb, doub
         __m512d b1 = _mm512_loadu_pd(b_ptr + 8);
         _mm512_storeu_pd(packedB, b0);
         _mm512_storeu_pd(packedB + 8, b1);
+        packedB += NR_512_D;
+    }
+}
+
+//------------------------------------------------------
+// Pack B panel from transposed storage for DGEMM (kc × NR_512_D)
+// When B is transposed, logical B[p, col+c] = b[c*ldb + p]
+//------------------------------------------------------
+static void PackMatrixB_avx512_d_trans(CBLAS_INDEX k, double *b, CBLAS_INDEX ldb, double *packedB)
+{
+    for (CBLAS_INDEX i = 0; i < k; i++)
+    {
+        for (CBLAS_INDEX c = 0; c < NR_512_D; c++)
+        {
+            packedB[c] = b[c * ldb + i];
+        }
         packedB += NR_512_D;
     }
 }
@@ -495,19 +586,35 @@ static void InnerKernel_avx512_d(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
                                   double *b, CBLAS_INDEX ldb,
                                   double *c, CBLAS_INDEX ldc,
                                   double alpha, int first_time,
-                                  double *packedA, double *packedB)
+                                  double *packedA, double *packedB,
+                                  CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE transb)
 {
     CBLAS_INDEX i, j;
+    
+    int transA = (transa == CblasTrans);
+    int transB = (transb == CblasTrans);
+    CBLAS_INDEX a_row_stride = transA ? 1 : lda;
+    CBLAS_INDEX a_col_stride = transA ? lda : 1;
+    CBLAS_INDEX b_row_stride = transB ? 1 : ldb;
+    CBLAS_INDEX b_col_stride = transB ? ldb : 1;
     
     for (j = 0; j + NR_512_D <= n; j += NR_512_D)
     {
         if (first_time)
-            PackMatrixB_avx512_d(k, &B(j, 0), ldb, &packedB[j * k]);
+        {
+            if (transB)
+                PackMatrixB_avx512_d_trans(k, b + j * b_col_stride, ldb, &packedB[j * k]);
+            else
+                PackMatrixB_avx512_d(k, b + j * b_col_stride, ldb, &packedB[j * k]);
+        }
     }
     
     for (i = 0; i + MR_512_D <= m; i += MR_512_D)
     {
-        PackMatrixA_avx512_d(k, &A(0, i), lda, packedA);
+        if (transA)
+            PackMatrixA_avx512_d_trans(k, a + i * a_row_stride, lda, packedA);
+        else
+            PackMatrixA_avx512_d(k, a + i * a_row_stride, lda, packedA);
         
         for (j = 0; j + NR_512_D <= n; j += NR_512_D)
         {
@@ -518,7 +625,7 @@ static void InnerKernel_avx512_d(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         {
             for (CBLAS_INDEX ii = 0; ii < MR_512_D; ii++)
             {
-                AddDot_avx512_d(k, packedA + ii, MR_512_D, &B(j, 0), ldb, &C(j, i + ii), alpha);
+                AddDot_avx512_d(k, packedA + ii, MR_512_D, b + j * b_col_stride, b_row_stride, &C(j, i + ii), alpha);
             }
         }
     }
@@ -527,7 +634,7 @@ static void InnerKernel_avx512_d(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
     {
         for (j = 0; j < n; j++)
         {
-            AddDot_avx512_d(k, &A(0, i), 1, &B(j, 0), ldb, &C(j, i), alpha);
+            AddDot_avx512_d(k, a + i * a_row_stride, a_col_stride, b + j * b_col_stride, b_row_stride, &C(j, i), alpha);
         }
     }
 }
@@ -545,6 +652,11 @@ void dgemm_k_avx512(cblas_args_t* args)
     CBLAS_INDEX ldc = args->ldc;
     double alpha = *(double*)args->alpha;
     double beta = *(double*)args->beta;
+    CBLAS_TRANSPOSE transa = args->transa;
+    CBLAS_TRANSPOSE transb = args->transb;
+    
+    int transA = (transa == CblasTrans);
+    int transB = (transb == CblasTrans);
     
     if (beta != 1.0)
     {
@@ -583,12 +695,16 @@ void dgemm_k_avx512(cblas_args_t* args)
             {
                 CBLAS_INDEX ib = (i + mc <= m) ? mc : (m - i);
                 
+                double *a_tile = transA ? (a + p * lda + i) : (a + i * lda + p);
+                double *b_tile = transB ? (b + j * ldb + p) : (b + p * ldb + j);
+                
                 InnerKernel_avx512_d(ib, jb, pb,
-                                      &A(p, i), lda,
-                                      &B(j, p), ldb,
+                                      a_tile, lda,
+                                      b_tile, ldb,
                                       &C(j, i), ldc,
                                       alpha, (i == 0),
-                                      packedA, packedB);
+                                      packedA, packedB,
+                                      transa, transb);
             }
         }
     }
