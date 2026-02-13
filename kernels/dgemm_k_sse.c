@@ -66,8 +66,10 @@ static void AddDot2x2_dgemm_sse(CBLAS_INDEX k, double *a, double *b, double *c, 
         
         // Prefetch
         if (p + PREFETCH_DISTANCE < k) {
-            CBLAS_PREFETCH(a + (PREFETCH_DISTANCE * MR_D), 0, 3);
-            CBLAS_PREFETCH(b + (PREFETCH_DISTANCE * NR_D), 0, 3);
+            CBLAS_PREFETCH_L2(a + (8 * MR_D));
+            CBLAS_PREFETCH_L1(a + (4 * MR_D));
+            CBLAS_PREFETCH_L2(b + (8 * NR_D));
+            CBLAS_PREFETCH_L1(b + (4 * NR_D));
         }
         
         // Row 0: broadcast A[0,p] and multiply-add
@@ -161,7 +163,7 @@ static void PackMatrixA_2_d_trans(CBLAS_INDEX k, CBLAS_INDEX m_rows, double *a, 
         double *a_col = a + i * lda;
         
         if (i + 8 < k) {
-            CBLAS_PREFETCH(a + (i + 8) * lda, 0, 3);
+            CBLAS_PREFETCH_L2(a + (i + 8) * lda);
         }
         
         for (CBLAS_INDEX r = 0; r < MR_D; r++) {

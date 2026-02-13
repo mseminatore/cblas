@@ -75,8 +75,10 @@ static void AddDot4x8_avx(CBLAS_INDEX k, float *a, float *b, float *c, CBLAS_IND
         
         // Prefetch next iterations
         if (p + PREFETCH_DISTANCE < k) {
-            CBLAS_PREFETCH(a + (PREFETCH_DISTANCE * MR), 0, 3);
-            CBLAS_PREFETCH(b + (PREFETCH_DISTANCE * NR), 0, 3);
+            CBLAS_PREFETCH_L2(a + (8 * MR));
+            CBLAS_PREFETCH_L1(a + (4 * MR));
+            CBLAS_PREFETCH_L2(b + (8 * NR));
+            CBLAS_PREFETCH_L1(b + (4 * NR));
         }
         
         // Row 0: broadcast A[0,p] and multiply-add (non-FMA)
@@ -129,7 +131,7 @@ static void PackMatrixA_4_trans(CBLAS_INDEX k, CBLAS_INDEX m_rows, float *a, CBL
         float *a_col = a + i * lda;
         
         if (i + 8 < k) {
-            CBLAS_PREFETCH(a + (i + 8) * lda, 0, 3);
+            CBLAS_PREFETCH_L2(a + (i + 8) * lda);
         }
         
         for (CBLAS_INDEX r = 0; r < MR; r++) {
@@ -176,7 +178,7 @@ static void PackMatrixB_8(CBLAS_INDEX k, CBLAS_INDEX n_cols, float *b, CBLAS_IND
         
         // Prefetch ahead
         if (j + 4 < k) {
-            CBLAS_PREFETCH(&B(0, j + 4), 0, 3);
+            CBLAS_PREFETCH_L2(&B(0, j + 4));
         }
         
         // Copy up to 8 columns, zero-pad if fewer
@@ -214,7 +216,7 @@ static void PackMatrixA_4(CBLAS_INDEX k, CBLAS_INDEX m_rows, float *a, CBLAS_IND
     {
         // Prefetch ahead
         if (i + 8 < k && a_ptrs[0]) {
-            CBLAS_PREFETCH(a_ptrs[0] + 8, 0, 3);
+            CBLAS_PREFETCH_L2(a_ptrs[0] + 8);
         }
         
         // Pack 4 rows for this column

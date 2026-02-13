@@ -75,8 +75,10 @@ static void AddDot4x4_sse(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *b, CB
 
         // Prefetch data ahead
         if (p + PREFETCH_DISTANCE < k) {
-            CBLAS_PREFETCH(a + (PREFETCH_DISTANCE * 4), 0, 3);
-            CBLAS_PREFETCH(b + (PREFETCH_DISTANCE * 4), 0, 3);
+            CBLAS_PREFETCH_L2(a + (8 * 4));
+            CBLAS_PREFETCH_L1(a + (4 * 4));
+            CBLAS_PREFETCH_L2(b + (8 * 4));
+            CBLAS_PREFETCH_L1(b + (4 * 4));
         }
 
         a += 4;
@@ -116,7 +118,7 @@ static void PackMatrixB(CBLAS_INDEX k, float *b, CBLAS_INDEX ldb, float *b_to)
         float *b_ij_pntr = &B(0, j);
 
         if (j + 8 < k) {
-            CBLAS_PREFETCH(&B(0, j + 8), 0, 3);
+            CBLAS_PREFETCH_L2(&B(0, j + 8));
         }
 
         *b_to       = *b_ij_pntr;
@@ -139,10 +141,10 @@ static void PackMatrixA(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a_to)
     for (CBLAS_INDEX i = 0; i < k; i++)
     {
         if (i + 8 < k) {
-            CBLAS_PREFETCH(a_0i_pntr + 8, 0, 3);
-            CBLAS_PREFETCH(a_1i_pntr + 8, 0, 3);
-            CBLAS_PREFETCH(a_2i_pntr + 8, 0, 3);
-            CBLAS_PREFETCH(a_3i_pntr + 8, 0, 3);
+            CBLAS_PREFETCH_L2(a_0i_pntr + 8);
+            CBLAS_PREFETCH_L2(a_1i_pntr + 8);
+            CBLAS_PREFETCH_L2(a_2i_pntr + 8);
+            CBLAS_PREFETCH_L2(a_3i_pntr + 8);
         }
 
         *a_to       = *a_0i_pntr++;
@@ -165,7 +167,7 @@ static void PackMatrixA_trans(CBLAS_INDEX k, float *a, CBLAS_INDEX lda, float *a
         float *a_col = a + p * lda;
 
         if (p + 8 < k) {
-            CBLAS_PREFETCH(a + (p + 8) * lda, 0, 3);
+            CBLAS_PREFETCH_L2(a + (p + 8) * lda);
         }
 
         *a_to       = a_col[0];
@@ -191,7 +193,7 @@ static void PackMatrixB_trans(CBLAS_INDEX k, float *b, CBLAS_INDEX ldb, float *b
     for (CBLAS_INDEX p = 0; p < k; p++)
     {
         if (p + 8 < k) {
-            CBLAS_PREFETCH(col0 + 8, 0, 3);
+            CBLAS_PREFETCH_L2(col0 + 8);
         }
 
         *b_to       = col0[p];
