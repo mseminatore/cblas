@@ -220,15 +220,23 @@ static void InnerKernel_sse(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
     cblas_gemm_buffer_t* buf = cblas_get_gemm_buffer(thread_id);
     float* packedA;
     float* packedB;
-    int use_pool = 0;
+    int use_pool_a = 0, use_pool_b = 0;
+    size_t packedB_needed = (size_t)k * n * sizeof(float);
+    size_t pool_b_size = (size_t)cblas_gemm_kc * cblas_gemm_nb * sizeof(float);
     
     if (buf) {
         packedA = buf->packedA_s;
-        packedB = buf->packedB_s;
-        use_pool = 1;
+        use_pool_a = 1;
+        if (packedB_needed <= pool_b_size) {
+            packedB = buf->packedB_s;
+            use_pool_b = 1;
+        } else {
+            packedB = (float*)malloc(packedB_needed);
+            if (!packedB) return;
+        }
     } else {
-        packedA = (float*)malloc(cblas_gemm_mc * cblas_gemm_kc * sizeof(float));
-        packedB = (float*)malloc(cblas_gemm_kc * 4 * sizeof(float));
+        packedA = (float*)malloc(4 * k * sizeof(float));
+        packedB = (float*)malloc(packedB_needed);
         if (!packedA || !packedB) {
             free(packedA);
             free(packedB);
@@ -246,6 +254,16 @@ static void InnerKernel_sse(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
 
     CBLAS_INDEX row, col;
 
+    // Phase 1: Pack ALL B column panels upfront
+    for (col = 0; col + 4 <= n; col += 4)
+    {
+        float *b_ptr = b + col * b_col_stride;
+        if (transB)
+            PackMatrixB_trans(k, b_ptr, ldb, &packedB[col * k]);
+        else
+            PackMatrixB(k, b_ptr, ldb, &packedB[col * k]);
+    }
+
     for (row = 0; row + 4 <= m; row += 4)
     {
         float *a_row_ptr = a + row * a_row_stride;
@@ -258,15 +276,7 @@ static void InnerKernel_sse(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
 
         for (col = 0; col + 4 <= n; col += 4)
         {
-            float *b_col_ptr = b + col * b_col_stride;
-
-            // Pack each 4-column panel of B for this iteration
-            if (transB)
-                PackMatrixB_trans(k, b_col_ptr, ldb, packedB);
-            else
-                PackMatrixB(k, b_col_ptr, ldb, packedB);
-
-            AddDot4x4_sse(k, packedA, 4, packedB, 4, &C(col, row), ldc, alpha);
+            AddDot4x4_sse(k, packedA, 4, &packedB[col * k], 4, &C(col, row), ldc, alpha);
         }
 
         // handle leftover columns
@@ -306,10 +316,8 @@ static void InnerKernel_sse(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         case 0: ;
     }
     
-    if (!use_pool) {
-        free(packedA);
-        free(packedB);
-    }
+    if (!use_pool_a) free(packedA);
+    if (!use_pool_b) free(packedB);
 }
 
 //------------------------------------------------------

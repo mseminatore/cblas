@@ -642,39 +642,203 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     CBLAS_INDEX a_row_stride_d = nota_d ? lda_use : 1;
     CBLAS_INDEX a_col_stride_d = nota_d ? 1 : lda_use;
     CBLAS_INDEX b_row_stride_d = notb_d ? ldb_use : 1;
+    CBLAS_INDEX b_col_stride_d = notb_d ? 1 : ldb_use;
 
     CBLAS_INDEX pb, ib;
-    cblas_args_t st_args;
+
+#if defined(MT_ENABLED)
+    mt_used = (m_use * n_use * k > CBLAS_MT_GEMM && cblas_get_num_threads() > 1) ? 1 : 0;
     
-    st_args.n = n_use;
-    st_args.lda = lda_use;
-    st_args.ldb = ldb_use;
-    st_args.ldc = ldc;
-    st_args.alpha_d = alpha;
-    st_args.beta_d = 1.0;
-    st_args.transa = transa_use;
-    st_args.transb = transb_use;
-    st_args.thread_id = 0;
-    
-    CBLAS_INDEX mc_d = cblas_gemm_mc;
-    CBLAS_INDEX kc_d = cblas_gemm_kc;
-    
-    for (CBLAS_INDEX p = 0; p < k; p += kc_d) 
+    if (mt_used)
     {
-        pb = MIN(k - p, kc_d);
-        for (CBLAS_INDEX row = 0; row < m_use; row += mc_d) 
+        CBLAS_INDEX num_threads = cblas_get_num_threads();
+        
+        CBLAS_INDEX mc_use = cblas_gemm_mc;
+        CBLAS_INDEX nb_use = cblas_gemm_nb;
+        
+        CBLAS_INDEX vert_tiles = (m_use + mc_use - 1) / mc_use;
+        CBLAS_INDEX horiz_tiles = (n_use + nb_use - 1) / nb_use;
+        
+        CBLAS_INDEX min_tiles_for_mt = num_threads;
+        CBLAS_INDEX natural_tiles = vert_tiles * horiz_tiles;
+        
+        if (natural_tiles < min_tiles_for_mt && 
+            (size_t)m_use * n_use > 4 * CBLAS_MT_GEMM &&
+            m_use >= 256 && n_use >= 256)
         {
-            ib = MIN(m_use - row, mc_d);
+            CBLAS_INDEX target_tiles_per_dim = (CBLAS_INDEX)(sqrt((double)min_tiles_for_mt) + 0.5);
+            if (target_tiles_per_dim < 2) target_tiles_per_dim = 2;
             
-            st_args.a = (double*)a_use + row * a_row_stride_d + p * a_col_stride_d;
-            st_args.b = (double*)b_use + p * b_row_stride_d;
-            st_args.c = c + row * ldc;
-            st_args.ib = ib;
-            st_args.pb = pb;
+            mc_use = (m_use + target_tiles_per_dim - 1) / target_tiles_per_dim;
+            nb_use = (n_use + target_tiles_per_dim - 1) / target_tiles_per_dim;
             
-            blas_kernels.dgemm_k(&st_args);
+            CBLAS_INDEX min_tile = 64;
+            mc_use = MAX(mc_use, min_tile);
+            nb_use = MAX(nb_use, min_tile);
+            
+            vert_tiles = (m_use + mc_use - 1) / mc_use;
+            horiz_tiles = (n_use + nb_use - 1) / nb_use;
+        }
+        
+        CBLAS_INDEX total_tiles = vert_tiles * horiz_tiles;
+        int use_2d_tiling = (horiz_tiles > 1);
+
+        work_queue_t *queue = (work_queue_t*)malloc(total_tiles * sizeof(work_queue_t));
+        cblas_args_t *args = (cblas_args_t*)malloc(total_tiles * sizeof(cblas_args_t));
+        
+        if (!queue || !args) {
+            free(queue);
+            free(args);
+            return;
+        }
+
+        for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
+        {
+            pb = MIN(k - p, cblas_gemm_kc);
+            CBLAS_INDEX tile_count = 0;
+            
+            if (use_2d_tiling)
+            {
+                for (CBLAS_INDEX row = 0; row < m_use; row += mc_use) 
+                {
+                    ib = MIN(m_use - row, mc_use);
+                    
+                    for (CBLAS_INDEX col = 0; col < n_use; col += nb_use)
+                    {
+                        CBLAS_INDEX jb = MIN(n_use - col, nb_use);
+                        
+                        args[tile_count].incx = 1;
+                        args[tile_count].incy = 1;
+                        args[tile_count].n = jb;
+                        args[tile_count].lda = lda_use;
+                        args[tile_count].ldb = ldb_use;
+                        args[tile_count].ldc = ldc;
+                        args[tile_count].a = (double*)a_use + row * a_row_stride_d + p * a_col_stride_d;
+                        args[tile_count].b = (double*)b_use + p * b_row_stride_d + col * b_col_stride_d;
+                        args[tile_count].c = c + row * ldc + col;
+                        args[tile_count].ib = ib;
+                        args[tile_count].pb = pb;
+                        args[tile_count].alpha_d = alpha;
+                        args[tile_count].beta_d = 1.0;
+                        args[tile_count].transa = transa_use;
+                        args[tile_count].transb = transb_use;
+                        args[tile_count].thread_id = 0;
+                    
+                        queue[tile_count].finished = 0;
+                        queue[tile_count].args = &args[tile_count];
+                        queue[tile_count].kernel = blas_kernels.dgemm_k;
+                        queue[tile_count].next = &queue[tile_count + 1];
+
+                        tile_count++;
+                    }
+                }
+            }
+            else
+            {
+                for (CBLAS_INDEX row = 0; row < m_use; row += mc_use) 
+                {
+                    ib = MIN(m_use - row, mc_use);
+
+                    args[tile_count].incx = 1;
+                    args[tile_count].incy = 1;
+                    args[tile_count].n = n_use;
+                    args[tile_count].lda = lda_use;
+                    args[tile_count].ldb = ldb_use;
+                    args[tile_count].ldc = ldc;
+                    args[tile_count].a = (double*)a_use + row * a_row_stride_d + p * a_col_stride_d;
+                    args[tile_count].b = (double*)b_use + p * b_row_stride_d;
+                    args[tile_count].c = c + row * ldc;
+                    args[tile_count].ib = ib;
+                    args[tile_count].pb = pb;
+                    args[tile_count].alpha_d = alpha;
+                    args[tile_count].beta_d = 1.0;
+                    args[tile_count].transa = transa_use;
+                    args[tile_count].transb = transb_use;
+                    args[tile_count].thread_id = 0;
+                
+                    queue[tile_count].finished = 0;
+                    queue[tile_count].args = &args[tile_count];
+                    queue[tile_count].kernel = blas_kernels.dgemm_k;
+                    queue[tile_count].next = &queue[tile_count + 1];
+
+                    tile_count++;
+                }
+            }
+
+            assert(tile_count <= total_tiles);
+
+            queue[tile_count - 1].next = NULL;
+
+            cblas_execute(tile_count, queue);
+        }
+        
+        free(queue);
+        free(args);
+    }
+    else
+    {
+        cblas_args_t st_args;
+        st_args.incx = 1;
+        st_args.incy = 1;
+        st_args.n = n_use;
+        st_args.lda = lda_use;
+        st_args.ldb = ldb_use;
+        st_args.ldc = ldc;
+        st_args.alpha_d = alpha;
+        st_args.beta_d = 1.0;
+        st_args.transa = transa_use;
+        st_args.transb = transb_use;
+        st_args.thread_id = 0;
+        
+        for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
+        {
+            pb = MIN(k - p, cblas_gemm_kc);
+            for (CBLAS_INDEX row = 0; row < m_use; row += cblas_gemm_mc) 
+            {
+                ib = MIN(m_use - row, cblas_gemm_mc);
+                
+                st_args.a = (double*)a_use + row * a_row_stride_d + p * a_col_stride_d;
+                st_args.b = (double*)b_use + p * b_row_stride_d;
+                st_args.c = c + row * ldc;
+                st_args.ib = ib;
+                st_args.pb = pb;
+                
+                blas_kernels.dgemm_k(&st_args);
+            }
         }
     }
+
+#else
+    {
+        cblas_args_t st_args;
+        st_args.n = n_use;
+        st_args.lda = lda_use;
+        st_args.ldb = ldb_use;
+        st_args.ldc = ldc;
+        st_args.alpha_d = alpha;
+        st_args.beta_d = 1.0;
+        st_args.transa = transa_use;
+        st_args.transb = transb_use;
+        st_args.thread_id = 0;
+        
+        for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
+        {
+            pb = MIN(k - p, cblas_gemm_kc);
+            for (CBLAS_INDEX row = 0; row < m_use; row += cblas_gemm_mc) 
+            {
+                ib = MIN(m_use - row, cblas_gemm_mc);
+                
+                st_args.a = (double*)a_use + row * a_row_stride_d + p * a_col_stride_d;
+                st_args.b = (double*)b_use + p * b_row_stride_d;
+                st_args.c = c + row * ldc;
+                st_args.ib = ib;
+                st_args.pb = pb;
+                
+                blas_kernels.dgemm_k(&st_args);
+            }
+        }
+    }
+#endif
 
     CBLAS_STATS_END("dgemm", m * n * k, mt_used);
 }

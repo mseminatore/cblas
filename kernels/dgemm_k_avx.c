@@ -207,15 +207,23 @@ static void InnerKernel_dgemm_avx(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
     cblas_gemm_buffer_t* buf = cblas_get_gemm_buffer(thread_id);
     double* packedA;
     double* packedB;
-    int use_pool = 0;
+    int use_pool_a = 0, use_pool_b = 0;
+    size_t packedB_needed = (size_t)k * n * sizeof(double);
+    size_t pool_b_size = (size_t)cblas_gemm_kc * cblas_gemm_nb * sizeof(double);
     
     if (buf) {
         packedA = buf->packedA_d;
-        packedB = buf->packedB_d;
-        use_pool = 1;
+        use_pool_a = 1;
+        if (packedB_needed <= pool_b_size) {
+            packedB = buf->packedB_d;
+            use_pool_b = 1;
+        } else {
+            packedB = (double*)malloc(packedB_needed);
+            if (!packedB) return;
+        }
     } else {
         packedA = (double*)malloc(MR_D * k * sizeof(double));
-        packedB = (double*)malloc(k * NR_D * sizeof(double));
+        packedB = (double*)malloc(packedB_needed);
         if (!packedA || !packedB) {
             free(packedA);
             free(packedB);
@@ -232,6 +240,16 @@ static void InnerKernel_dgemm_avx(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
 
     CBLAS_INDEX row, col;
 
+    // Phase 1: Pack all k×NR_D panels of B upfront
+    for (col = 0; col + NR_D <= n; col += NR_D)
+    {
+        double *b_ptr = b + col * b_col_stride;
+        if (transB)
+            PackMatrixB_4_d_trans(k, NR_D, b_ptr, ldb, &packedB[col * k]);
+        else
+            PackMatrixB_4_d(k, NR_D, b_ptr, ldb, &packedB[col * k]);
+    }
+
     for (row = 0; row + MR_D <= m; row += MR_D)
     {
         if (transA)
@@ -241,11 +259,7 @@ static void InnerKernel_dgemm_avx(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
 
         for (col = 0; col + NR_D <= n; col += NR_D)
         {
-            if (transB)
-                PackMatrixB_4_d_trans(k, NR_D, b + col * b_col_stride, ldb, packedB);
-            else
-                PackMatrixB_4_d(k, NR_D, b + col * b_col_stride, ldb, packedB);
-            AddDot4x4_dgemm_avx(k, packedA, packedB, &C(col, row), ldc, alpha);
+            AddDot4x4_dgemm_avx(k, packedA, &packedB[col * k], &C(col, row), ldc, alpha);
         }
 
         // Leftover columns
@@ -263,10 +277,8 @@ static void InnerKernel_dgemm_avx(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         }
     }
     
-    if (!use_pool) {
-        free(packedA);
-        free(packedB);
-    }
+    if (!use_pool_a) free(packedA);
+    if (!use_pool_b) free(packedB);
 }
 
 //------------------------------------------------------

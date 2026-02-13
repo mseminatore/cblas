@@ -819,15 +819,23 @@ static void InnerKernel_neon(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
     cblas_gemm_buffer_t* buf = cblas_get_gemm_buffer(thread_id);
     float* packedA;
     float* packedB;
-    int use_pool = 0;
+    int use_pool_a = 0, use_pool_b = 0;
+    size_t packedB_needed = (size_t)k * n * sizeof(float);
+    size_t pool_b_size = (size_t)cblas_gemm_kc * cblas_gemm_nb * sizeof(float);
     
     if (buf) {
         packedA = buf->packedA_s;
-        packedB = buf->packedB_s;
-        use_pool = 1;
+        use_pool_a = 1;
+        if (packedB_needed <= pool_b_size) {
+            packedB = buf->packedB_s;
+            use_pool_b = 1;
+        } else {
+            packedB = (float*)malloc(packedB_needed);
+            if (!packedB) return;
+        }
     } else {
         packedA = (float*)malloc(MR * k * sizeof(float));
-        packedB = (float*)malloc(k * NR * sizeof(float));
+        packedB = (float*)malloc(packedB_needed);
         if (!packedA || !packedB) {
             free(packedA);
             free(packedB);
@@ -844,6 +852,16 @@ static void InnerKernel_neon(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
 
     CBLAS_INDEX row, col;
 
+    // Phase 1: Pack ALL B column panels once upfront
+    for (col = 0; col + NR <= n; col += NR)
+    {
+        float *b_ptr = b + col * b_col_stride;
+        if (transB)
+            PackMatrixB_12_trans(k, NR, b_ptr, ldb, &packedB[col * k]);
+        else
+            PackMatrixB_12(k, NR, b_ptr, ldb, &packedB[col * k]);
+    }
+
     // Main loop: 8 rows at a time with 8x12 kernel
     for (row = 0; row + MR <= m; row += MR)
     {
@@ -853,17 +871,10 @@ static void InnerKernel_neon(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         else
             PackMatrixA_8(k, MR, a + row * a_row_stride, lda, packedA);
 
-        // Process 12 columns at a time
+        // Process 12 columns at a time using pre-packed B
         for (col = 0; col + NR <= n; col += NR)
         {
-            // Pack this k×12 panel of B
-            if (transB)
-                PackMatrixB_12_trans(k, NR, b + col * b_col_stride, ldb, packedB);
-            else
-                PackMatrixB_12(k, NR, b + col * b_col_stride, ldb, packedB);
-            
-            // Call 8x12 micro-kernel
-            AddDot8x12_neon(k, packedA, packedB, &C(col, row), ldc, alpha);
+            AddDot8x12_neon(k, packedA, &packedB[col * k], &C(col, row), ldc, alpha);
         }
 
         // Handle leftover columns (< 12) - use scalar fallback
@@ -887,11 +898,7 @@ static void InnerKernel_neon(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         
         for (col = 0; col + NR <= n; col += NR)
         {
-            if (transB)
-                PackMatrixB_12_trans(k, NR, b + col * b_col_stride, ldb, packedB);
-            else
-                PackMatrixB_12(k, NR, b + col * b_col_stride, ldb, packedB);
-            AddDot4x12_neon(k, packedA, packedB, &C(col, row), ldc, alpha);
+            AddDot4x12_neon(k, packedA, &packedB[col * k], &C(col, row), ldc, alpha);
         }
         
         // Leftover columns
@@ -912,10 +919,8 @@ static void InnerKernel_neon(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         }
     }
     
-    if (!use_pool) {
-        free(packedA);
-        free(packedB);
-    }
+    if (!use_pool_a) free(packedA);
+    if (!use_pool_b) free(packedB);
 }
 
 //------------------------------------------------------

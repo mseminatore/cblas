@@ -247,15 +247,23 @@ static void InnerKernel_avx(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
     cblas_gemm_buffer_t* buf = cblas_get_gemm_buffer(thread_id);
     float* packedA;
     float* packedB;
-    int use_pool = 0;
+    int use_pool_a = 0, use_pool_b = 0;
+    size_t packedB_needed = (size_t)k * n * sizeof(float);
+    size_t pool_b_size = (size_t)cblas_gemm_kc * cblas_gemm_nb * sizeof(float);
     
     if (buf) {
         packedA = buf->packedA_s;
-        packedB = buf->packedB_s;
-        use_pool = 1;
+        use_pool_a = 1;
+        if (packedB_needed <= pool_b_size) {
+            packedB = buf->packedB_s;
+            use_pool_b = 1;
+        } else {
+            packedB = (float*)malloc(packedB_needed);
+            if (!packedB) return;
+        }
     } else {
         packedA = (float*)malloc(MR * k * sizeof(float));
-        packedB = (float*)malloc(k * NR * sizeof(float));
+        packedB = (float*)malloc(packedB_needed);
         if (!packedA || !packedB) {
             free(packedA);
             free(packedB);
@@ -272,7 +280,17 @@ static void InnerKernel_avx(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
 
     CBLAS_INDEX row, col;
 
-    // Main loop: 4 rows at a time
+    // Phase 1: Pack ALL B column panels once upfront
+    for (col = 0; col + NR <= n; col += NR)
+    {
+        float *b_ptr = b + col * b_col_stride;
+        if (transB)
+            PackMatrixB_8_trans(k, NR, b_ptr, ldb, &packedB[col * k]);
+        else
+            PackMatrixB_8(k, NR, b_ptr, ldb, &packedB[col * k]);
+    }
+
+    // Phase 2: Main loop - 4 rows at a time
     for (row = 0; row + MR <= m; row += MR)
     {
         // Pack this 4×k panel of A once per row iteration
@@ -284,14 +302,8 @@ static void InnerKernel_avx(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         // Process 8 columns at a time
         for (col = 0; col + NR <= n; col += NR)
         {
-            // Pack this k×8 panel of B
-            if (transB)
-                PackMatrixB_8_trans(k, NR, b + col * b_col_stride, ldb, packedB);
-            else
-                PackMatrixB_8(k, NR, b + col * b_col_stride, ldb, packedB);
-            
-            // Call 4x8 micro-kernel
-            AddDot4x8_avx(k, packedA, packedB, &C(col, row), ldc, alpha);
+            // Call 4x8 micro-kernel with pre-packed B
+            AddDot4x8_avx(k, packedA, &packedB[col * k], &C(col, row), ldc, alpha);
         }
 
         // Handle leftover columns (< 8) - use scalar fallback
@@ -310,10 +322,8 @@ static void InnerKernel_avx(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         }
     }
     
-    if (!use_pool) {
-        free(packedA);
-        free(packedB);
-    }
+    if (!use_pool_a) free(packedA);
+    if (!use_pool_b) free(packedB);
 }
 
 //------------------------------------------------------

@@ -11,6 +11,10 @@
 // Prefetch distance tuning
 #define PREFETCH_DISTANCE 16
 
+// Micro-kernel tile sizes for base scalar kernel
+#define MR 4
+#define NR 4
+
 // Matrix access macros (local to this file)
 #define A(col, row) a[((row) * lda + (col))]
 #define B(col, row) b[((row) * ldb + (col))]
@@ -112,8 +116,9 @@ static void AddDot4x4_base(CBLAS_INDEX k, float* a, CBLAS_INDEX lda, float* b, C
 //------------------------------------------------------
 // PackMatrixB - Copy a k×4 panel of B into contiguous memory
 //------------------------------------------------------
-static void PackMatrixB(CBLAS_INDEX k, float *b, CBLAS_INDEX ldb, float *b_to)
+static void PackMatrixB(CBLAS_INDEX k, CBLAS_INDEX n_cols, float *b, CBLAS_INDEX ldb, float *b_to)
 {
+    (void)n_cols;
     for (CBLAS_INDEX j = 0; j < k; j++)
     {
         float *b_ij_pntr = &B(0, j);
@@ -135,8 +140,9 @@ static void PackMatrixB(CBLAS_INDEX k, float *b, CBLAS_INDEX ldb, float *b_to)
 // PackMatrixB_trans - Pack k×4 panel of B from transposed storage
 // B^T[p,j] = b[j*ldb+p], so column j of logical B is row j of stored b
 //------------------------------------------------------
-static void PackMatrixB_trans(CBLAS_INDEX k, float *b, CBLAS_INDEX ldb, float *b_to)
+static void PackMatrixB_trans(CBLAS_INDEX k, CBLAS_INDEX n_cols, float *b, CBLAS_INDEX ldb, float *b_to)
 {
+    (void)n_cols;
     // b points to logical B[0, col_start] in transposed storage
     // Logical B[p, col+c] = b[c*ldb + p]
     float *col0 = b;
@@ -225,15 +231,23 @@ static void InnerKernel_base(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
     cblas_gemm_buffer_t* buf = cblas_get_gemm_buffer(thread_id);
     float* packedA;
     float* packedB;
-    int use_pool = 0;
+    int use_pool_a = 0, use_pool_b = 0;
+    size_t packedB_needed = (size_t)k * n * sizeof(float);
+    size_t pool_b_size = (size_t)cblas_gemm_kc * cblas_gemm_nb * sizeof(float);
     
     if (buf) {
         packedA = buf->packedA_s;
-        packedB = buf->packedB_s;
-        use_pool = 1;
+        use_pool_a = 1;
+        if (packedB_needed <= pool_b_size) {
+            packedB = buf->packedB_s;
+            use_pool_b = 1;
+        } else {
+            packedB = (float*)malloc(packedB_needed);
+            if (!packedB) return;
+        }
     } else {
-        packedA = (float*)malloc(cblas_gemm_mc * cblas_gemm_kc * sizeof(float));
-        packedB = (float*)malloc(cblas_gemm_kc * 4 * sizeof(float));
+        packedA = (float*)malloc(MR * k * sizeof(float));
+        packedB = (float*)malloc(packedB_needed);
         if (!packedA || !packedB) {
             free(packedA);
             free(packedB);
@@ -256,7 +270,18 @@ static void InnerKernel_base(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
 
     CBLAS_INDEX row, col;
 
-    for (row = 0; row + 4 <= m; row += 4)
+    // Phase 1: Pack ALL B column panels once upfront
+    for (col = 0; col + NR <= n; col += NR)
+    {
+        float *b_ptr = b + col * b_col_stride;
+        if (transB)
+            PackMatrixB_trans(k, NR, b_ptr, ldb, &packedB[col * k]);
+        else
+            PackMatrixB(k, NR, b_ptr, ldb, &packedB[col * k]);
+    }
+
+    // Phase 2: Main loop - MR rows at a time
+    for (row = 0; row + MR <= m; row += MR)
     {
         // Pointer to logical A[row, 0]
         float *a_row = a + row * a_row_stride;
@@ -267,18 +292,9 @@ static void InnerKernel_base(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         else
             PackMatrixA(k, a_row, lda, packedA);
 
-        for (col = 0; col + 4 <= n; col += 4)
+        for (col = 0; col + NR <= n; col += NR)
         {
-            // Pointer to logical B[0, col]
-            float *b_col = b + col * b_col_stride;
-
-            // Pack each 4-column panel of B for this iteration
-            if (transB)
-                PackMatrixB_trans(k, b_col, ldb, packedB);
-            else
-                PackMatrixB(k, b_col, ldb, packedB);
-
-            AddDot4x4_base(k, packedA, 4, packedB, 4, &C(col, row), ldc, alpha);
+            AddDot4x4_base(k, packedA, 4, &packedB[col * k], 4, &C(col, row), ldc, alpha);
         }
 
         // handle leftover columns
@@ -318,10 +334,8 @@ static void InnerKernel_base(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         case 0: ;
     }
     
-    if (!use_pool) {
-        free(packedA);
-        free(packedB);
-    }
+    if (!use_pool_a) free(packedA);
+    if (!use_pool_b) free(packedB);
 }
 
 //------------------------------------------------------
