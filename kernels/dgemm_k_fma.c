@@ -87,9 +87,11 @@ static void AddDot6x8_dgemm_fma(CBLAS_INDEX k, double *a, double *b, double *c, 
         b0 = _mm256_loadu_pd(b);      // B[p, 0:3]
         b1 = _mm256_loadu_pd(b + 4);  // B[p, 4:7]
         
-        // Prefetch next iterations
-        CBLAS_PREFETCH(a + (PREFETCH_DISTANCE * MR_D), 0, 3);
-        CBLAS_PREFETCH(b + (PREFETCH_DISTANCE * NR_D), 0, 3);
+        // Two-level prefetch: L2 far-ahead, L1 near-ahead
+        CBLAS_PREFETCH_L2(a + (8 * MR_D));
+        CBLAS_PREFETCH_L2(b + (8 * NR_D));
+        CBLAS_PREFETCH_L1(a + (4 * MR_D));
+        CBLAS_PREFETCH_L1(b + (4 * NR_D));
         
         // Row 0
         a_elem = _mm256_broadcast_sd(&a[0]);
@@ -249,9 +251,12 @@ static void PackMatrixB_8_d(CBLAS_INDEX k, CBLAS_INDEX n_cols, double *b, CBLAS_
     {
         double *b_ij_pntr = &B(0, j);
         
-        // Prefetch ahead
+        // Two-level prefetch for source data
+        if (j + 8 < k) {
+            CBLAS_PREFETCH_L2(&B(0, j + 8));
+        }
         if (j + 4 < k) {
-            CBLAS_PREFETCH(&B(0, j + 4), 0, 3);
+            CBLAS_PREFETCH_L1(&B(0, j + 4));
         }
         
         // Copy up to 8 columns, zero-pad if fewer
@@ -276,6 +281,14 @@ static void PackMatrixB_8_d_trans(CBLAS_INDEX k, CBLAS_INDEX n_cols, double *b, 
 {
     for (CBLAS_INDEX j = 0; j < k; j++)
     {
+        // Two-level prefetch for transposed source data
+        if (j + 8 < k) {
+            CBLAS_PREFETCH_L2(&b[j + 8]);
+        }
+        if (j + 4 < k) {
+            CBLAS_PREFETCH_L1(&b[j + 4]);
+        }
+        
         CBLAS_INDEX col;
         for (col = 0; col < n_cols && col < NR_D; col++) {
             b_to[col] = b[col * ldb + j];
@@ -294,34 +307,59 @@ static void PackMatrixB_8_d_trans(CBLAS_INDEX k, CBLAS_INDEX n_cols, double *b, 
 //------------------------------------------------------
 static void PackMatrixA_6_d(CBLAS_INDEX k, CBLAS_INDEX m_rows, double *a, CBLAS_INDEX lda, double *a_to)
 {
-    // Handle varying number of rows (1-6)
-    double *a_ptrs[6];
-    
-    for (CBLAS_INDEX r = 0; r < MR_D; r++) {
-        if (r < m_rows) {
-            a_ptrs[r] = &A(0, r);
-        } else {
-            a_ptrs[r] = NULL;  // Will be zero-padded
-        }
-    }
-    
-    for (CBLAS_INDEX i = 0; i < k; i++)
-    {
-        // Prefetch ahead
-        if (i + 8 < k && a_ptrs[0]) {
-            CBLAS_PREFETCH(a_ptrs[0] + 8, 0, 3);
-        }
+    if (m_rows == MR_D) {
+        // Fast path: full 6 rows — direct pointer arithmetic, no branches
+        double *a0 = a;
+        double *a1 = a + lda;
+        double *a2 = a + 2 * lda;
+        double *a3 = a + 3 * lda;
+        double *a4 = a + 4 * lda;
+        double *a5 = a + 5 * lda;
         
-        // Pack 6 rows for this column
+        for (CBLAS_INDEX i = 0; i < k; i++)
+        {
+            if (i + 8 < k) {
+                CBLAS_PREFETCH_L2(a0 + 8);
+                CBLAS_PREFETCH_L2(a3 + 8);
+            }
+            
+            a_to[0] = *a0++;
+            a_to[1] = *a1++;
+            a_to[2] = *a2++;
+            a_to[3] = *a3++;
+            a_to[4] = *a4++;
+            a_to[5] = *a5++;
+            
+            a_to += MR_D;
+        }
+    } else {
+        // Slow path: partial rows with zero-padding
+        double *a_ptrs[6];
+        
         for (CBLAS_INDEX r = 0; r < MR_D; r++) {
-            if (a_ptrs[r]) {
-                a_to[r] = *a_ptrs[r]++;
+            if (r < m_rows) {
+                a_ptrs[r] = &A(0, r);
             } else {
-                a_to[r] = 0.0;  // Zero-pad
+                a_ptrs[r] = NULL;
             }
         }
         
-        a_to += MR_D;
+        for (CBLAS_INDEX i = 0; i < k; i++)
+        {
+            if (i + 8 < k && a_ptrs[0]) {
+                CBLAS_PREFETCH_L2(a_ptrs[0] + 8);
+            }
+            
+            for (CBLAS_INDEX r = 0; r < MR_D; r++) {
+                if (a_ptrs[r]) {
+                    a_to[r] = *a_ptrs[r]++;
+                } else {
+                    a_to[r] = 0.0;
+                }
+            }
+            
+            a_to += MR_D;
+        }
     }
 }
 
@@ -331,23 +369,45 @@ static void PackMatrixA_6_d(CBLAS_INDEX k, CBLAS_INDEX m_rows, double *a, CBLAS_
 //------------------------------------------------------
 static void PackMatrixA_6_d_trans(CBLAS_INDEX k, CBLAS_INDEX m_rows, double *a, CBLAS_INDEX lda, double *a_to)
 {
-    for (CBLAS_INDEX i = 0; i < k; i++)
-    {
-        double *a_col = a + i * lda;
-        
-        if (i + 8 < k) {
-            CBLAS_PREFETCH(a + (i + 8) * lda, 0, 3);
-        }
-        
-        for (CBLAS_INDEX r = 0; r < MR_D; r++) {
-            if (r < m_rows) {
-                a_to[r] = a_col[r];
-            } else {
-                a_to[r] = 0.0;
+    if (m_rows == MR_D) {
+        // Fast path: full 6 rows — direct scalar loads, no inner loop or branch
+        for (CBLAS_INDEX i = 0; i < k; i++)
+        {
+            double *a_col = a + i * lda;
+
+            if (i + 8 < k) {
+                CBLAS_PREFETCH_L2(a + (i + 8) * lda);
             }
+
+            a_to[0] = a_col[0];
+            a_to[1] = a_col[1];
+            a_to[2] = a_col[2];
+            a_to[3] = a_col[3];
+            a_to[4] = a_col[4];
+            a_to[5] = a_col[5];
+
+            a_to += MR_D;
         }
-        
-        a_to += MR_D;
+    } else {
+        // Slow path: partial rows with zero-padding
+        for (CBLAS_INDEX i = 0; i < k; i++)
+        {
+            double *a_col = a + i * lda;
+
+            if (i + 8 < k) {
+                CBLAS_PREFETCH_L2(a + (i + 8) * lda);
+            }
+
+            for (CBLAS_INDEX r = 0; r < MR_D; r++) {
+                if (r < m_rows) {
+                    a_to[r] = a_col[r];
+                } else {
+                    a_to[r] = 0.0;
+                }
+            }
+
+            a_to += MR_D;
+        }
     }
 }
 
@@ -365,15 +425,23 @@ static void InnerKernel_dgemm_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
     cblas_gemm_buffer_t* buf = cblas_get_gemm_buffer(thread_id);
     double* packedA;
     double* packedB;
-    int use_pool = 0;
+    int use_pool_a = 0, use_pool_b = 0;
+    size_t packedB_needed = (size_t)k * n * sizeof(double);
+    size_t pool_b_size = (size_t)cblas_gemm_kc * cblas_gemm_nb * sizeof(double);
     
     if (buf) {
         packedA = buf->packedA_d;
-        packedB = buf->packedB_d;
-        use_pool = 1;
+        use_pool_a = 1;
+        if (packedB_needed <= pool_b_size) {
+            packedB = buf->packedB_d;
+            use_pool_b = 1;
+        } else {
+            packedB = (double*)malloc(packedB_needed);
+            if (!packedB) return;
+        }
     } else {
         packedA = (double*)malloc(MR_D * k * sizeof(double));
-        packedB = (double*)malloc(k * NR_D * sizeof(double));
+        packedB = (double*)malloc(packedB_needed);
         if (!packedA || !packedB) {
             free(packedA);
             free(packedB);
@@ -390,6 +458,16 @@ static void InnerKernel_dgemm_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
 
     CBLAS_INDEX row, col;
 
+    // Phase 1: Pack all k×NR_D panels of B upfront
+    for (col = 0; col + NR_D <= n; col += NR_D)
+    {
+        double *b_ptr = b + col * b_col_stride;
+        if (transB)
+            PackMatrixB_8_d_trans(k, NR_D, b_ptr, ldb, &packedB[col * k]);
+        else
+            PackMatrixB_8_d(k, NR_D, b_ptr, ldb, &packedB[col * k]);
+    }
+
     // Main loop: 6 rows at a time
     for (row = 0; row + MR_D <= m; row += MR_D)
     {
@@ -399,17 +477,11 @@ static void InnerKernel_dgemm_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         else
             PackMatrixA_6_d(k, MR_D, a + row * a_row_stride, lda, packedA);
 
-        // Process 8 columns at a time
+        // Process 8 columns at a time using pre-packed B
         for (col = 0; col + NR_D <= n; col += NR_D)
         {
-            // Pack this k×8 panel of B
-            if (transB)
-                PackMatrixB_8_d_trans(k, NR_D, b + col * b_col_stride, ldb, packedB);
-            else
-                PackMatrixB_8_d(k, NR_D, b + col * b_col_stride, ldb, packedB);
-            
             // Call 6x8 micro-kernel
-            AddDot6x8_dgemm_fma(k, packedA, packedB, &C(col, row), ldc, alpha);
+            AddDot6x8_dgemm_fma(k, packedA, &packedB[col * k], &C(col, row), ldc, alpha);
         }
 
         // Handle leftover columns (< 8) - use scalar fallback
@@ -428,10 +500,8 @@ static void InnerKernel_dgemm_fma(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         }
     }
     
-    if (!use_pool) {
-        free(packedA);
-        free(packedB);
-    }
+    if (!use_pool_a) free(packedA);
+    if (!use_pool_b) free(packedB);
 }
 
 //------------------------------------------------------

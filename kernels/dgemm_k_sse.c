@@ -66,8 +66,10 @@ static void AddDot2x2_dgemm_sse(CBLAS_INDEX k, double *a, double *b, double *c, 
         
         // Prefetch
         if (p + PREFETCH_DISTANCE < k) {
-            CBLAS_PREFETCH(a + (PREFETCH_DISTANCE * MR_D), 0, 3);
-            CBLAS_PREFETCH(b + (PREFETCH_DISTANCE * NR_D), 0, 3);
+            CBLAS_PREFETCH_L2(a + (8 * MR_D));
+            CBLAS_PREFETCH_L1(a + (4 * MR_D));
+            CBLAS_PREFETCH_L2(b + (8 * NR_D));
+            CBLAS_PREFETCH_L1(b + (4 * NR_D));
         }
         
         // Row 0: broadcast A[0,p] and multiply-add
@@ -161,7 +163,7 @@ static void PackMatrixA_2_d_trans(CBLAS_INDEX k, CBLAS_INDEX m_rows, double *a, 
         double *a_col = a + i * lda;
         
         if (i + 8 < k) {
-            CBLAS_PREFETCH(a + (i + 8) * lda, 0, 3);
+            CBLAS_PREFETCH_L2(a + (i + 8) * lda);
         }
         
         for (CBLAS_INDEX r = 0; r < MR_D; r++) {
@@ -189,15 +191,23 @@ static void InnerKernel_dgemm_sse(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
     cblas_gemm_buffer_t* buf = cblas_get_gemm_buffer(thread_id);
     double* packedA;
     double* packedB;
-    int use_pool = 0;
+    int use_pool_a = 0, use_pool_b = 0;
+    size_t packedB_needed = (size_t)k * n * sizeof(double);
+    size_t pool_b_size = (size_t)cblas_gemm_kc * cblas_gemm_nb * sizeof(double);
     
     if (buf) {
         packedA = buf->packedA_d;
-        packedB = buf->packedB_d;
-        use_pool = 1;
+        use_pool_a = 1;
+        if (packedB_needed <= pool_b_size) {
+            packedB = buf->packedB_d;
+            use_pool_b = 1;
+        } else {
+            packedB = (double*)malloc(packedB_needed);
+            if (!packedB) return;
+        }
     } else {
         packedA = (double*)malloc(MR_D * k * sizeof(double));
-        packedB = (double*)malloc(k * NR_D * sizeof(double));
+        packedB = (double*)malloc(packedB_needed);
         if (!packedA || !packedB) {
             free(packedA);
             free(packedB);
@@ -214,6 +224,16 @@ static void InnerKernel_dgemm_sse(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
 
     CBLAS_INDEX row, col;
 
+    // Phase 1: Pack all k×NR_D panels of B upfront
+    for (col = 0; col + NR_D <= n; col += NR_D)
+    {
+        double *b_ptr = b + col * b_col_stride;
+        if (transB)
+            PackMatrixB_2_d_trans(k, NR_D, b_ptr, ldb, &packedB[col * k]);
+        else
+            PackMatrixB_2_d(k, NR_D, b_ptr, ldb, &packedB[col * k]);
+    }
+
     for (row = 0; row + MR_D <= m; row += MR_D)
     {
         if (transA)
@@ -223,11 +243,7 @@ static void InnerKernel_dgemm_sse(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
 
         for (col = 0; col + NR_D <= n; col += NR_D)
         {
-            if (transB)
-                PackMatrixB_2_d_trans(k, NR_D, b + col * b_col_stride, ldb, packedB);
-            else
-                PackMatrixB_2_d(k, NR_D, b + col * b_col_stride, ldb, packedB);
-            AddDot2x2_dgemm_sse(k, packedA, packedB, &C(col, row), ldc, alpha);
+            AddDot2x2_dgemm_sse(k, packedA, &packedB[col * k], &C(col, row), ldc, alpha);
         }
 
         // Leftover columns
@@ -245,10 +261,8 @@ static void InnerKernel_dgemm_sse(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
         }
     }
     
-    if (!use_pool) {
-        free(packedA);
-        free(packedB);
-    }
+    if (!use_pool_a) free(packedA);
+    if (!use_pool_b) free(packedB);
 }
 
 //------------------------------------------------------

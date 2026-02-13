@@ -74,11 +74,17 @@
 // Cross-platform prefetch macros
 #if defined(__GNUC__) || defined(__clang__)
 #   define CBLAS_PREFETCH(addr, rw, locality) __builtin_prefetch((addr), (rw), (locality))
+#   define CBLAS_PREFETCH_L1(addr) __builtin_prefetch((addr), 0, 3)
+#   define CBLAS_PREFETCH_L2(addr) __builtin_prefetch((addr), 0, 2)
 #elif defined(_MSC_VER)
 #   include <intrin.h>
 #   define CBLAS_PREFETCH(addr, rw, locality) _mm_prefetch((const char*)(addr), _MM_HINT_T0)
+#   define CBLAS_PREFETCH_L1(addr) _mm_prefetch((const char*)(addr), _MM_HINT_T0)
+#   define CBLAS_PREFETCH_L2(addr) _mm_prefetch((const char*)(addr), _MM_HINT_T1)
 #else
 #   define CBLAS_PREFETCH(addr, rw, locality) ((void)0)  // No-op for other compilers
+#   define CBLAS_PREFETCH_L1(addr) ((void)0)
+#   define CBLAS_PREFETCH_L2(addr) ((void)0)
 #endif
 
 //------------------------------------------------------
