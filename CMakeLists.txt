@@ -37,6 +37,12 @@ if ( WIN32 )
 #    add_test(NAME blas_stress COMMAND blas_stress)
 #    add_test(NAME win_test COMMAND win_test)
 #    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+else()
+    # On glibc, _GNU_SOURCE must be defined on the command line (before
+    # any header is parsed) to expose cpu_set_t, CPU_ZERO/CPU_SET, and
+    # pthread_setaffinity_np used by platform/threading.h. Harmless on
+    # macOS / other POSIX systems.
+    add_compile_definitions(_GNU_SOURCE)
 endif()
 
 # add the includes

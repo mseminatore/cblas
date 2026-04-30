@@ -68,11 +68,11 @@
 
 #else
     // POSIX threading API (pthread)
-    // _GNU_SOURCE must be defined before <pthread.h>/<sched.h> on glibc
-    // to expose cpu_set_t, CPU_ZERO/CPU_SET, and pthread_setaffinity_np.
-    #ifndef _GNU_SOURCE
-    #define _GNU_SOURCE
-    #endif
+    // NOTE: _GNU_SOURCE must be defined as a compile-line flag (see
+    // CMakeLists.txt / Makefile) so glibc exposes cpu_set_t,
+    // CPU_ZERO/CPU_SET, and pthread_setaffinity_np. Defining it here
+    // would be too late: cblas.h pulls in <stdio.h> etc. before this
+    // header, which transitively includes glibc's <features.h>.
     #include <pthread.h>
     #include <sched.h>
     

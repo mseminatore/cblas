@@ -18,7 +18,7 @@ OBJS = swap.o dot.o copy.o axpy.o scal.o axpby.o asum.o nrm2.o rot.o ger.o \
 	kernels/gemm_k.o kernels/gemm_k_sse.o kernels/gemm_k_avx.o kernels/gemm_k_fma.o kernels/gemm_k_avx512.o kernels/gemm_k_neon.o \
 	kernels/dgemm_k_sse.o kernels/dgemm_k_avx.o kernels/dgemm_k_fma.o kernels/dgemm_k_neon.o
 DEPS = cblas.h cblas_config.h tests/test.h platform/threading.h platform/simd.h platform/cpuid.h
-CFLAGS += -g -O2 -Wall -Wextra -Wpedantic -I. -Itests #-DNDEBUG
+CFLAGS += -g -O2 -Wall -Wextra -Wpedantic -I. -Itests -D_GNU_SOURCE #-DNDEBUG
 LIBNAME = libcblas.a
 LFLAGS += -L. -lcblas -lm
 
