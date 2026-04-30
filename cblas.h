@@ -38,6 +38,7 @@
 
 // Include platform abstraction headers
 #include "platform/cpuid.h"
+#include "platform/threading.h"
 
 // set the sizes of various buffers
 #define CBLAS_SMALL_BUF 256
@@ -492,7 +493,8 @@ typedef enum CBLAS_TRANSPOSE {
 #define CPU_x64_FMA3    0x10
 #define CPU_NEON        0x20
 #define CPU_NEON_FMA    0x40
-#define CPU_HYBRID      0x80    // Hybrid architecture (P-cores + E-cores)
+#define CPU_HYBRID      0x80        // Hybrid architecture (P-cores + E-cores)
+#define CPU_HTT         (1 << 7)    // Hyperthreading / SMT enabled
 
 //------------------------------------------------------
 // arguments passed to kernel functions

@@ -453,11 +453,16 @@ static unsigned int __cpu_get_features(void)
 
 	if (info[EBX] & (1 << 16))
 		cpu_features |= CPU_AVX512;
-	
+
 	// Check for hybrid architecture (P-cores + E-cores)
 	if (info[EDX] & (1 << 15))
 		cpu_features |= CPU_HYBRID;
-	
+
+	// MSVC path
+	__cpuid(info, 1);
+	if (info[EDX] & (1 << 28))     // EDX bit 28 = HTT flag
+	    cpu_features |= CPU_HTT;
+
 #else
 	unsigned int eax, ebx, ecx, edx;
 
@@ -483,6 +488,10 @@ static unsigned int __cpu_get_features(void)
 	if (edx & (1 << 15))
 		cpu_features |= CPU_HYBRID;
 
+	// GCC/Clang path
+	__cpuid(1, eax, ebx, ecx, edx);
+	if (edx & (1 << 28))     // EDX bit 28 = HTT flag
+	    cpu_features |= CPU_HTT;
 #endif
 
 	init_blas_kernels();
@@ -684,5 +693,13 @@ int cpu_get_e_core_count(void)
 		return 0;
 	
 	return cpu_get_core_count() - cpu_get_p_core_count();
+}
+
+//------------------------------------------------------
+// Check for Simultaneous Multithreading (SMT) support
+//------------------------------------------------------
+int cpu_has_smt(void)
+{
+    return (cpu_get_features() & CPU_HTT) ? 1 : 0;
 }
 

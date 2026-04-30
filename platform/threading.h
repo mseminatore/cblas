@@ -58,6 +58,14 @@
         #endif
     #endif
     
+    // Thread priority operations
+    #define PLATFORM_THREAD_PRIORITY_TIME_CRITICAL  THREAD_PRIORITY_TIME_CRITICAL
+    #define platform_thread_set_priority(t, p)      SetThreadPriority(t, p)
+    
+    // Bind thread to a specific logical processor (0-based index)
+    #define platform_thread_set_affinity(t, core) \
+        SetThreadAffinityMask(t, (DWORD_PTR)(1ULL << (core)))
+
 #else
     // POSIX threading API (pthread)
     #include <pthread.h>
@@ -103,11 +111,35 @@
     // Yield CPU
     #define platform_yield()            sched_yield()
     
+    // Thread priority operations
+    #define PLATFORM_THREAD_PRIORITY_TIME_CRITICAL  99  // Max real-time priority
+    
+    static inline int platform_thread_set_priority(pthread_t t, int priority) {
+        struct sched_param param;
+        param.sched_priority = priority;
+        return pthread_setschedparam(t, SCHED_FIFO, &param);
+    }
+
+    // Bind thread to a specific logical processor (0-based index)
+    static inline int platform_thread_set_affinity(pthread_t t, int core) {
+        cpu_set_t cpuset;
+        CPU_ZERO(&cpuset);
+        CPU_SET(core, &cpuset);
+        return pthread_setaffinity_np(t, sizeof(cpu_set_t), &cpuset);
+    }
 #endif
 
 // Windows doesn't have sched_yield in the same way
 #ifdef _WIN32
     #define platform_yield()            YieldProcessor() // was Sleep(0)
+#endif
+
+#ifdef _WIN32
+    #define platform_thread_current()       GetCurrentThread()   // returns HANDLE
+    #define platform_thread_current_id()    GetCurrentThreadId() // returns DWORD
+#else
+    #define platform_thread_current()       pthread_self()
+    #define platform_thread_current_id()    pthread_self()
 #endif
 
 #endif // __PLATFORM_THREADING_H

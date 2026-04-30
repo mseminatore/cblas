@@ -66,4 +66,10 @@ int cpu_get_p_core_count(void);
  */
 int cpu_get_e_core_count(void);
 
+/**
+ * @brief Check if SMT (Hyperthreading) is enabled
+ * @return 1 if SMT/HTT enabled, 0 otherwise
+ */
+int cpu_has_smt(void);
+
 #endif // __PLATFORM_CPUID_H

@@ -85,6 +85,8 @@ void cblas_set_num_threads(int threads)
         for (int i = start; i < threads - 1; i++)
         {
             platform_thread_create(&cblas_threads[i], cblas_worker_thread, i, &cblas_thread_ids[i]);
+			//platform_thread_set_priority(cblas_threads[i], PLATFORM_THREAD_PRIORITY_TIME_CRITICAL);
+   //         platform_thread_set_affinity(cblas_threads[i], (int)2*i + 1); // pin each worker to its own core
         }
 
         platform_mutex_unlock(&server_lock);
@@ -112,10 +114,15 @@ int cblas_init_server()
 
     platform_mutex_lock(&server_lock);
 
+    // When pinning threads, skip HT sibling cores if SMT is enabled
+    //int step = cpu_has_smt() ? 2 : 1;   // stride by 2 to avoid sibling logical cores
+
     // create the worker threads
     for (INT_PTR i = 0; i < cblas_max_threads - 1; i++)
     {
         platform_thread_create(&cblas_threads[i], cblas_worker_thread, i, &cblas_thread_ids[i]);
+		//platform_thread_set_priority(cblas_threads[i], PLATFORM_THREAD_PRIORITY_TIME_CRITICAL);
+        //platform_thread_set_affinity(cblas_threads[i], (int)2*i + 1); // pin each worker to its own core
     }
 
     cblas_set_server_alive(CBLAS_TRUE);
