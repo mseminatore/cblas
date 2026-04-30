@@ -68,6 +68,11 @@
 
 #else
     // POSIX threading API (pthread)
+    // _GNU_SOURCE must be defined before <pthread.h>/<sched.h> on glibc
+    // to expose cpu_set_t, CPU_ZERO/CPU_SET, and pthread_setaffinity_np.
+    #ifndef _GNU_SOURCE
+    #define _GNU_SOURCE
+    #endif
     #include <pthread.h>
     #include <sched.h>
     
@@ -121,12 +126,21 @@
     }
 
     // Bind thread to a specific logical processor (0-based index)
-    static inline int platform_thread_set_affinity(pthread_t t, int core) {
-        cpu_set_t cpuset;
-        CPU_ZERO(&cpuset);
-        CPU_SET(core, &cpuset);
-        return pthread_setaffinity_np(t, sizeof(cpu_set_t), &cpuset);
-    }
+    #if defined(__APPLE__)
+        // macOS does not support pthread CPU affinity; provide a no-op
+        // stub that reports success so callers can remain portable.
+        static inline int platform_thread_set_affinity(pthread_t t, int core) {
+            (void)t; (void)core;
+            return 0;
+        }
+    #else
+        static inline int platform_thread_set_affinity(pthread_t t, int core) {
+            cpu_set_t cpuset;
+            CPU_ZERO(&cpuset);
+            CPU_SET(core, &cpuset);
+            return pthread_setaffinity_np(t, sizeof(cpu_set_t), &cpuset);
+        }
+    #endif
 #endif
 
 // Windows doesn't have sched_yield in the same way
