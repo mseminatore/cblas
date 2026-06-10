@@ -72,7 +72,7 @@ static void fill_random_smatrix(float* M, CBLAS_INDEX rows, CBLAS_INDEX cols, un
 {
 	srand(seed);
 	for (CBLAS_INDEX i = 0; i < rows * cols; i++) {
-		M[i] = ((float)rand() / RAND_MAX) * 2.0f - 1.0f;
+		M[i] = ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f;
 	}
 }
 

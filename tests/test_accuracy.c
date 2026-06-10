@@ -128,7 +128,7 @@ static void fill_random_svector(float* v, CBLAS_INDEX n, unsigned int seed)
 {
     srand(seed);
     for (CBLAS_INDEX i = 0; i < n; i++) {
-        v[i] = ((float)rand() / RAND_MAX) * 2.0f - 1.0f;
+        v[i] = ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f;
     }
 }
 

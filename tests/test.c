@@ -919,7 +919,7 @@ CBLAS_UNUSED static void fill_random_smatrix(float* M, CBLAS_INDEX rows, CBLAS_I
 {
 	srand(seed);
 	for (CBLAS_INDEX i = 0; i < rows * cols; i++) {
-		M[i] = ((float)rand() / RAND_MAX) * 2.0f - 1.0f;  // Range [-1, 1]
+		M[i] = ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f;  // Range [-1, 1]
 	}
 }
 
