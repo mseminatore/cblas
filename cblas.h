@@ -1167,11 +1167,18 @@ void xerbla(const char *srcname, int info, size_t len);
 //------------------------------------------------------
 
 /**
- * @brief Get number of CPU cores
- * @return Number of logical processors/cores
+ * @brief Get number of physical CPU cores
+ * @return Number of physical cores (excludes SMT/hyperthread siblings)
  * @note Thread-safe. Platform-specific implementation.
  */
 int cpu_get_core_count(void);
+
+/**
+ * @brief Get number of logical processors (hardware threads)
+ * @return Number of logical processors, including SMT/hyperthread siblings
+ * @note Thread-safe. Platform-specific implementation.
+ */
+int cpu_get_logical_core_count(void);
 
 /**
  * @brief Get CPU core name/model

@@ -11,10 +11,16 @@
 #define __PLATFORM_CPUID_H
 
 /**
- * @brief Get the number of CPU cores
- * @return Number of CPU cores available
+ * @brief Get the number of physical CPU cores
+ * @return Number of physical CPU cores available (excludes SMT/hyperthread siblings)
  */
 int cpu_get_core_count(void);
+
+/**
+ * @brief Get the number of logical processors (hardware threads)
+ * @return Number of logical processors, including SMT/hyperthread siblings
+ */
+int cpu_get_logical_core_count(void);
 
 /**
  * @brief Get the CPU manufacturer/model name

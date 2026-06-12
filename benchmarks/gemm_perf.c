@@ -10,15 +10,24 @@
 
 #define MAX_SIZE 8192
 
-// Wall-clock seconds. NOTE: do NOT use the library's cbu_timer here — it uses
-// CLOCK_PROCESS_CPUTIME_ID (summed CPU time across all threads), which
+// Wall-clock seconds. NOTE: do NOT use the library's cbu_timer here — on POSIX it
+// uses CLOCK_PROCESS_CPUTIME_ID (summed CPU time across all threads), which
 // underreports multi-threaded throughput by ~the thread count. GFLOPS must be
 // measured against elapsed wall time, matching the OpenBLAS comparison bench.
+// Portable: QueryPerformanceCounter on Windows (MSVC has no clock_gettime /
+// CLOCK_MONOTONIC), CLOCK_MONOTONIC elsewhere. <windows.h> arrives via cblas.h.
 static double bench_now(void)
 {
+#ifdef _WIN32
+    LARGE_INTEGER freq, counter;
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&counter);
+    return (double)counter.QuadPart / (double)freq.QuadPart;
+#else
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return ts.tv_sec + ts.tv_nsec * 1e-9;
+#endif
 }
 
 //------------------------------------------------------

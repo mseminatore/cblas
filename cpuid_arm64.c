@@ -223,6 +223,29 @@ int cpu_get_core_count(void)
 }
 
 //------------------------------------------------------
+// return the number of logical processors (hardware threads)
+//------------------------------------------------------
+int cpu_get_logical_core_count(void)
+{
+#ifdef __APPLE__
+    uint32_t entry = 0;
+    size_t len = sizeof(entry);
+    if (sysctlbyname("hw.logicalcpu_max", &entry, &len, NULL, 0) == 0 && entry > 0)
+        return (int)entry;
+#endif
+
+#ifndef _WIN32
+    int logical = (int)sysconf(_SC_NPROCESSORS_ONLN);
+    if (logical < 1)
+        logical = 1;
+
+    return logical;
+#else
+    return 1;
+#endif
+}
+
+//------------------------------------------------------
 // return the CPU L1 cache line size
 //------------------------------------------------------
 int cpu_get_cacheline_size(void)

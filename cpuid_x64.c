@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdlib.h>   // malloc/free for Windows GetLogicalProcessorInformation
 #include "cblas.h"
 #include "kernels.h"
 
@@ -539,76 +540,97 @@ int cpu_get_core_count(void)
 	if (-1 != cores)
 		return cores;
 
+	cores = 0;
+
 #ifdef _WIN32
-	SYSTEM_INFO si;
-	GetSystemInfo(&si);
-
-	cores = si.dwNumberOfProcessors;
-	return cores;
-#else
-    cores = (int)sysconf(_SC_NPROCESSORS_ONLN);
-    if (cores == -1)
-        cores = 1;
-
-    return cores;
-#endif
-
-#if defined(_MSC_VER)
-	//int info[4];
-	//const char* vendor_string = cpu_get_core_name();
-
-	//if (!strcmp(vendor_string, "GenuineIntel"))
-	//{
-	//	__cpuid(info, 4);
-	//	cores = ((info[EAX] >> 26) & 0x3f) + 1; // EAX[31:26] + 1
-	//}
-	//else if (!strcmp(vendor_string, "AuthenticAMD"))
-	//{
-	//	__cpuid(info, 0x80000008);
-	//	cores = ((unsigned)(info[ECX] & 0xff)) + 1; // ECX[7:0] + 1
-	//}
-	//else
-	//{
-	//	puts("Error: Unknown CPU vendor");
-	//	cores = 1;
-	//}
-
-	//return cores;
-#else 
-	#ifdef __APPLE__
-		uint32_t entry;
+	// Count PHYSICAL cores via processor relationships.
+	{
+		DWORD len = 0;
+		GetLogicalProcessorInformation(NULL, &len);  // query required size
+		if (len > 0)
+		{
+			SYSTEM_LOGICAL_PROCESSOR_INFORMATION *buf =
+				(SYSTEM_LOGICAL_PROCESSOR_INFORMATION*)malloc(len);
+			if (buf && GetLogicalProcessorInformation(buf, &len))
+			{
+				DWORD count = len / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
+				for (DWORD i = 0; i < count; i++)
+					if (buf[i].Relationship == RelationProcessorCore)
+						cores++;
+			}
+			free(buf);
+		}
+		if (cores <= 0)
+		{
+			// fall back to logical processor count
+			SYSTEM_INFO si;
+			GetSystemInfo(&si);
+			cores = (int)si.dwNumberOfProcessors;
+		}
+	}
+#elif defined(__APPLE__)
+	{
+		uint32_t entry = 0;
 		size_t len = sizeof(entry);
-
-		// TODO - per sysctl.h this might want to be hw.ncpu or physicalcpu_max?
-		sysctlbyname("hw.physicalcpu", &entry, &len, NULL, 0);
-		cores = (int)entry;
-
-		return cores;
-	#else
+		if (sysctlbyname("hw.physicalcpu", &entry, &len, NULL, 0) == 0 && entry > 0)
+			cores = (int)entry;
+		else
+			cores = (int)sysconf(_SC_NPROCESSORS_ONLN);  // logical fallback
+	}
+#else
+	// Linux / other POSIX: derive PHYSICAL cores from CPUID, else fall back
+	// to the logical processor count from sysconf.
+	#if defined(__clang__) || defined(__GNUC__)
+	{
 		unsigned int eax, ebx, ecx, edx;
 		const char* vendor_string = cpu_get_core_name();
 
 		if (!strcmp(vendor_string, "GenuineIntel"))
 		{
-			__cpuid(4, eax, ebx, ecx, edx);
-			cores =  ((eax >> 26) & 0x3f) + 1; // EAX[31:26] + 1
+			// leaf 4 has subleaves: subleaf 0 carries the core-count field.
+			if (__get_cpuid_count(4, 0, &eax, &ebx, &ecx, &edx))
+				cores = (int)(((eax >> 26) & 0x3f) + 1); // EAX[31:26] + 1
 		}
 		else if (!strcmp(vendor_string, "AuthenticAMD"))
 		{
-			__cpuid(0x80000008, eax, ebx, ecx, edx);
-			cores = ((unsigned)(ecx & 0xff)) + 1; // ECX[7:0] + 1
+			if (__get_cpuid(0x80000008, &eax, &ebx, &ecx, &edx))
+				cores = (int)((ecx & 0xff) + 1); // ECX[7:0] + 1
 		}
-		else
-		{
-			puts("Error: Unknown CPU vendor, defaulting to 1 core");
-			cores = 1;
-		}
-
-		// printf("Detected %d cores\n", core_count);
-		return cores;
+	}
 	#endif
+	if (cores <= 0)
+		cores = (int)sysconf(_SC_NPROCESSORS_ONLN);  // logical fallback
 #endif
 
+	// never report fewer than 1
+	if (cores < 1)
+		cores = 1;
+
+	return cores;
+}
+
+//------------------------------------------------------
+// return the number of logical processors (hardware threads)
+//------------------------------------------------------
+int cpu_get_logical_core_count(void)
+{
+	static int logical = -1;
+
+	if (-1 != logical)
+		return logical;
+
+#ifdef _WIN32
+	SYSTEM_INFO si;
+	GetSystemInfo(&si);
+	logical = (int)si.dwNumberOfProcessors;
+#else
+	logical = (int)sysconf(_SC_NPROCESSORS_ONLN);
+#endif
+
+	if (logical < 1)
+		logical = 1;
+
+	return logical;
 }
 
 //------------------------------------------------------

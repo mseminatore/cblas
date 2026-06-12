@@ -502,16 +502,17 @@ void cblas_print_configuration(void)
     printf("     CPU uArch: %s\n", cblas_get_corename());
 	printf("ISA Extensions: %s\n", cblas_get_isa_features());
     
-    // Show hybrid architecture info if available
+    // Physical cores / logical hardware threads (the active worker-thread count
+    // is reported separately in the multi-threading section below).
     if (cpu_is_hybrid())
     {
-        printf(" Cores/Threads: %d/%d (Hybrid: %dP + %dE)\n", 
-               cblas_get_num_procs(), cblas_get_num_threads(),
+        printf(" Cores/Threads: %d/%d (Hybrid: %dP + %dE)\n",
+               cpu_get_core_count(), cpu_get_logical_core_count(),
                cpu_get_p_core_count(), cpu_get_e_core_count());
     }
     else
     {
-        printf(" Cores/Threads: %d/%d\n", cblas_get_num_procs(), cblas_get_num_threads());
+        printf(" Cores/Threads: %d/%d\n", cpu_get_core_count(), cpu_get_logical_core_count());
     }
     
     printf(" L1$ line size: %d bytes\n", cpu_get_cacheline_size());
