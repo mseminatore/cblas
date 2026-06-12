@@ -181,11 +181,12 @@ static void sgemm_mt_band(cblas_args_t *args)
     CBLAS_INDEX m = args->ib;     // rows in this band
     CBLAS_INDEX n = args->n;
     CBLAS_INDEX k = args->k;      // full k
-    CBLAS_INDEX lda = args->lda, ldb = args->ldb, ldc = args->ldc;
+    CBLAS_INDEX lda = args->lda, ldb = args->ldb;
 
     int is_notrans_a = (args->transa == CblasNoTrans);
     int is_notrans_b = (args->transb == CblasNoTrans);
-    CBLAS_INDEX a_row_stride = is_notrans_a ? lda : 1;
+    // A rows are handled inside the micro-kernel; here we only step columns of A
+    // (the k panel) and both dimensions of B.
     CBLAS_INDEX a_col_stride = is_notrans_a ? 1 : lda;
     CBLAS_INDEX b_row_stride = is_notrans_b ? ldb : 1;
     CBLAS_INDEX b_col_stride = is_notrans_b ? 1 : ldb;
@@ -200,8 +201,11 @@ static void sgemm_mt_band(cblas_args_t *args)
     slab.incy = 1;
     slab.beta_s = 1.0f;
 
-    // Cache-blocked over K (kc) and N (nb) so the packed-B panel a band feeds
-    // to the micro-kernel stays L2-resident (pb*nb*4 bytes), then over M (mc).
+    // Cache-blocked over K (kc) and N (nb) so the packed-B panel the band feeds
+    // to the micro-kernel fits the packed-B buffer (pb*nb floats). The micro-kernel
+    // (InnerKernel) packs that B panel once and loops over all band rows internally,
+    // so we pass the full band height here rather than re-slicing by mc — which
+    // would re-pack the same B panel for every row-block.
     for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc)
     {
         CBLAS_INDEX pb = MIN(k - p, cblas_gemm_kc);
@@ -210,19 +214,14 @@ static void sgemm_mt_band(cblas_args_t *args)
         {
             CBLAS_INDEX jb = MIN(n - col, cblas_gemm_nb);
 
-            for (CBLAS_INDEX row = 0; row < m; row += cblas_gemm_mc)
-            {
-                CBLAS_INDEX ib = MIN(m - row, cblas_gemm_mc);
+            slab.a = a + p * a_col_stride;
+            slab.b = b + p * b_row_stride + col * b_col_stride;
+            slab.c = c + col;
+            slab.n = jb;
+            slab.ib = m;     // full band height; InnerKernel loops its own MR strips
+            slab.pb = pb;
 
-                slab.a = a + row * a_row_stride + p * a_col_stride;
-                slab.b = b + p * b_row_stride + col * b_col_stride;
-                slab.c = c + row * ldc + col;
-                slab.n = jb;
-                slab.ib = ib;
-                slab.pb = pb;
-
-                blas_kernels.sgemm_k(&slab);
-            }
+            blas_kernels.sgemm_k(&slab);
         }
     }
 }

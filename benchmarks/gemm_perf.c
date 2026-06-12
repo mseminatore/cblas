@@ -5,16 +5,27 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include "cblas.h"
 
 #define MAX_SIZE 8192
+
+// Wall-clock seconds. NOTE: do NOT use the library's cbu_timer here — it uses
+// CLOCK_PROCESS_CPUTIME_ID (summed CPU time across all threads), which
+// underreports multi-threaded throughput by ~the thread count. GFLOPS must be
+// measured against elapsed wall time, matching the OpenBLAS comparison bench.
+static double bench_now(void)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec + ts.tv_nsec * 1e-9;
+}
 
 //------------------------------------------------------
 //
 //------------------------------------------------------
 void test_gemm(void)
 {
-    struct cblas_timer t1, t2;
     CBLAS_INDEX m, n, k;
     float dt;
     
@@ -56,15 +67,13 @@ void test_gemm(void)
         if (i <= 128) iters = 100;
         if (i <= 32) iters = 1000;
         
-        cbu_timer_get_time(&t1);
-        
+        double w1 = bench_now();
+
         for (int iter = 0; iter < iters; iter++) {
             cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1.0f, a, MAX_SIZE, b, MAX_SIZE, 1.0f, c, MAX_SIZE);
         }
 
-        cbu_timer_get_time(&t2);
-
-        dt = cbu_timer_get_delta(&t1, &t2) / iters;
+        dt = (float)((bench_now() - w1) / iters);
 
         printf(" %5.2f GFlops in %5.2fs\n", (float)2 * m * n * k / 1000000000 / dt, dt);
     }
@@ -95,15 +104,13 @@ void test_gemm(void)
         int iters = 10;
         if (i <= 256) iters = 50;
         
-        cbu_timer_get_time(&t1);
-        
+        double w1 = bench_now();
+
         for (int iter = 0; iter < iters; iter++) {
             cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1.0f, a_cont, i, b_cont, i, 1.0f, c_cont, i);
         }
 
-        cbu_timer_get_time(&t2);
-
-        dt = cbu_timer_get_delta(&t1, &t2) / iters;
+        dt = (float)((bench_now() - w1) / iters);
 
         printf(" %5.2f GFlops in %5.2fs\n", (float)2 * m * n * k / 1000000000 / dt, dt);
         

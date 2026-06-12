@@ -871,6 +871,16 @@ static void cblas_compute_gemm_block_sizes(void)
     cblas_gemm_kc = MIN(cblas_gemm_kc, 256);  // MAX_KC
     cblas_gemm_nb = MIN(cblas_gemm_nb, 1024); // MAX_NB
 #endif
+
+    // Optional manual overrides for block-size tuning experiments.
+    // The packed buffers are sized from these globals in cblas_init_gemm_buffers(),
+    // which runs after this function, so overrides are honored safely.
+    char *s_mc = getenv("CBLAS_GEMM_MC");
+    char *s_kc = getenv("CBLAS_GEMM_KC");
+    char *s_nb = getenv("CBLAS_GEMM_NB");
+    if (s_mc) cblas_gemm_mc = MAX(atoi(s_mc), 16);
+    if (s_kc) cblas_gemm_kc = MAX(atoi(s_kc), 16);
+    if (s_nb) cblas_gemm_nb = MAX(atoi(s_nb), 16);
 }
 
 //------------------------------------------------------
