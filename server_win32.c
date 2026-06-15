@@ -6,7 +6,7 @@
 #include "platform/threading.h"
 #include "cblas.h"
 
-extern volatile int cblas_max_threads;
+extern atomic_int cblas_max_threads;
 
 static platform_thread_t cblas_threads[MAX_THREADS] = {NULL};
 static platform_thread_id_t cblas_thread_ids[MAX_THREADS] = {0};
@@ -15,6 +15,10 @@ static platform_cond_t kickoff_event = NULL;
 
 static platform_mutex_t queue_lock;
 static platform_mutex_t server_lock;
+// Serializes whole MT batches so concurrent cblas_* calls from multiple
+// application threads do not share the global work_queue or the calling
+// thread's packing-buffer slot at once. See server.c for the full rationale.
+static platform_mutex_t execute_lock;
 
 static work_queue_t *work_queue = NULL;
 
@@ -111,6 +115,7 @@ int cblas_init_server()
     platform_cond_init(&kickoff_event);
     platform_mutex_init(&queue_lock);
     platform_mutex_init(&server_lock);
+    platform_mutex_init(&execute_lock);
 
     platform_mutex_lock(&server_lock);
 
@@ -172,6 +177,7 @@ void cblas_shutdown()
 
     platform_mutex_destroy(&queue_lock);
     platform_mutex_destroy(&server_lock);
+    platform_mutex_destroy(&execute_lock);
 
     // cleanup GEMM packing buffers
     cblas_cleanup_gemm_buffers();
@@ -291,6 +297,11 @@ void cblas_execute(CBLAS_INDEX items, work_queue_t *queue)
     if (items <= 0 || queue == NULL)
         return;
 
+    // One MT batch at a time (see execute_lock): protects the shared work_queue
+    // and the calling-thread packing-buffer slot from concurrent callers. Only
+    // application/main threads call this, never workers, so it cannot deadlock.
+    platform_mutex_lock(&execute_lock);
+
     // submit task queue
     if (items > 1 && queue->next)
         cblas_execute_async(items - 1, queue->next);
@@ -304,6 +315,8 @@ void cblas_execute(CBLAS_INDEX items, work_queue_t *queue)
     // wait for the queue of work to finish
     if (items > 1 && queue->next)
         cblas_execute_async_join(items - 1, queue->next);
+
+    platform_mutex_unlock(&execute_lock);
 }
 
 //------------------------------------------------------

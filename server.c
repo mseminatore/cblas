@@ -7,7 +7,7 @@
 #include "platform/threading.h"
 #include "cblas.h"
 
-extern volatile int cblas_max_threads;
+extern atomic_int cblas_max_threads;
 
 static work_queue_t *work_queue = NULL;
 static platform_thread_t cblas_thread_ids[MAX_THREADS] = {0};
@@ -22,6 +22,13 @@ static void *cblas_worker_thread(void *pvoid);
 static platform_mutex_t queue_lock   = PLATFORM_MUTEX_INITIALIZER;
 static platform_mutex_t server_lock   = PLATFORM_MUTEX_INITIALIZER;
 static platform_cond_t kickoff_event = PLATFORM_COND_INITIALIZER;
+
+// Serializes whole MT batches. The worker pool, the global work_queue, and the
+// calling thread's packing-buffer slot (cblas_max_threads-1) are shared global
+// state, so only one cblas_execute batch may be in flight at a time. This makes
+// concurrent cblas_* calls from multiple application threads safe (they run one
+// after another); each batch still uses every worker core internally.
+static platform_mutex_t execute_lock = PLATFORM_MUTEX_INITIALIZER;
 
 //------------------------------------------------------
 // set the active number of threads [1..cores]
@@ -48,9 +55,15 @@ void cblas_set_num_threads(int threads)
         platform_mutex_lock(&server_lock);
 
         int thread_count = cblas_max_threads;
-        cblas_max_threads = threads;
 
+        // Change the exit predicate and wake workers under queue_lock (the mutex
+        // they hold when evaluating it and parking) so a worker cannot read the
+        // old count, commit to cond_wait, and miss the broadcast. See the same
+        // pattern in cblas_shutdown.
+        platform_mutex_lock(&queue_lock);
+        cblas_max_threads = threads;
         platform_cond_broadcast(&kickoff_event);
+        platform_mutex_unlock(&queue_lock);
 
         for (int i = threads - 1; i < thread_count - 1; i++)
         {
@@ -132,13 +145,19 @@ void cblas_shutdown(void)
 
     // Wake all threads and wait for them to exit gracefully
     platform_mutex_lock(&server_lock);
-    
+
     int thread_count = cblas_max_threads;
+
+    // Change the exit predicate and wake workers while holding queue_lock — the
+    // same mutex workers hold when they evaluate the predicate and park on
+    // kickoff_event. Signalling under a different lock leaves a window where a
+    // worker reads the old thread count, commits to cond_wait, and then misses
+    // the broadcast forever, hanging shutdown. (pthread condvars do not latch.)
+    platform_mutex_lock(&queue_lock);
     cblas_max_threads = 1;  // Signal all threads to exit
-    
-    // Wake up all waiting threads
     platform_cond_broadcast(&kickoff_event);
-    
+    platform_mutex_unlock(&queue_lock);
+
     // Wait for all threads to complete
     for (int i = 0; i < thread_count - 1; i++)
     {
@@ -267,6 +286,12 @@ void cblas_execute(CBLAS_INDEX items, work_queue_t* queue)
     if (items <= 0 || queue == NULL)
         return;
 
+    // One MT batch at a time (see execute_lock above): protects the shared
+    // work_queue and the calling-thread packing-buffer slot against concurrent
+    // callers. Only application/main threads call this, never workers, so there
+    // is no nesting and no deadlock.
+    platform_mutex_lock(&execute_lock);
+
     // submit task queue
     if (items > 1 && queue->next)
         cblas_execute_async(items - 1, queue->next);
@@ -275,12 +300,14 @@ void cblas_execute(CBLAS_INDEX items, work_queue_t* queue)
     // Main thread uses highest buffer slot to avoid conflict with workers (0 to max-2)
     queue->args->thread_id = cblas_max_threads - 1;
     queue->kernel(queue->args);
-    
+
     atomic_store_explicit(&queue->finished, 1, memory_order_release);
 
     // wait for the queue of work to finish
     if (items > 1 && queue->next)
         cblas_execute_async_join(items - 1, queue->next);
+
+    platform_mutex_unlock(&execute_lock);
 }
 
 //------------------------------------------------------

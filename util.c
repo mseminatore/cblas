@@ -11,7 +11,10 @@
 //------------------------------------------------------
 // state variables
 //------------------------------------------------------
-volatile int cblas_max_threads  = MAX_THREADS;  // max system supported threads
+// atomic_int (not plain volatile): read by worker threads under queue_lock and
+// written by the main thread under server_lock — i.e. under different locks — so
+// it must be atomic to be race-free. See server.c.
+atomic_int cblas_max_threads  = MAX_THREADS;  // max system supported threads
 static int cblas_server_alive   = CBLAS_FALSE;  // has thread server been initialized
 kernels_t blas_kernels;
 
@@ -169,7 +172,10 @@ typedef struct {
 } stats_entry_t;
 
 static stats_entry_t stats_table[STATS_TABLE_SIZE];
-static int stats_initialized = 0;
+// atomic_int: the fast-path "already initialized?" checks read this without the
+// stats lock while init writes it under the lock (double-checked locking), so it
+// must be atomic to avoid a data race on concurrent BLAS calls.
+static atomic_int stats_initialized = 0;
 
 #ifdef MT_ENABLED
 #ifdef _WIN32
