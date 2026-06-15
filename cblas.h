@@ -27,7 +27,7 @@
 #   define LIB_CBLAS
 #endif
 
-#define CBLAS_VERSION "0.25"
+#define CBLAS_VERSION "0.5"
 
 //[]------------------------------------------------------[]
 // configurable library parameters
