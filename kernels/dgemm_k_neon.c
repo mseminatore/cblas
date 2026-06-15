@@ -40,6 +40,30 @@ static void AddDot_d(CBLAS_INDEX k, double *x, CBLAS_INDEX incx, double *y, CBLA
 }
 
 //------------------------------------------------------
+// Leftover-column kernel: compute one column of C for a packed 4-row strip,
+// SIMD across the 4 rows. Replaces the scalar per-(row,col) fallback for the
+// < NR_D=8 trailing columns (matters when n is not a multiple of 8). 'a' is the
+// packed A strip (MR_D doubles per k step); 'bcol' is the raw B column (stride
+// bstr); 'c' points at &C(col,row), so the 4 rows are at c[r*ldc].
+//------------------------------------------------------
+static void AddDot4x1col_d_neon(CBLAS_INDEX k, double *a, double *bcol, CBLAS_INDEX bstr,
+                                double *c, CBLAS_INDEX ldc, double alpha)
+{
+    float64x2_t acc0 = vdupq_n_f64(0.0), acc1 = vdupq_n_f64(0.0);
+    for (CBLAS_INDEX p = 0; p < k; p++)
+    {
+        double bj = bcol[p * bstr];
+        acc0 = vfmaq_n_f64(acc0, vld1q_f64(a + p * 4),     bj);
+        acc1 = vfmaq_n_f64(acc1, vld1q_f64(a + p * 4 + 2), bj);
+    }
+    double r[4];
+    vst1q_f64(r,     acc0);
+    vst1q_f64(r + 2, acc1);
+    for (int i = 0; i < 4; i++)
+        c[i * ldc] += alpha * r[i];
+}
+
+//------------------------------------------------------
 // 4x8 micro-kernel using NEON for double precision
 // Computes C[4x8] += alpha * A[4xk] * B[kx8]
 // Uses 16 float64x2_t registers for C (4 rows × 4 per row)
@@ -396,12 +420,9 @@ static void InnerKernel_dgemm_neon(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
             AddDot4x8_dgemm_neon(k, packedA, &packedB[col * k], &C(col, row), ldc, alpha);
         }
 
-        // Handle leftover columns (< 8)
-        for (; col < n; col++) {
-            for (CBLAS_INDEX r = 0; r < MR_D; r++) {
-                AddDot_d(k, a + (row + r) * a_row_stride, a_col_stride, b + col * b_col_stride, b_row_stride, &C(col, row + r), alpha);
-            }
-        }
+        // Handle leftover columns (< 8) - SIMD across the 4 packed rows
+        for (; col < n; col++)
+            AddDot4x1col_d_neon(k, packedA, b + col * b_col_stride, b_row_stride, &C(col, row), ldc, alpha);
     }
 
     // Handle leftover rows (< 4)
@@ -420,12 +441,91 @@ static void InnerKernel_dgemm_neon(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
 //------------------------------------------------------
 void dgemm_k_neon(cblas_args_t* args)
 {
-    InnerKernel_dgemm_neon(args->ib, args->n, args->pb, 
-                           (double*)args->a, args->lda, 
-                           (double*)args->b, args->ldb, 
+    InnerKernel_dgemm_neon(args->ib, args->n, args->pb,
+                           (double*)args->a, args->lda,
+                           (double*)args->b, args->ldb,
                            (double*)args->c, args->ldc,
                            args->alpha_d, args->thread_id,
                            args->transa, args->transb);
+}
+
+//------------------------------------------------------
+// Cooperative MT DGEMM: pack a k x n panel of B (full NR_D=8 column panels)
+// into the shared args->packedB buffer. See sgemm_pack_b_neon for rationale.
+//------------------------------------------------------
+void dgemm_pack_b_neon(cblas_args_t* args)
+{
+    CBLAS_INDEX k = args->pb;
+    CBLAS_INDEX n = args->n;
+    CBLAS_INDEX ldb = args->ldb;
+    double *b = (double*)args->b;
+    double *packedB = (double*)args->packedB;
+    int transB = (args->transb == CblasTrans);
+    CBLAS_INDEX b_col_stride = transB ? ldb : 1;
+
+    for (CBLAS_INDEX col = 0; col + NR_D <= n; col += NR_D)
+    {
+        double *b_ptr = b + col * b_col_stride;
+        if (transB)
+            PackMatrixB_8_d_trans(k, NR_D, b_ptr, ldb, &packedB[col * k]);
+        else
+            PackMatrixB_8_d(k, NR_D, b_ptr, ldb, &packedB[col * k]);
+    }
+}
+
+//------------------------------------------------------
+// Cooperative MT DGEMM macro-kernel: compute one m-band of C using the shared
+// pre-packed B. Packs this band's A in MR_D=4 strips and runs the 4x8 micro-
+// kernel against the shared packedB; scalar handles the row/column remainders
+// (reading raw B). Mirrors sgemm_macro_k_neon.
+//------------------------------------------------------
+void dgemm_macro_k_neon(cblas_args_t* args)
+{
+    CBLAS_INDEX m = args->ib;
+    CBLAS_INDEX n = args->n;
+    CBLAS_INDEX k = args->pb;
+    CBLAS_INDEX lda = args->lda, ldb = args->ldb, ldc = args->ldc;
+    double *a = (double*)args->a;
+    double *b = (double*)args->b;            // raw B panel (leftover columns)
+    double *c = (double*)args->c;
+    double *packedB = (double*)args->packedB;
+    double alpha = args->alpha_d;
+
+    int transA = (args->transa == CblasTrans);
+    int transB = (args->transb == CblasTrans);
+    CBLAS_INDEX a_row_stride = transA ? 1 : lda;
+    CBLAS_INDEX a_col_stride = transA ? lda : 1;
+    CBLAS_INDEX b_row_stride = transB ? 1 : ldb;
+    CBLAS_INDEX b_col_stride = transB ? ldb : 1;
+
+    cblas_gemm_buffer_t* buf = cblas_get_gemm_buffer(args->thread_id);
+    double *packedA;
+    int use_pool_a = 0;
+    if (buf) { packedA = buf->packedA_d; use_pool_a = 1; }
+    else { packedA = (double*)malloc(MR_D * k * sizeof(double)); if (!packedA) return; }
+
+    CBLAS_INDEX row, col;
+
+    for (row = 0; row + MR_D <= m; row += MR_D)
+    {
+        if (transA)
+            PackMatrixA_4_d_trans(k, MR_D, a + row * a_row_stride, lda, packedA);
+        else
+            PackMatrixA_4_d(k, MR_D, a + row * a_row_stride, lda, packedA);
+
+        for (col = 0; col + NR_D <= n; col += NR_D)
+            AddDot4x8_dgemm_neon(k, packedA, &packedB[col * k], &C(col, row), ldc, alpha);
+
+        for (; col < n; col++)
+            AddDot4x1col_d_neon(k, packedA, b + col * b_col_stride, b_row_stride, &C(col, row), ldc, alpha);
+    }
+
+    for (; row < m; row++)
+        for (col = 0; col < n; col++)
+            AddDot_d(k, a + row * a_row_stride, a_col_stride,
+                     b + col * b_col_stride, b_row_stride, &C(col, row), alpha);
+
+    if (!use_pool_a) free(packedA);
 }
 
 #endif // ARM64 NEON

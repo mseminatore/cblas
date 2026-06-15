@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "cblas.h"
+#include "platform/threading.h"
 
 //------------------------------------------------------
 // state variables
@@ -889,8 +890,18 @@ static void cblas_compute_gemm_block_sizes(void)
 //------------------------------------------------------
 void cblas_init(int threads)
 {
+    // The calling thread participates in MT GEMM (it runs one band itself), so
+    // give it the same high QoS as the workers; otherwise on Apple Silicon the
+    // main thread can be scheduled on an efficiency core and gate the result.
+    platform_thread_set_qos_high();
+
+    // Auto thread count = performance cores only. On asymmetric CPUs (Apple
+    // Silicon P/E, Intel hybrid) the efficiency cores run GEMM bands far slower
+    // and hurt the cooperative path more than they help; the P-core count is
+    // the sweet spot. An explicit thread count (cblas_init(n)) still overrides
+    // this and may use up to cpu_get_core_count() total cores.
     if (CBLAS_DEFAULT_THREADS == threads)
-        threads = cpu_get_core_count();
+        threads = cpu_get_p_core_count();
 
     char *s_env_threads = getenv("CBLAS_THREADS");
     int env_threads = threads;

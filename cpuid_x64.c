@@ -2,6 +2,9 @@
 //
 // Copyright 2023 Mark Seminatore. All rights reserved.
 //------------------------------------------------------
+#if defined(__linux__) && !defined(_GNU_SOURCE)
+#	define _GNU_SOURCE   // must precede any libc header for CPU_SET/sched_setaffinity
+#endif
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
@@ -13,6 +16,10 @@
 #	include <Windows.h>
 #else
 #   include <unistd.h>
+#endif
+
+#if defined(__linux__)
+#   include <sched.h>   // sched_setaffinity / cpu_set_t for per-core CPUID probing
 #endif
 
 #if defined(__clang__) || defined(__GNUC__)
@@ -677,33 +684,140 @@ int cpu_is_hybrid(void)
 }
 
 //------------------------------------------------------
-// Get number of P-cores (performance cores)
+// Get number of PHYSICAL performance cores (P-cores).
+//
+// On non-hybrid parts (all AMD, plain-HT Intel, Apple Intel) every core is a
+// performance core, so this equals cpu_get_core_count(). On hybrid Intel we
+// enumerate real core types: GetLogicalProcessorInformationEx on Windows
+// (highest EfficiencyClass == P), CPUID leaf 0x1A per logical CPU on Linux
+// (core type 0x40 == P, 0x20 == E), deduped to physical cores. The result is
+// the auto thread-count default used by cblas_init, matching the Apple
+// hw.perflevel0.physicalcpu semantics. Falls back to a heuristic only if the
+// platform enumeration is unavailable, so it never returns 0.
 //------------------------------------------------------
 int cpu_get_p_core_count(void)
 {
+	static int pcache = -1;
+	if (pcache != -1)
+		return pcache;
+
 	if (!cpu_is_hybrid())
-		return cpu_get_core_count();
-	
-	// For hybrid CPUs, we need to enumerate cores via Windows API
-	// or use CPUID leaf 0x1A to identify core types
-	// This is a simplified version - actual implementation would need
-	// to iterate through all logical processors
-	
+		return (pcache = cpu_get_core_count());
+
+	int pcores = 0;
+
 #ifdef _WIN32
-	// Windows provides this through GetLogicalProcessorInformationEx
-	// but for now, we'll use a heuristic
-	int total_cores = cpu_get_core_count();
-	
-	// Common Intel configurations:
-	// 12th gen: 8P+8E (16 total)
-	// 13th gen: 8P+16E (24 total), 6P+8E (14 total)
-	// This is a rough estimate - real detection needs Windows API calls
-	
-	// For now, return approximately 1/2 to 2/3 as P-cores
-	return (total_cores * 2) / 3;
-#else
-	return cpu_get_core_count() / 2;
+	// Each RelationProcessorCore entry is one physical core carrying an
+	// EfficiencyClass byte; P-cores have the maximum class. Two passes:
+	// find the max class, then count the physical cores at that class.
+	{
+		DWORD len = 0;
+		GetLogicalProcessorInformationEx(RelationProcessorCore, NULL, &len);
+		if (len > 0)
+		{
+			char *buf = (char*)malloc(len);
+			if (buf && GetLogicalProcessorInformationEx(RelationProcessorCore,
+					(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX*)buf, &len))
+			{
+				BYTE max_class = 0;
+				char *p;
+				for (p = buf; p < buf + len; )
+				{
+					SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *e =
+						(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX*)p;
+					if (e->Relationship == RelationProcessorCore &&
+						e->Processor.EfficiencyClass > max_class)
+						max_class = e->Processor.EfficiencyClass;
+					p += e->Size;
+				}
+				for (p = buf; p < buf + len; )
+				{
+					SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *e =
+						(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX*)p;
+					if (e->Relationship == RelationProcessorCore &&
+						e->Processor.EfficiencyClass == max_class)
+						pcores++;
+					p += e->Size;
+				}
+			}
+			free(buf);
+		}
+	}
+#elif defined(__APPLE__)
+	// Apple Intel Macs are never hybrid (we won't reach here); be safe.
+	pcores = cpu_get_core_count();
+#elif defined(__clang__) || defined(__GNUC__)
+	// Pin to each logical CPU, read CPUID leaf 0x1A (Hybrid Information) for
+	// its core type, and dedupe HT siblings into physical cores via the sysfs
+	// topology keys. Restore the original affinity mask afterward.
+	{
+		int nconf = (int)sysconf(_SC_NPROCESSORS_CONF);
+		if (nconf < 1)
+			nconf = (int)sysconf(_SC_NPROCESSORS_ONLN);
+		if (nconf < 1)
+			nconf = 1;
+
+		cpu_set_t oldset;
+		int have_old = (sched_getaffinity(0, sizeof(oldset), &oldset) == 0);
+
+		// distinct physical P-cores keyed by (package << 16 | core_id)
+		int *seen = (int*)malloc((size_t)nconf * sizeof(int));
+		int nseen = 0;
+
+		for (int c = 0; seen && c < nconf; c++)
+		{
+			cpu_set_t set;
+			CPU_ZERO(&set);
+			CPU_SET(c, &set);
+			if (sched_setaffinity(0, sizeof(set), &set) != 0)
+				continue;  // offline or not permitted
+
+			unsigned int eax, ebx, ecx, edx;
+			if (!__get_cpuid_count(0x1A, 0, &eax, &ebx, &ecx, &edx))
+				continue;
+			if (((eax >> 24) & 0xff) != 0x40)  // 0x40 = P (Core), 0x20 = E (Atom)
+				continue;
+
+			int core_id = c, pkg = 0;
+			char path[128];
+			FILE *f;
+			snprintf(path, sizeof(path),
+				"/sys/devices/system/cpu/cpu%d/topology/core_id", c);
+			if ((f = fopen(path, "r"))) { if (fscanf(f, "%d", &core_id) != 1) core_id = c; fclose(f); }
+			snprintf(path, sizeof(path),
+				"/sys/devices/system/cpu/cpu%d/topology/physical_package_id", c);
+			if ((f = fopen(path, "r"))) { if (fscanf(f, "%d", &pkg) != 1) pkg = 0; fclose(f); }
+
+			int key = (pkg << 16) | (core_id & 0xffff);
+			int dup = 0;
+			for (int i = 0; i < nseen; i++)
+				if (seen[i] == key) { dup = 1; break; }
+			if (!dup)
+				seen[nseen++] = key;
+		}
+
+		if (have_old)
+			sched_setaffinity(0, sizeof(oldset), &oldset);
+		free(seen);
+		pcores = nseen;
+	}
 #endif
+
+	// Fallback if enumeration was unavailable or yielded nothing: never 0.
+	if (pcores < 1)
+	{
+		int total = cpu_get_core_count();
+#ifdef _WIN32
+		pcores = (total * 2) / 3;   // 12th/13th-gen Intel skew toward P-cores
+#else
+		pcores = total / 2;
+#endif
+		if (pcores < 1)
+			pcores = total;
+	}
+
+	pcache = pcores;
+	return pcache;
 }
 
 //------------------------------------------------------

@@ -1,7 +1,10 @@
 # Project files
 sgemm_bench
 sgemm_bench_ob
+dgemm_bench
 openblas_gemm_perf
+openblas_gemm
+openblas_dgemm
 axpy_perf
 blas_test
 blas_stress

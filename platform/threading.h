@@ -62,6 +62,9 @@
     #define PLATFORM_THREAD_PRIORITY_TIME_CRITICAL  THREAD_PRIORITY_TIME_CRITICAL
     #define platform_thread_set_priority(t, p)      SetThreadPriority(t, p)
     
+    // No asymmetric P/E scheduling concern on Windows targets here; no-op.
+    static inline void platform_thread_set_qos_high(void) { }
+
     // Bind thread to a specific logical processor (0-based index)
     #define platform_thread_set_affinity(t, core) \
         SetThreadAffinityMask(t, (DWORD_PTR)(1ULL << (core)))
@@ -124,6 +127,22 @@
         param.sched_priority = priority;
         return pthread_setschedparam(t, SCHED_FIFO, &param);
     }
+
+    // Request that the CALLING thread run on high-performance cores.
+    // On Apple Silicon (asymmetric P/E cores) macOS schedules threads by
+    // Quality-of-Service class, not affinity (which is a no-op). Worker
+    // threads created with a plain pthread_create inherit a low/default QoS
+    // and get parked on the slow efficiency cores, which destroys GEMM
+    // scaling. Raising the worker's QoS to USER_INITIATED steers it onto the
+    // performance cores. No-op on platforms without this API.
+    #if defined(__APPLE__)
+        #include <pthread/qos.h>
+        static inline void platform_thread_set_qos_high(void) {
+            pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
+        }
+    #else
+        static inline void platform_thread_set_qos_high(void) { }
+    #endif
 
     // Bind thread to a specific logical processor (0-based index)
     #if defined(__APPLE__)

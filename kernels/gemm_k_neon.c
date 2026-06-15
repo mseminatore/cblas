@@ -38,12 +38,50 @@
 static void AddDot(CBLAS_INDEX k, float *x, CBLAS_INDEX incx, float *y, CBLAS_INDEX incy, float *gamma, float alpha)
 {
     float sum = 0.0f;
-    
+
     for (CBLAS_INDEX p = 0; p < k; p++)
     {
         sum += x[p * incx] * y[p * incy];
     }
     *gamma += alpha * sum;
+}
+
+//------------------------------------------------------
+// Leftover-column kernels: compute one column of C for a packed MR-row strip,
+// SIMD across the rows. These replace the scalar per-(row,col) fallback for the
+// < NR=12 trailing columns. That fallback used to dominate at sizes where n is
+// not a multiple of 12 (e.g. powers of two: n%12 = 4 or 8), dragging a kernel
+// that otherwise matches OpenBLAS down by ~20%. 'a' is the packed A strip
+// (MR floats per k step); 'bcol' is the raw B column (k elements, stride bstr);
+// 'c' points at &C(col,row) so the rows are at c[r*ldc].
+//------------------------------------------------------
+static void AddDot8x1col_neon(CBLAS_INDEX k, float *a, float *bcol, CBLAS_INDEX bstr,
+                              float *c, CBLAS_INDEX ldc, float alpha)
+{
+    float32x4_t acc0 = vdupq_n_f32(0.0f), acc1 = vdupq_n_f32(0.0f);
+    for (CBLAS_INDEX p = 0; p < k; p++)
+    {
+        float bj = bcol[p * bstr];
+        acc0 = vfmaq_n_f32(acc0, vld1q_f32(a + p * 8),     bj);
+        acc1 = vfmaq_n_f32(acc1, vld1q_f32(a + p * 8 + 4), bj);
+    }
+    float r[8];
+    vst1q_f32(r,     acc0);
+    vst1q_f32(r + 4, acc1);
+    for (int i = 0; i < 8; i++)
+        c[i * ldc] += alpha * r[i];
+}
+
+static void AddDot4x1col_neon(CBLAS_INDEX k, float *a, float *bcol, CBLAS_INDEX bstr,
+                              float *c, CBLAS_INDEX ldc, float alpha)
+{
+    float32x4_t acc = vdupq_n_f32(0.0f);
+    for (CBLAS_INDEX p = 0; p < k; p++)
+        acc = vfmaq_n_f32(acc, vld1q_f32(a + p * 4), bcol[p * bstr]);
+    float r[4];
+    vst1q_f32(r, acc);
+    for (int i = 0; i < 4; i++)
+        c[i * ldc] += alpha * r[i];
 }
 
 //------------------------------------------------------
@@ -877,12 +915,9 @@ static void InnerKernel_neon(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
             AddDot8x12_neon(k, packedA, &packedB[col * k], &C(col, row), ldc, alpha);
         }
 
-        // Handle leftover columns (< 12) - use scalar fallback
-        for (; col < n; col++) {
-            for (CBLAS_INDEX r = 0; r < MR; r++) {
-                AddDot(k, a + (row + r) * a_row_stride, a_col_stride, b + col * b_col_stride, b_row_stride, &C(col, row + r), alpha);
-            }
-        }
+        // Handle leftover columns (< 12) - SIMD across the 8 packed rows
+        for (; col < n; col++)
+            AddDot8x1col_neon(k, packedA, b + col * b_col_stride, b_row_stride, &C(col, row), ldc, alpha);
     }
 
     // Handle leftover rows (< 8) using smaller kernels
@@ -901,12 +936,9 @@ static void InnerKernel_neon(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
             AddDot4x12_neon(k, packedA, &packedB[col * k], &C(col, row), ldc, alpha);
         }
         
-        // Leftover columns
-        for (; col < n; col++) {
-            for (CBLAS_INDEX r = 0; r < 4; r++) {
-                AddDot(k, a + (row + r) * a_row_stride, a_col_stride, b + col * b_col_stride, b_row_stride, &C(col, row + r), alpha);
-            }
-        }
+        // Leftover columns - SIMD across the 4 packed rows
+        for (; col < n; col++)
+            AddDot4x1col_neon(k, packedA, b + col * b_col_stride, b_row_stride, &C(col, row), ldc, alpha);
         row += 4;
         remaining_rows -= 4;
     }
@@ -928,12 +960,114 @@ static void InnerKernel_neon(CBLAS_INDEX m, CBLAS_INDEX n, CBLAS_INDEX k,
 //------------------------------------------------------
 void sgemm_k_neon(cblas_args_t* args)
 {
-    InnerKernel_neon(args->ib, args->n, args->pb, 
-                     args->a, args->lda, 
-                     args->b, args->ldb, 
+    InnerKernel_neon(args->ib, args->n, args->pb,
+                     args->a, args->lda,
+                     args->b, args->ldb,
                      args->c, args->ldc,
                      args->alpha_s, args->thread_id,
                      args->transa, args->transb);
+}
+
+//------------------------------------------------------
+// Cooperative MT SGEMM: pack a k x n panel of B (full NR=12 column panels)
+// into the shared args->packedB buffer. Called once per kc-panel; every
+// m-band macro-kernel then reads this packed B from the shared L2 instead of
+// re-streaming raw B from memory. Leftover (< NR) columns are left to the
+// macro-kernel's scalar path, which reads raw B directly.
+//------------------------------------------------------
+void sgemm_pack_b_neon(cblas_args_t* args)
+{
+    CBLAS_INDEX k = args->pb;       // kc for this panel
+    CBLAS_INDEX n = args->n;        // full panel width
+    CBLAS_INDEX ldb = args->ldb;
+    float *b = (float*)args->b;
+    float *packedB = (float*)args->packedB;
+    int transB = (args->transb == CblasTrans);
+    CBLAS_INDEX b_col_stride = transB ? ldb : 1;
+
+    for (CBLAS_INDEX col = 0; col + NR <= n; col += NR)
+    {
+        float *b_ptr = b + col * b_col_stride;
+        if (transB)
+            PackMatrixB_12_trans(k, NR, b_ptr, ldb, &packedB[col * k]);
+        else
+            PackMatrixB_12(k, NR, b_ptr, ldb, &packedB[col * k]);
+    }
+}
+
+//------------------------------------------------------
+// Cooperative MT SGEMM macro-kernel: compute one m-band of C using the shared
+// pre-packed B. Packs this band's A in MR=8 strips (per-thread buffer) and runs
+// the 8x12 micro-kernel against the shared packedB; 4x12 + scalar handle the
+// row remainder, scalar (reading raw B) handles the < NR column remainder.
+//
+// args: a=raw A band base, b=raw B panel base (for leftover cols),
+//   packedB=shared packed B, c=C band base, ib=band rows, n=panel width,
+//   pb=kc, lda/ldb/ldc, alpha_s, transa/transb, thread_id.
+//------------------------------------------------------
+void sgemm_macro_k_neon(cblas_args_t* args)
+{
+    CBLAS_INDEX m = args->ib;       // rows in this band
+    CBLAS_INDEX n = args->n;
+    CBLAS_INDEX k = args->pb;       // kc
+    CBLAS_INDEX lda = args->lda, ldb = args->ldb, ldc = args->ldc;
+    float *a = (float*)args->a;
+    float *b = (float*)args->b;             // raw B panel (leftover columns)
+    float *c = (float*)args->c;
+    float *packedB = (float*)args->packedB;
+    float alpha = args->alpha_s;
+
+    int transA = (args->transa == CblasTrans);
+    int transB = (args->transb == CblasTrans);
+    CBLAS_INDEX a_row_stride = transA ? 1 : lda;
+    CBLAS_INDEX a_col_stride = transA ? lda : 1;
+    CBLAS_INDEX b_row_stride = transB ? 1 : ldb;
+    CBLAS_INDEX b_col_stride = transB ? ldb : 1;
+
+    cblas_gemm_buffer_t* buf = cblas_get_gemm_buffer(args->thread_id);
+    float *packedA;
+    int use_pool_a = 0;
+    if (buf) { packedA = buf->packedA_s; use_pool_a = 1; }
+    else { packedA = (float*)malloc(MR * k * sizeof(float)); if (!packedA) return; }
+
+    CBLAS_INDEX row, col;
+
+    for (row = 0; row + MR <= m; row += MR)
+    {
+        if (transA)
+            PackMatrixA_8_trans(k, MR, a + row * a_row_stride, lda, packedA);
+        else
+            PackMatrixA_8(k, MR, a + row * a_row_stride, lda, packedA);
+
+        for (col = 0; col + NR <= n; col += NR)
+            AddDot8x12_neon(k, packedA, &packedB[col * k], &C(col, row), ldc, alpha);
+
+        for (; col < n; col++)
+            AddDot8x1col_neon(k, packedA, b + col * b_col_stride, b_row_stride, &C(col, row), ldc, alpha);
+    }
+
+    CBLAS_INDEX remaining_rows = m - row;
+    if (remaining_rows >= 4)
+    {
+        if (transA)
+            PackMatrixA_4_trans(k, 4, a + row * a_row_stride, lda, packedA);
+        else
+            PackMatrixA_4(k, 4, a + row * a_row_stride, lda, packedA);
+
+        for (col = 0; col + NR <= n; col += NR)
+            AddDot4x12_neon(k, packedA, &packedB[col * k], &C(col, row), ldc, alpha);
+
+        for (; col < n; col++)
+            AddDot4x1col_neon(k, packedA, b + col * b_col_stride, b_row_stride, &C(col, row), ldc, alpha);
+        row += 4;
+    }
+
+    for (; row < m; row++)
+        for (col = 0; col < n; col++)
+            AddDot(k, a + row * a_row_stride, a_col_stride,
+                   b + col * b_col_stride, b_row_stride, &C(col, row), alpha);
+
+    if (!use_pool_a) free(packedA);
 }
 
 #endif // ARM64 NEON

@@ -56,7 +56,7 @@ static void test_gemm(void)
     }
 
     printf("\nTesting with contiguous layout (lda=n):\n\n");
-    for (int i = 128; i <= 1024; i <<= 1) {
+    for (int i = 128; i <= MAX_SIZE; i <<= 1) {
         int m = i, n = i, k = i;
 
         printf("Testing size %d...", i);

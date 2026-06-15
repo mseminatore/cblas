@@ -128,6 +128,13 @@ static unsigned int __cpu_get_features(void)
 	blas_kernels.sgemm_k = sgemm_k_base;
 	blas_kernels.dgemm_k = dgemm_k_base;
 
+	// Cooperative (shared packed-B) MT GEMM kernels: NULL unless an ISA below
+	// provides them, in which case cblas_[sd]gemm uses the shared-B MT path.
+	blas_kernels.sgemm_pack_b = NULL;
+	blas_kernels.sgemm_macro_k = NULL;
+	blas_kernels.dgemm_pack_b = NULL;
+	blas_kernels.dgemm_macro_k = NULL;
+
     // use NEON optimized kernels if available
 	if (cpu_features & CPU_NEON)
 	{
@@ -161,6 +168,12 @@ static unsigned int __cpu_get_features(void)
 		// Level-3 NEON optimized kernels
 		blas_kernels.sgemm_k = sgemm_k_neon;
 		blas_kernels.dgemm_k = dgemm_k_neon;
+
+		// Cooperative shared-packed-B MT GEMM (NEON)
+		blas_kernels.sgemm_pack_b = sgemm_pack_b_neon;
+		blas_kernels.sgemm_macro_k = sgemm_macro_k_neon;
+		blas_kernels.dgemm_pack_b = dgemm_pack_b_neon;
+		blas_kernels.dgemm_macro_k = dgemm_macro_k_neon;
     }
 
     return cpu_features;
@@ -308,28 +321,52 @@ int cpu_get_l1_data_cache_size(void)
 }
 
 //------------------------------------------------------
-// Check if CPU has hybrid architecture (P-cores + E-cores)
-// ARM64 doesn't have hybrid architectures like x86
+// Check if CPU has hybrid architecture (P-cores + E-cores).
+// Apple Silicon IS hybrid: macOS exposes >= 2 "perf levels"
+// (perflevel0 = performance cores, perflevel1 = efficiency cores).
 //------------------------------------------------------
 int cpu_is_hybrid(void)
 {
-    return 0;  // ARM64 systems don't have hybrid P/E core architectures
+#ifdef __APPLE__
+    uint32_t nlevels = 0;
+    size_t len = sizeof(nlevels);
+    if (sysctlbyname("hw.nperflevels", &nlevels, &len, NULL, 0) == 0)
+        return nlevels >= 2;
+#endif
+    return 0;
 }
 
 //------------------------------------------------------
-// Get number of P-cores (performance cores)
-// Not applicable for ARM64
+// Get number of P-cores (performance cores).
+// On Apple Silicon this is hw.perflevel0.physicalcpu (e.g. 4 on an M1).
+// GEMM scales best on the P-cores alone — the efficiency cores run the
+// same band ~3x slower and, in the cooperative path, gate the join. This
+// value is used as the auto thread-count default in cblas_init.
 //------------------------------------------------------
 int cpu_get_p_core_count(void)
 {
-    return 0;  // Not applicable for ARM64
+#ifdef __APPLE__
+    uint32_t entry = 0;
+    size_t len = sizeof(entry);
+    if (sysctlbyname("hw.perflevel0.physicalcpu", &entry, &len, NULL, 0) == 0 && entry > 0)
+        return (int)entry;
+#endif
+    // Non-asymmetric ARM (or detection failed): all cores are "performance".
+    return cpu_get_core_count();
 }
 
 //------------------------------------------------------
-// Get number of E-cores (efficiency cores)
-// Not applicable for ARM64
+// Get number of E-cores (efficiency cores).
+// On Apple Silicon this is hw.perflevel1.physicalcpu.
 //------------------------------------------------------
 int cpu_get_e_core_count(void)
 {
-    return 0;  // Not applicable for ARM64
+#ifdef __APPLE__
+    uint32_t entry = 0;
+    size_t len = sizeof(entry);
+    if (cpu_is_hybrid() &&
+        sysctlbyname("hw.perflevel1.physicalcpu", &entry, &len, NULL, 0) == 0)
+        return (int)entry;
+#endif
+    return 0;
 }

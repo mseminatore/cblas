@@ -503,6 +503,11 @@ typedef struct
 {
     CBLAS_INDEX m, n, k, incx, incy, lda, ldb, ldc, ib, pb;
     void *x, *y, *c, *alpha, *beta, *a, *b;
+
+    // Shared pre-packed B panel for the cooperative (GotoBLAS-style) MT GEMM
+    // path: B is packed once into this buffer and read by every m-band task
+    // from the shared L2, instead of each band re-streaming raw B from memory.
+    void *packedB;
     
     // Scalar alpha/beta for direct access in kernels (avoids void* dereferencing)
     float  alpha_s, beta_s;   // single-precision
@@ -573,6 +578,12 @@ typedef struct
     kernel_function daxpby_k_noinc;  // double-precision A*X plus B*Y inc=1
     kernel_function sgemm_k;        // single-precision general matrix multiply
     kernel_function dgemm_k;        // double-precision general matrix multiply
+    // Cooperative MT GEMM (shared pre-packed B). NULL when the active ISA has
+    // no implementation; cblas_[sd]gemm then falls back to the band-MT path.
+    kernel_function sgemm_pack_b;   // pack a kc x n B panel into args->packedB
+    kernel_function sgemm_macro_k;  // macro-kernel over an m-band vs shared packedB
+    kernel_function dgemm_pack_b;   // double-precision pack a kc x n B panel
+    kernel_function dgemm_macro_k;  // double-precision macro-kernel vs shared packedB
     kernel_function sger_k;         // single-precision rank-1 update
     kernel_function dger_k;         // double-precision rank-1 update
     kernel_function sgemv_k;        // single-precision general matrix-vector multiply

@@ -135,6 +135,27 @@ gemv_perf: $(LIBNAME) benchmarks/gemv_perf.o
 mem_perf: $(LIBNAME) benchmarks/mem_perf.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
+# Controllable GEMM benchmarks: <bin> [size] [threads] [lda_pad], with a
+# built-in correctness check for size <= 256. Used for the OpenBLAS comparison.
+sgemm_bench: $(LIBNAME) benchmarks/sgemm_bench.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
+dgemm_bench: $(LIBNAME) benchmarks/dgemm_bench.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
+# OpenBLAS comparison binaries (require an OpenBLAS install; not part of `all`).
+# Override location with: make OPENBLAS_DIR=/path openblas_gemm
+# Benchmark fairly on Apple Silicon with: OPENBLAS_NUM_THREADS=4 ./openblas_gemm
+OPENBLAS_DIR ?= /opt/OpenBLAS
+openblas_gemm: benchmarks/openblas_gemm_perf.c
+	$(CC) -O3 -I$(OPENBLAS_DIR)/include -o $@ $< -L$(OPENBLAS_DIR)/lib -lopenblas
+
+openblas_dgemm: benchmarks/openblas_dgemm_perf.c
+	$(CC) -O3 -I$(OPENBLAS_DIR)/include -o $@ $< -L$(OPENBLAS_DIR)/lib -lopenblas
+
+.PHONY: gemm_compare
+gemm_compare: sgemm_bench dgemm_bench openblas_gemm openblas_dgemm
+
 # Per-file SIMD compile flags for x86-64 kernels
 # Only apply on x86-64, not on ARM64
 ifeq ($(ARCH), x86_64)

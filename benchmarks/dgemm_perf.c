@@ -5,16 +5,34 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include "cblas.h"
 
-#define MAX_SIZE 1024
+#define MAX_SIZE 4096
+
+// Wall-clock seconds. The library's cbu_timer uses CLOCK_PROCESS_CPUTIME_ID
+// (summed CPU time across all threads), which underreports multi-threaded
+// throughput by ~the thread count. GFLOPS must be measured against elapsed
+// wall time, matching the OpenBLAS comparison bench.
+static double bench_now(void)
+{
+#ifdef _WIN32
+    LARGE_INTEGER freq, counter;
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&counter);
+    return (double)counter.QuadPart / (double)freq.QuadPart;
+#else
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec + ts.tv_nsec * 1e-9;
+#endif
+}
 
 void test_dgemm(void)
 {
-    struct cblas_timer t1, t2;
     CBLAS_INDEX m, n, k;
-    float dt;
-    
+    double dt;
+
     // Allocate matrices on heap to avoid stack overflow
     double *a = (double*)malloc(MAX_SIZE * MAX_SIZE * sizeof(double));
     double *b = (double*)malloc(MAX_SIZE * MAX_SIZE * sizeof(double));
@@ -48,15 +66,18 @@ void test_dgemm(void)
             c[j] = 0.0;
         }
 
-        cbu_timer_get_time(&t1);
+        int iters = 1;
+        if (i <= 512) iters = 10;
+        if (i <= 128) iters = 50;
 
-        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1.0, a, MAX_SIZE, b, MAX_SIZE, 1.0, c, MAX_SIZE);
+        double w1 = bench_now();
 
-        cbu_timer_get_time(&t2);
+        for (int iter = 0; iter < iters; iter++)
+            cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1.0, a, MAX_SIZE, b, MAX_SIZE, 1.0, c, MAX_SIZE);
 
-        dt = cbu_timer_get_delta(&t1, &t2);
+        dt = (bench_now() - w1) / iters;
 
-        printf("%4d x %4d: %5.2f GFlops in %5.2fs\n", i, i, (double)2 * m * n * k / 1000000000 / dt, dt);
+        printf("%4d x %4d: %5.2f GFlops in %6.3fs\n", i, i, (double)2 * m * n * k / 1000000000 / dt, dt);
     }
     
     // Free allocated memory

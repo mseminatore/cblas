@@ -357,10 +357,6 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     
     if (mt_used)
     {
-        // Parallelize over the M (row) dimension: split C into contiguous
-        // row-bands, one task per thread. Each band runs the complete
-        // cache-blocked GEMM (kc/mc loops) over its rows independently —
-        // no per-kc barrier, balanced work, disjoint C output rows.
         CBLAS_INDEX num_threads = cblas_get_num_threads();
         if (num_threads < 1) num_threads = 1;
 
@@ -372,53 +368,168 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 
         CBLAS_INDEX nbands = (m_use + band - 1) / band;
 
-        work_queue_t *queue = (work_queue_t*)malloc(nbands * sizeof(work_queue_t));
-        cblas_args_t *args = (cblas_args_t*)malloc(nbands * sizeof(cblas_args_t));
+        // Cooperative shared-packed-B path (GotoBLAS 5-loop): for each kc-panel
+        // of K, pack that panel of B ONCE into a shared buffer, then parallelize
+        // the M row-bands so every core reads the same packed B from the shared
+        // L2 instead of re-streaming all of B from memory. On Apple Silicon the
+        // old per-band path was memory-bandwidth bound (each band re-streamed B,
+        // ~Nx the traffic) and barely scaled past ~1.6x; this restores scaling.
+        int used_coop = 0;
+        if (blas_kernels.sgemm_macro_k && blas_kernels.sgemm_pack_b)
+        {
+            // Shared B panel buffer: cblas_gemm_kc x n_use floats, reused for
+            // every kc-panel. Packing is O(k*n) total, negligible vs O(m*n*k).
+            float *sharedBp = (float*)malloc((size_t)cblas_gemm_kc * n_use * sizeof(float));
 
-        if (!queue || !args) {
+            // The pack and macro phases each dispatch at most num_threads tasks;
+            // one queue/args pair sized for the larger of the two serves both.
+            CBLAS_INDEX qcap = MAX(nbands, num_threads);
+            work_queue_t *queue = (work_queue_t*)malloc(qcap * sizeof(work_queue_t));
+            cblas_args_t *args = (cblas_args_t*)malloc(qcap * sizeof(cblas_args_t));
+
+            // B-pack column granularity = the NEON micro-kernel's NR (12 floats).
+            // Chunk boundaries must fall on whole NR column panels so each pack
+            // task fills disjoint, correctly-indexed panels of the shared buffer.
+            const CBLAS_INDEX PACK_NR = 12;
+            CBLAS_INDEX b_col_stride = is_notrans_b ? 1 : ldb_use;
+
+            if (sharedBp && queue && args)
+            {
+                // Column-chunk width for parallel packing, rounded up to NR.
+                CBLAS_INDEX col_chunk = (n_use + num_threads - 1) / num_threads;
+                col_chunk = ((col_chunk + PACK_NR - 1) / PACK_NR) * PACK_NR;
+                if (col_chunk < PACK_NR) col_chunk = PACK_NR;
+
+                for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc)
+                {
+                    pb = MIN(k - p, cblas_gemm_kc);
+
+                    // 1) Pack this kc-panel of B into the shared buffer, splitting
+                    //    the columns across worker tasks so packing does not
+                    //    serialize on one core — the dominant overhead at smaller
+                    //    sizes, where compute per panel is short. Each task owns a
+                    //    disjoint NR-aligned column range; column col of the panel
+                    //    lives at sharedBp + col*pb (the macro-kernel's index).
+                    CBLAS_INDEX pack_count = 0;
+                    for (CBLAS_INDEX col = 0; col < n_use; col += col_chunk)
+                    {
+                        CBLAS_INDEX cn = MIN(n_use - col, col_chunk);
+
+                        args[pack_count].ldb = ldb_use;
+                        args[pack_count].transb = transb_use;
+                        args[pack_count].b = b_use + p * b_row_stride + col * b_col_stride;
+                        args[pack_count].packedB = sharedBp + (size_t)col * pb;
+                        args[pack_count].pb = pb;
+                        args[pack_count].n = cn;
+                        args[pack_count].thread_id = 0;
+
+                        queue[pack_count].finished = 0;
+                        queue[pack_count].args = &args[pack_count];
+                        queue[pack_count].kernel = blas_kernels.sgemm_pack_b;
+                        queue[pack_count].next = &queue[pack_count + 1];
+
+                        pack_count++;
+                    }
+
+                    queue[pack_count - 1].next = NULL;
+                    cblas_execute(pack_count, queue);
+
+                    // 2) Parallelize the M bands against the shared packed B.
+                    CBLAS_INDEX tile_count = 0;
+                    for (CBLAS_INDEX row = 0; row < m_use; row += band)
+                    {
+                        ib = MIN(m_use - row, band);
+
+                        args[tile_count].incx = 1;
+                        args[tile_count].incy = 1;
+                        args[tile_count].n = n_use;
+                        args[tile_count].pb = pb;
+                        args[tile_count].lda = lda_use;
+                        args[tile_count].ldb = ldb_use;
+                        args[tile_count].ldc = ldc;
+                        args[tile_count].a = a_use + row * a_row_stride + p * a_col_stride;
+                        args[tile_count].b = b_use + p * b_row_stride;   // raw B (leftover cols)
+                        args[tile_count].c = c + row * ldc;
+                        args[tile_count].packedB = sharedBp;
+                        args[tile_count].ib = ib;
+                        args[tile_count].alpha_s = alpha;
+                        args[tile_count].beta_s = 1.0f;
+                        args[tile_count].transa = transa_use;
+                        args[tile_count].transb = transb_use;
+                        args[tile_count].thread_id = 0;
+
+                        queue[tile_count].finished = 0;
+                        queue[tile_count].args = &args[tile_count];
+                        queue[tile_count].kernel = blas_kernels.sgemm_macro_k;
+                        queue[tile_count].next = &queue[tile_count + 1];
+
+                        tile_count++;
+                    }
+
+                    queue[tile_count - 1].next = NULL;
+                    cblas_execute(tile_count, queue);
+                }
+                used_coop = 1;
+            }
+
+            free(sharedBp);
             free(queue);
             free(args);
-            return;
         }
 
-        CBLAS_INDEX tile_count = 0;
-        for (CBLAS_INDEX row = 0; row < m_use; row += band)
+        if (!used_coop)
         {
-            ib = MIN(m_use - row, band);
+            // Fallback: per-band path (each band runs the full cache-blocked
+            // GEMM over its rows independently). Used on ISAs without the
+            // cooperative kernels or if the shared buffer could not be sized.
+            work_queue_t *queue = (work_queue_t*)malloc(nbands * sizeof(work_queue_t));
+            cblas_args_t *args = (cblas_args_t*)malloc(nbands * sizeof(cblas_args_t));
 
-            args[tile_count].incx = 1;
-            args[tile_count].incy = 1;
-            args[tile_count].n = n_use;        // full N
-            args[tile_count].k = k;            // full K
-            args[tile_count].lda = lda_use;
-            args[tile_count].ldb = ldb_use;
-            args[tile_count].ldc = ldc;
-            args[tile_count].a = a_use + row * a_row_stride;  // band A start (p=0)
-            args[tile_count].b = b_use;                       // full B
-            args[tile_count].c = c + row * ldc;               // band C start
-            args[tile_count].ib = ib;                         // rows in this band
-            args[tile_count].alpha_s = alpha;
-            args[tile_count].beta_s = 1.0f;
-            args[tile_count].transa = transa_use;
-            args[tile_count].transb = transb_use;
-            args[tile_count].thread_id = 0;
+            if (!queue || !args) {
+                free(queue);
+                free(args);
+                return;
+            }
 
-            queue[tile_count].finished = 0;
-            queue[tile_count].args = &args[tile_count];
-            queue[tile_count].kernel = sgemm_mt_band;
-            queue[tile_count].next = &queue[tile_count + 1];
+            CBLAS_INDEX tile_count = 0;
+            for (CBLAS_INDEX row = 0; row < m_use; row += band)
+            {
+                ib = MIN(m_use - row, band);
 
-            tile_count++;
+                args[tile_count].incx = 1;
+                args[tile_count].incy = 1;
+                args[tile_count].n = n_use;        // full N
+                args[tile_count].k = k;            // full K
+                args[tile_count].lda = lda_use;
+                args[tile_count].ldb = ldb_use;
+                args[tile_count].ldc = ldc;
+                args[tile_count].a = a_use + row * a_row_stride;  // band A start (p=0)
+                args[tile_count].b = b_use;                       // full B
+                args[tile_count].c = c + row * ldc;               // band C start
+                args[tile_count].ib = ib;                         // rows in this band
+                args[tile_count].alpha_s = alpha;
+                args[tile_count].beta_s = 1.0f;
+                args[tile_count].transa = transa_use;
+                args[tile_count].transb = transb_use;
+                args[tile_count].thread_id = 0;
+
+                queue[tile_count].finished = 0;
+                queue[tile_count].args = &args[tile_count];
+                queue[tile_count].kernel = sgemm_mt_band;
+                queue[tile_count].next = &queue[tile_count + 1];
+
+                tile_count++;
+            }
+
+            assert(tile_count == nbands);
+
+            queue[tile_count - 1].next = NULL;
+
+            cblas_execute(tile_count, queue);
+
+            free(queue);
+            free(args);
         }
-
-        assert(tile_count == nbands);
-
-        queue[tile_count - 1].next = NULL;
-
-        cblas_execute(tile_count, queue);
-
-        free(queue);
-        free(args);
     }
     else
     {
@@ -636,7 +747,89 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     if (mt_used)
     {
         CBLAS_INDEX num_threads = cblas_get_num_threads();
-        
+        if (num_threads < 1) num_threads = 1;
+
+        // Cooperative shared-packed-B path (see cblas_sgemm for the rationale):
+        // pack each kc-panel of B once into a shared buffer and parallelize the
+        // M row-bands so every core reads the same packed B from the shared L2,
+        // instead of re-streaming B per tile. Falls back to the 2-D tiling path
+        // on ISAs without the cooperative kernels.
+        int used_coop = 0;
+        if (blas_kernels.dgemm_macro_k && blas_kernels.dgemm_pack_b)
+        {
+            // Band rounded up to the 4-row micro-kernel (MR_D) granularity.
+            CBLAS_INDEX band = (m_use + num_threads - 1) / num_threads;
+            band = ((band + 3) / 4) * 4;
+            if (band < 4) band = 4;
+            CBLAS_INDEX nbands = (m_use + band - 1) / band;
+
+            double *sharedBp = (double*)malloc((size_t)cblas_gemm_kc * n_use * sizeof(double));
+            work_queue_t *queue = (work_queue_t*)malloc(nbands * sizeof(work_queue_t));
+            cblas_args_t *args = (cblas_args_t*)malloc(nbands * sizeof(cblas_args_t));
+
+            if (sharedBp && queue && args)
+            {
+                cblas_args_t pack_args;
+                memset(&pack_args, 0, sizeof(pack_args));
+                pack_args.ldb = ldb_use;
+                pack_args.transb = transb_use;
+                pack_args.packedB = sharedBp;
+
+                for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc)
+                {
+                    pb = MIN(k - p, cblas_gemm_kc);
+
+                    // 1) Pack this kc-panel of B once into the shared buffer.
+                    pack_args.b = (double*)b_use + p * b_row_stride_d;
+                    pack_args.pb = pb;
+                    pack_args.n = n_use;
+                    blas_kernels.dgemm_pack_b(&pack_args);
+
+                    // 2) Parallelize the M bands against the shared packed B.
+                    CBLAS_INDEX tile_count = 0;
+                    for (CBLAS_INDEX row = 0; row < m_use; row += band)
+                    {
+                        ib = MIN(m_use - row, band);
+
+                        args[tile_count].incx = 1;
+                        args[tile_count].incy = 1;
+                        args[tile_count].n = n_use;
+                        args[tile_count].pb = pb;
+                        args[tile_count].lda = lda_use;
+                        args[tile_count].ldb = ldb_use;
+                        args[tile_count].ldc = ldc;
+                        args[tile_count].a = (double*)a_use + row * a_row_stride_d + p * a_col_stride_d;
+                        args[tile_count].b = (double*)b_use + p * b_row_stride_d;  // raw B (leftover cols)
+                        args[tile_count].c = c + row * ldc;
+                        args[tile_count].packedB = sharedBp;
+                        args[tile_count].ib = ib;
+                        args[tile_count].alpha_d = alpha;
+                        args[tile_count].beta_d = 1.0;
+                        args[tile_count].transa = transa_use;
+                        args[tile_count].transb = transb_use;
+                        args[tile_count].thread_id = 0;
+
+                        queue[tile_count].finished = 0;
+                        queue[tile_count].args = &args[tile_count];
+                        queue[tile_count].kernel = blas_kernels.dgemm_macro_k;
+                        queue[tile_count].next = &queue[tile_count + 1];
+
+                        tile_count++;
+                    }
+
+                    queue[tile_count - 1].next = NULL;
+                    cblas_execute(tile_count, queue);
+                }
+                used_coop = 1;
+            }
+
+            free(sharedBp);
+            free(queue);
+            free(args);
+        }
+
+        if (!used_coop)
+        {
         CBLAS_INDEX mc_use = cblas_gemm_mc;
         CBLAS_INDEX nb_use = cblas_gemm_nb;
         
@@ -755,9 +948,10 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
 
             cblas_execute(tile_count, queue);
         }
-        
+
         free(queue);
         free(args);
+        }
     }
     else
     {

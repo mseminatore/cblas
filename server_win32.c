@@ -193,6 +193,11 @@ static void *cblas_worker_thread(void *pvArg)
 
     int thread_num = (int)(intptr_t)pvArg;
 
+    // On asymmetric-core CPUs (e.g. Apple Silicon P/E cores) steer this worker
+    // onto the performance cores; without this macOS parks workers on the slow
+    // efficiency cores and GEMM barely scales past one thread. No-op elsewhere.
+    platform_thread_set_qos_high();
+
     MT_TRACE_THREAD(thread_num, "created.\n");
 
     while(1)

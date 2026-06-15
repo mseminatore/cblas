@@ -175,5 +175,11 @@ void dgemm_k_fma(cblas_args_t* args);
 void dgemm_k_avx512(cblas_args_t* args);
 void dgemm_k_neon(cblas_args_t* args);
 
+// Cooperative MT GEMM kernels (shared pre-packed B). NEON only for now.
+void sgemm_pack_b_neon(cblas_args_t* args);
+void sgemm_macro_k_neon(cblas_args_t* args);
+void dgemm_pack_b_neon(cblas_args_t* args);
+void dgemm_macro_k_neon(cblas_args_t* args);
+
 #endif // __KERNELS_H
 
