@@ -60,7 +60,7 @@ message("Compiler = ${CMAKE_C_COMPILER_ID}")
 if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang" OR
     "${CMAKE_C_COMPILER_ID}" STREQUAL "AppleClang" OR
     "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O2 -Wall -Wextra -Wpedantic -Werror")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O3 -Wall -Wextra -Wpedantic -Werror")
 elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
     # Convert GCC-style flags to MSVC equivalents if they exist in CMAKE_C_FLAGS
     string(REPLACE "-Werror" "/WX" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")

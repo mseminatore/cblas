@@ -18,7 +18,7 @@ OBJS = swap.o dot.o copy.o axpy.o scal.o axpby.o asum.o nrm2.o rot.o ger.o \
 	kernels/gemm_k.o kernels/gemm_k_sse.o kernels/gemm_k_avx.o kernels/gemm_k_fma.o kernels/gemm_k_avx512.o kernels/gemm_k_neon.o \
 	kernels/dgemm_k_sse.o kernels/dgemm_k_avx.o kernels/dgemm_k_fma.o kernels/dgemm_k_neon.o
 DEPS = cblas.h cblas_config.h tests/test.h platform/threading.h platform/simd.h platform/cpuid.h
-CFLAGS += -g -O2 -Wall -Wextra -Wpedantic -I. -Itests -D_GNU_SOURCE #-DNDEBUG
+CFLAGS += -g -O3 -Wall -Wextra -Wpedantic -I. -Itests -D_GNU_SOURCE #-DNDEBUG
 LIBNAME = libcblas.a
 LFLAGS += -L. -lcblas -lm
 
@@ -173,8 +173,10 @@ kernels/%_fma.o: kernels/%_fma.c $(DEPS)
 	$(CC) -c $(CFLAGS) -mavx2 -mfma $(CPPFLAGS) $< -o $@
 
 # AVX512 kernels - Skylake-X and later
+# -mfma is required for the FMA intrinsics used in the AVX cleanup loops
+# (matches the per-file flags in CMakeLists.txt).
 kernels/%_avx512.o: kernels/%_avx512.c $(DEPS)
-	$(CC) -c $(CFLAGS) -mavx512f $(CPPFLAGS) $< -o $@
+	$(CC) -c $(CFLAGS) -mavx512f -mfma $(CPPFLAGS) $< -o $@
 
 # Mixed-SIMD kernels (contain both SSE and AVX code, need AVX2 for 256-bit)
 kernels/ger_k.o: kernels/ger_k.c $(DEPS)
