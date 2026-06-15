@@ -197,6 +197,8 @@ install:
 	sudo cp cblas.h /opt/cblas/include
 	sudo cp cblas_config.h /opt/cblas/include
 	sudo cp platform/cpuid.h /opt/cblas/include/platform
+	sudo cp platform/simd.h /opt/cblas/include/platform
+	sudo cp platform/threading.h /opt/cblas/include/platform
 
 test: all
 	./blas_test
