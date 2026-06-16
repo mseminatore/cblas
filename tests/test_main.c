@@ -49,6 +49,12 @@ int setupConsole(void)
 //------------------------------------------------------
 int main(int argc, char *argv[])
 {
+	// Unbuffered stdout so the last line in a crashing CI run is the operation
+	// that actually crashed. When stdout is redirected to a pipe/file (CI) it is
+	// fully buffered by default, so a crash can lose the final buffer and make an
+	// earlier suite look like the failure point.
+	setvbuf(stdout, NULL, _IONBF, 0);
+
 	setupConsole();
 
 	BEGIN_TESTS();
