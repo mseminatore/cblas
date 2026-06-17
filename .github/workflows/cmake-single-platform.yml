@@ -43,3 +43,48 @@ jobs:
       # NB: add -V to see full test output
       run: ctest --rerun-failed --output-on-failure --timeout 180 -C ${{env.BUILD_TYPE}}
 
+  # AddressSanitizer + UndefinedBehaviorSanitizer on x64. ASan checks every memory
+  # access, so it flags an out-of-bounds deterministically even when the
+  # uninstrumented crash is intermittent (timing/ASLR/runner-hardware dependent).
+  # This is the diagnostic for the intermittent x64 blas_test crash in MT GEMM.
+  asan:
+    name: ASan/UBSan (ubuntu x64)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Configure CMake (ASan + UBSan)
+      run: >
+        cmake -B ${{github.workspace}}/build-asan
+        -DCMAKE_BUILD_TYPE=Debug
+        -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g"
+        -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build-asan
+    - name: Test (ASan/UBSan)
+      working-directory: ${{github.workspace}}/build-asan
+      env:
+        ASAN_OPTIONS: detect_leaks=0:abort_on_error=1:halt_on_error=1
+        UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+      run: ctest --output-on-failure --timeout 600
+
+  # ThreadSanitizer on x64 - flags a residual data race in the worker pool / MT
+  # GEMM dispatch (the other possible cause of the intermittent crash).
+  tsan:
+    name: TSan (ubuntu x64)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Configure CMake (TSan)
+      run: >
+        cmake -B ${{github.workspace}}/build-tsan
+        -DCMAKE_BUILD_TYPE=Debug
+        -DCMAKE_C_FLAGS="-fsanitize=thread -fno-omit-frame-pointer -g"
+        -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=thread"
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build-tsan
+    - name: Test (TSan)
+      working-directory: ${{github.workspace}}/build-tsan
+      env:
+        TSAN_OPTIONS: halt_on_error=1
+      run: ctest --output-on-failure --timeout 600
+
