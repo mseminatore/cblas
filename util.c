@@ -920,6 +920,12 @@ void cblas_init(int threads)
 
     threads = MIN(threads, env_threads);
 
+    // Clamp to the supported range: cblas_thread_ids[] and gemm_buffer_pool[] are
+    // sized MAX_THREADS, so a bogus/oversized CPU-detection result must never
+    // drive the worker-creation loop past those array bounds.
+    if (threads < 1) threads = 1;
+    if (threads > MAX_THREADS) threads = MAX_THREADS;
+
 #ifndef MT_ENABLED
     threads = 1;
 #endif

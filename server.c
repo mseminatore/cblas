@@ -123,7 +123,18 @@ int cblas_init_server(void)
     for (int i = 0; i < cblas_max_threads - 1; i++)
     {
         platform_thread_id_t tid CBLAS_UNUSED;
-        platform_thread_create(&cblas_thread_ids[i], cblas_worker_thread, i, &tid);
+        if (platform_thread_create(&cblas_thread_ids[i], cblas_worker_thread, i, &tid) != 0)
+        {
+            // Thread creation failed (e.g. EAGAIN under load). pthread_create
+            // leaves the handle unspecified on failure, and joining a
+            // never-created handle SEGFAULTs on glibc (macOS returns ESRCH).
+            // Leave a 0 sentinel and cap the pool to the workers that actually
+            // started so the contiguous range [0..i-1] is consistent for both
+            // dispatch and the shutdown join.
+            cblas_thread_ids[i] = 0;
+            cblas_max_threads = i + 1;   // i workers + the calling thread
+            break;
+        }
     }
 
     cblas_set_server_alive(CBLAS_TRUE);
@@ -158,13 +169,19 @@ void cblas_shutdown(void)
     platform_cond_broadcast(&kickoff_event);
     platform_mutex_unlock(&queue_lock);
 
-    // Wait for all threads to complete
+    // Wait for all threads to complete. Guard each handle: a 0 slot means the
+    // worker was never created (see cblas_init_server), and pthread_join on a
+    // null/never-created handle SEGFAULTs on glibc. This mirrors the guards
+    // already present in cblas_set_num_threads and the Win32 server.
     for (int i = 0; i < thread_count - 1; i++)
     {
-        MT_TRACE("shutdown: waiting on thread [%d] to quit.\n", i);
-        platform_thread_join(cblas_thread_ids[i]);
-        MT_TRACE("shutdown: thread [%d] has quit.\n", i);
-        cblas_thread_ids[i] = 0;
+        if (cblas_thread_ids[i] != 0)
+        {
+            MT_TRACE("shutdown: waiting on thread [%d] to quit.\n", i);
+            platform_thread_join(cblas_thread_ids[i]);
+            MT_TRACE("shutdown: thread [%d] has quit.\n", i);
+            cblas_thread_ids[i] = 0;
+        }
     }
     
     platform_mutex_unlock(&server_lock);
