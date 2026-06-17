@@ -1307,6 +1307,14 @@ cblas_gemm_buffer_t* cblas_get_gemm_buffer(int thread_id);
 void cblas_init_gemm_buffers(void);
 
 /**
+ * @brief Grow the GEMM buffer pool to cover at least `nthreads` slots
+ * @note Idempotent/grow-on-demand; called when the thread count is raised so
+ *       newly added worker slots have packing buffers. Only adds slots beyond
+ *       the current high-water mark.
+ */
+void cblas_ensure_gemm_buffers(int nthreads);
+
+/**
  * @brief Cleanup GEMM buffer pool (called by cblas_shutdown)
  * @note Frees all allocated packing buffers
  */

@@ -87,6 +87,12 @@ void cblas_set_num_threads(int threads)
     {
         platform_mutex_lock(&server_lock);
 
+        // Make sure the packing-buffer pool covers the new (higher) thread
+        // count before any new worker can run — otherwise the added workers
+        // (and the calling thread's slot threads-1) would have no buffer. This
+        // only grows the pool; it never touches slots already in use.
+        cblas_ensure_gemm_buffers(threads);
+
         int start = cblas_max_threads > 0 ? cblas_max_threads - 1 : 0;
         cblas_max_threads = threads;
 

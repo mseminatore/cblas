@@ -41,73 +41,101 @@ CBLAS_INDEX cblas_gemm_nb = 256;   // Columns of B to pack
 //------------------------------------------------------
 static cblas_gemm_buffer_t gemm_buffer_pool[MAX_THREADS];
 static int gemm_buffers_initialized = 0;
+static int gemm_buffers_count = 0;   // number of slots [0, count) currently allocated
 
 //------------------------------------------------------
-// Initialize GEMM buffer pool
+// Free the four packing buffers of one pool slot.
 //------------------------------------------------------
-void cblas_init_gemm_buffers(void)
+static void cblas_free_gemm_buffer_slot(int i)
 {
-    if (gemm_buffers_initialized)
-        return;
-    
-    // Zero out the pool first
-    memset(gemm_buffer_pool, 0, sizeof(gemm_buffer_pool));
-    
-    // Allocate buffers for each potential thread
-    // Use maximum tile sizes to ensure buffers are large enough
+#ifdef _WIN32
+    if (gemm_buffer_pool[i].packedA_s) _aligned_free(gemm_buffer_pool[i].packedA_s);
+    if (gemm_buffer_pool[i].packedB_s) _aligned_free(gemm_buffer_pool[i].packedB_s);
+    if (gemm_buffer_pool[i].packedA_d) _aligned_free(gemm_buffer_pool[i].packedA_d);
+    if (gemm_buffer_pool[i].packedB_d) _aligned_free(gemm_buffer_pool[i].packedB_d);
+#else
+    free(gemm_buffer_pool[i].packedA_s);
+    free(gemm_buffer_pool[i].packedB_s);
+    free(gemm_buffer_pool[i].packedA_d);
+    free(gemm_buffer_pool[i].packedB_d);
+#endif
+    gemm_buffer_pool[i].packedA_s = NULL;
+    gemm_buffer_pool[i].packedB_s = NULL;
+    gemm_buffer_pool[i].packedA_d = NULL;
+    gemm_buffer_pool[i].packedB_d = NULL;
+    gemm_buffer_pool[i].allocated = 0;
+}
+
+//------------------------------------------------------
+// Allocate the four packing buffers of one pool slot.
+// Non-fatal on failure: the slot is left unallocated and kernels fall back to
+// their own malloc (see cblas_get_gemm_buffer returning NULL).
+//------------------------------------------------------
+static void cblas_alloc_gemm_buffer_slot(int i)
+{
     size_t packedA_s_size = (size_t)cblas_gemm_mc * cblas_gemm_kc * sizeof(float);
     size_t packedB_s_size = (size_t)cblas_gemm_kc * cblas_gemm_nb * sizeof(float);
     size_t packedA_d_size = (size_t)cblas_gemm_mc * cblas_gemm_kc * sizeof(double);
     size_t packedB_d_size = (size_t)cblas_gemm_kc * cblas_gemm_nb * sizeof(double);
-    
-    for (int i = 0; i < MAX_THREADS; i++)
+
+    // 64-byte alignment for SIMD (incl. AVX-512)
+#ifdef _WIN32
+    gemm_buffer_pool[i].packedA_s = (float*)_aligned_malloc(packedA_s_size, 64);
+    gemm_buffer_pool[i].packedB_s = (float*)_aligned_malloc(packedB_s_size, 64);
+    gemm_buffer_pool[i].packedA_d = (double*)_aligned_malloc(packedA_d_size, 64);
+    gemm_buffer_pool[i].packedB_d = (double*)_aligned_malloc(packedB_d_size, 64);
+#else
+    if (posix_memalign((void**)&gemm_buffer_pool[i].packedA_s, 64, packedA_s_size) != 0)
+        gemm_buffer_pool[i].packedA_s = NULL;
+    if (posix_memalign((void**)&gemm_buffer_pool[i].packedB_s, 64, packedB_s_size) != 0)
+        gemm_buffer_pool[i].packedB_s = NULL;
+    if (posix_memalign((void**)&gemm_buffer_pool[i].packedA_d, 64, packedA_d_size) != 0)
+        gemm_buffer_pool[i].packedA_d = NULL;
+    if (posix_memalign((void**)&gemm_buffer_pool[i].packedB_d, 64, packedB_d_size) != 0)
+        gemm_buffer_pool[i].packedB_d = NULL;
+#endif
+
+    if (gemm_buffer_pool[i].packedA_s && gemm_buffer_pool[i].packedB_s &&
+        gemm_buffer_pool[i].packedA_d && gemm_buffer_pool[i].packedB_d)
+        gemm_buffer_pool[i].allocated = 1;
+    else
+        cblas_free_gemm_buffer_slot(i);   // partial failure: roll back
+}
+
+//------------------------------------------------------
+// Ensure the pool has packing buffers for at least `nthreads` slots.
+// Grows on demand (idempotent); used at init and when the thread count is
+// raised. Only ever ADDS slots beyond the current high-water mark, so it never
+// touches a buffer a running worker is using.
+//------------------------------------------------------
+void cblas_ensure_gemm_buffers(int nthreads)
+{
+    if (nthreads < 1) nthreads = 1;
+    if (nthreads > MAX_THREADS) nthreads = MAX_THREADS;
+
+    if (!gemm_buffers_initialized)
     {
-        // Allocate with alignment for SIMD operations (64-byte for AVX-512 compatibility)
-#ifdef _WIN32
-        gemm_buffer_pool[i].packedA_s = (float*)_aligned_malloc(packedA_s_size, 64);
-        gemm_buffer_pool[i].packedB_s = (float*)_aligned_malloc(packedB_s_size, 64);
-        gemm_buffer_pool[i].packedA_d = (double*)_aligned_malloc(packedA_d_size, 64);
-        gemm_buffer_pool[i].packedB_d = (double*)_aligned_malloc(packedB_d_size, 64);
-#else
-        if (posix_memalign((void**)&gemm_buffer_pool[i].packedA_s, 64, packedA_s_size) != 0)
-            gemm_buffer_pool[i].packedA_s = NULL;
-        if (posix_memalign((void**)&gemm_buffer_pool[i].packedB_s, 64, packedB_s_size) != 0)
-            gemm_buffer_pool[i].packedB_s = NULL;
-        if (posix_memalign((void**)&gemm_buffer_pool[i].packedA_d, 64, packedA_d_size) != 0)
-            gemm_buffer_pool[i].packedA_d = NULL;
-        if (posix_memalign((void**)&gemm_buffer_pool[i].packedB_d, 64, packedB_d_size) != 0)
-            gemm_buffer_pool[i].packedB_d = NULL;
-#endif
-        
-        // Check if all allocations succeeded
-        if (gemm_buffer_pool[i].packedA_s && gemm_buffer_pool[i].packedB_s &&
-            gemm_buffer_pool[i].packedA_d && gemm_buffer_pool[i].packedB_d)
-        {
-            gemm_buffer_pool[i].allocated = 1;
-        }
-        else
-        {
-            // Allocation failed - clean up partial allocations
-#ifdef _WIN32
-            if (gemm_buffer_pool[i].packedA_s) _aligned_free(gemm_buffer_pool[i].packedA_s);
-            if (gemm_buffer_pool[i].packedB_s) _aligned_free(gemm_buffer_pool[i].packedB_s);
-            if (gemm_buffer_pool[i].packedA_d) _aligned_free(gemm_buffer_pool[i].packedA_d);
-            if (gemm_buffer_pool[i].packedB_d) _aligned_free(gemm_buffer_pool[i].packedB_d);
-#else
-            free(gemm_buffer_pool[i].packedA_s);
-            free(gemm_buffer_pool[i].packedB_s);
-            free(gemm_buffer_pool[i].packedA_d);
-            free(gemm_buffer_pool[i].packedB_d);
-#endif
-            gemm_buffer_pool[i].packedA_s = NULL;
-            gemm_buffer_pool[i].packedB_s = NULL;
-            gemm_buffer_pool[i].packedA_d = NULL;
-            gemm_buffer_pool[i].packedB_d = NULL;
-            gemm_buffer_pool[i].allocated = 0;
-        }
+        memset(gemm_buffer_pool, 0, sizeof(gemm_buffer_pool));
+        gemm_buffers_count = 0;
+        gemm_buffers_initialized = 1;
     }
-    
-    gemm_buffers_initialized = 1;
+
+    for (int i = gemm_buffers_count; i < nthreads; i++)
+        cblas_alloc_gemm_buffer_slot(i);
+
+    if (nthreads > gemm_buffers_count)
+        gemm_buffers_count = nthreads;
+}
+
+//------------------------------------------------------
+// Initialize GEMM buffer pool for the current thread count.
+//------------------------------------------------------
+void cblas_init_gemm_buffers(void)
+{
+    // One slot per worker plus the calling thread (slot cblas_max_threads-1),
+    // i.e. cblas_max_threads slots — not the full MAX_THREADS (which over-
+    // allocated ~all 64 slots regardless of the actual thread count).
+    cblas_ensure_gemm_buffers((int)cblas_max_threads);
 }
 
 //------------------------------------------------------
@@ -117,30 +145,12 @@ void cblas_cleanup_gemm_buffers(void)
 {
     if (!gemm_buffers_initialized)
         return;
-    
-    for (int i = 0; i < MAX_THREADS; i++)
-    {
+
+    for (int i = 0; i < gemm_buffers_count; i++)
         if (gemm_buffer_pool[i].allocated)
-        {
-#ifdef _WIN32
-            _aligned_free(gemm_buffer_pool[i].packedA_s);
-            _aligned_free(gemm_buffer_pool[i].packedB_s);
-            _aligned_free(gemm_buffer_pool[i].packedA_d);
-            _aligned_free(gemm_buffer_pool[i].packedB_d);
-#else
-            free(gemm_buffer_pool[i].packedA_s);
-            free(gemm_buffer_pool[i].packedB_s);
-            free(gemm_buffer_pool[i].packedA_d);
-            free(gemm_buffer_pool[i].packedB_d);
-#endif
-            gemm_buffer_pool[i].packedA_s = NULL;
-            gemm_buffer_pool[i].packedB_s = NULL;
-            gemm_buffer_pool[i].packedA_d = NULL;
-            gemm_buffer_pool[i].packedB_d = NULL;
-            gemm_buffer_pool[i].allocated = 0;
-        }
-    }
-    
+            cblas_free_gemm_buffer_slot(i);
+
+    gemm_buffers_count = 0;
     gemm_buffers_initialized = 0;
 }
 
@@ -930,17 +940,19 @@ void cblas_init(int threads)
     threads = 1;
 #endif
 
+    // Set the thread count before sizing the buffer pool and starting the
+    // server: cblas_init_gemm_buffers() allocates one slot per thread, and the
+    // server checks cblas_max_threads.
+    cblas_max_threads = threads;
+
     // Compute optimal GEMM block sizes based on cache
     cblas_compute_gemm_block_sizes();
-    
-    // Initialize GEMM packing buffer pool
+
+    // Initialize GEMM packing buffer pool (sized to cblas_max_threads)
     cblas_init_gemm_buffers();
-    
+
     // Detect CPU features for kernel dispatch
     cpu_get_features();
-
-    // Set initial thread count BEFORE server init (server checks cblas_max_threads)
-    cblas_max_threads = threads;
 
     // start thread server
 #ifdef MT_ENABLED
