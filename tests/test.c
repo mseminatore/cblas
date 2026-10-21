@@ -1523,6 +1523,120 @@ static void test_gemv_beta_zero(void)
 }
 
 //------------------------------------------------------
+// compare ?gemv() against a double-precision reference for every
+// layout/transpose combination, non-square shapes, strides, alpha/beta,
+// and sizes large enough to take the multi-threaded path
+//------------------------------------------------------
+static int gemv_reference_check(int dbl, CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, int m, int n,
+                                int incx, int incy, double alpha, double beta)
+{
+	int lda = ((layout == CblasRowMajor) ? n : m) + 3;
+	int lenx = (trans == CblasNoTrans) ? n : m;
+	int leny = (trans == CblasNoTrans) ? m : n;
+	int asize = ((layout == CblasRowMajor) ? m : n) * lda;
+	int ok = 1;
+
+	double* ad = malloc(sizeof(double) * asize);
+	double* xd = malloc(sizeof(double) * lenx * incx);
+	double* yd = malloc(sizeof(double) * leny * incy);
+	double* ref = malloc(sizeof(double) * leny);
+	double* bound = malloc(sizeof(double) * leny);
+	float* af = malloc(sizeof(float) * asize);
+	float* xf = malloc(sizeof(float) * lenx * incx);
+	float* yf = malloc(sizeof(float) * leny * incy);
+
+	for (int i = 0; i < asize; i++)
+		ad[i] = (double)(af[i] = (float)((i * 37 + 11) % 101) / 50.0f - 1.0f);
+	for (int i = 0; i < lenx * incx; i++)
+		xd[i] = (double)(xf[i] = (float)((i * 13 + 5) % 23) / 11.0f - 1.0f);
+	for (int i = 0; i < leny * incy; i++)
+		yd[i] = (double)(yf[i] = (float)((i * 7 + 3) % 17) / 8.0f - 1.0f);
+
+	// beta == 0 must ignore y on input, even if it holds NaN
+	if (beta == 0.0)
+	{
+		for (int i = 0; i < leny * incy; i++)
+		{
+			yd[i] = NAN;
+			yf[i] = NAN;
+		}
+	}
+
+	for (int i = 0; i < leny; i++)
+	{
+		double sum = 0.0, abssum = 0.0;
+		for (int k = 0; k < lenx; k++)
+		{
+			// element (row, col) of op(A)
+			int row = (trans == CblasNoTrans) ? i : k;
+			int col = (trans == CblasNoTrans) ? k : i;
+			double aval = (layout == CblasRowMajor) ? ad[row * lda + col] : ad[col * lda + row];
+			sum += aval * xd[k * incx];
+			abssum += fabs(aval * xd[k * incx]);
+		}
+		double y0 = (beta == 0.0) ? 0.0 : beta * yd[i * incy];
+		ref[i] = alpha * sum + y0;
+		bound[i] = fabs(alpha) * abssum + fabs(y0) + 1.0;
+	}
+
+	if (dbl)
+	{
+		cblas_dgemv(layout, trans, m, n, alpha, ad, lda, xd, incx, beta, yd, incy);
+		for (int i = 0; i < leny && ok; i++)
+			ok = !(fabs(yd[i * incy] - ref[i]) > 1e-12 * bound[i]);
+	}
+	else
+	{
+		cblas_sgemv(layout, trans, m, n, (float)alpha, af, lda, xf, incx, (float)beta, yf, incy);
+		for (int i = 0; i < leny && ok; i++)
+			ok = !(fabs((double)yf[i * incy] - ref[i]) > 1e-5 * bound[i]);
+	}
+
+	if (!ok)
+		printf("\t  mismatch: %s layout=%s trans=%s m=%d n=%d incx=%d incy=%d alpha=%g beta=%g\n",
+		       dbl ? "dgemv" : "sgemv", layout == CblasRowMajor ? "Row" : "Col",
+		       trans == CblasNoTrans ? "N" : "T", m, n, incx, incy, alpha, beta);
+
+	free(ad); free(xd); free(yd); free(ref); free(bound);
+	free(af); free(xf); free(yf);
+	return ok;
+}
+
+static void test_gemv_reference(void)
+{
+	SUITE("gemv vs reference (all layouts, shapes, strides)");
+
+	static const int shapes[][2] = {
+		{1, 1}, {1, 37}, {37, 1}, {3, 5}, {5, 3}, {4, 16}, {7, 33}, {33, 7},
+		{10, 128}, {128, 10}, {65, 129}, {300, 2100}, {2100, 300}, {517, 263}
+	};
+	static const int incs[][2] = { {1, 1}, {2, 3} };
+	static const double ab[][2] = { {1.0, 0.0}, {0.5, -1.5}, {-2.0, 1.0} };
+
+	for (int dbl = 0; dbl < 2; dbl++)
+	{
+		for (int l = 0; l < 2; l++)
+		{
+			for (int t = 0; t < 2; t++)
+			{
+				CBLAS_LAYOUT layout = l ? CblasColMajor : CblasRowMajor;
+				CBLAS_TRANSPOSE trans = t ? CblasTrans : CblasNoTrans;
+				int ok = 1;
+
+				for (size_t s = 0; s < sizeof(shapes) / sizeof(shapes[0]); s++)
+					for (size_t i = 0; i < sizeof(incs) / sizeof(incs[0]); i++)
+						for (size_t k = 0; k < sizeof(ab) / sizeof(ab[0]); k++)
+							ok &= gemv_reference_check(dbl, layout, trans, shapes[s][0], shapes[s][1],
+							                           incs[i][0], incs[i][1], ab[k][0], ab[k][1]);
+
+				printf("\t%s %s %s\n", dbl ? "dgemv" : "sgemv", l ? "ColMajor" : "RowMajor", t ? "Trans" : "NoTrans");
+				TEST(ok);
+			}
+		}
+	}
+}
+
+//------------------------------------------------------
 // BLAS level 2 testing
 //------------------------------------------------------
 static void test_level2(void)
@@ -1534,6 +1648,7 @@ static void test_level2(void)
 	test_nonsquare_level2();
 	test_leading_dimension();
 	test_gemv_beta_zero();
+	test_gemv_reference();
 }
 
 //------------------------------------------------------

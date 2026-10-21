@@ -149,8 +149,13 @@ if ((CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "
             kernels/swap_k_avx.c kernels/setv_k_avx.c kernels/rot_k_avx.c
             kernels/nrm2_k_avx.c kernels/scal_k_avx.c kernels/axpy_k_avx.c
             kernels/axpby_k_avx.c kernels/gemm_k_avx.c kernels/dgemm_k_avx.c
-            kernels/gemv_k_avx.c kernels/ger_k.c
+            kernels/ger_k.c
             PROPERTIES COMPILE_FLAGS "-mavx2"
+        )
+        # AVX (no AVX2) kernels - 256-bit float ops only (Sandy Bridge+)
+        set_source_files_properties(
+            kernels/gemv_k_avx.c
+            PROPERTIES COMPILE_FLAGS "-mavx"
         )
         # FMA kernels - 256-bit + FMA (Haswell+)
         set_source_files_properties(
@@ -175,8 +180,13 @@ if ((CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "
             kernels/swap_k_avx.c kernels/setv_k_avx.c kernels/rot_k_avx.c
             kernels/nrm2_k_avx.c kernels/scal_k_avx.c kernels/axpy_k_avx.c
             kernels/axpby_k_avx.c kernels/gemm_k_avx.c kernels/dgemm_k_avx.c
-            kernels/gemv_k_avx.c kernels/ger_k.c
+            kernels/ger_k.c
             PROPERTIES COMPILE_FLAGS "/arch:AVX2"
+        )
+        # AVX (no AVX2) kernels - 256-bit float ops only (Sandy Bridge+)
+        set_source_files_properties(
+            kernels/gemv_k_avx.c
+            PROPERTIES COMPILE_FLAGS "/arch:AVX"
         )
         # FMA/AVX2 kernels - 256-bit + FMA (Haswell+)
         set_source_files_properties(
@@ -261,6 +271,9 @@ target_link_libraries(dger_perf cblas ${MATH_LIB})
 
 add_executable(gemv_perf benchmarks/gemv_perf.c)
 target_link_libraries(gemv_perf cblas ${MATH_LIB})
+
+add_executable(gemv_compare benchmarks/gemv_compare.c)
+target_link_libraries(gemv_compare cblas ${MATH_LIB})
 
 add_executable(dot_perf benchmarks/dot_perf.c)
 target_link_libraries(dot_perf cblas ${MATH_LIB})

@@ -734,6 +734,60 @@ void cblas_level1_exec_result(CBLAS_INDEX byte_stride, kernel_function kernel, C
 }
 
 //------------------------------------------------------
+// level 2 dispatch - partitions columns of A (and y) across threads
+//------------------------------------------------------
+static void cblas_level2_exec_cols(CBLAS_INDEX element_size, kernel_function kernel, CBLAS_INDEX thread_count,
+                                   CBLAS_INDEX m, CBLAS_INDEX n, void* a, CBLAS_INDEX lda,
+                                   void* x, CBLAS_INDEX incx, void* y, CBLAS_INDEX incy,
+                                   void* alpha, void* beta, const char* op_name)
+{
+    work_queue_t queue[MAX_THREADS];
+    cblas_args_t args[MAX_THREADS];
+
+    // keep each thread's slice of y a whole number of cache lines to avoid
+    // false sharing on the output
+    CBLAS_INDEX align = 64 / element_size;
+    CBLAS_INDEX cols_per_thread = (n + thread_count - 1) / thread_count;
+    cols_per_thread = (cols_per_thread + align - 1) / align * align;
+    CBLAS_INDEX tasks = (n + cols_per_thread - 1) / cols_per_thread;
+    CBLAS_INDEX col_offset = 0;
+
+    for (CBLAS_INDEX i = 0; i < tasks; i++)
+    {
+        CBLAS_INDEX cols = MIN(cols_per_thread, n - col_offset);
+
+        args[i].m = m;
+        args[i].n = cols;
+        args[i].lda = lda;
+        args[i].incx = incx;
+        args[i].incy = incy;
+        args[i].alpha = alpha;
+        args[i].beta = beta;
+        args[i].a = (char*)a + col_offset * element_size;
+        args[i].x = x;
+        args[i].y = (char*)y + col_offset * incy * element_size;
+
+        queue[i].finished = 0;
+        queue[i].args = &args[i];
+        queue[i].kernel = kernel;
+        queue[i].next = &queue[i + 1];
+#ifdef MT_DEBUG
+        queue[i].operation = op_name ? op_name : "UNKNOWN";
+#else
+        (void)op_name;  // Suppress unused parameter warning
+#endif
+
+        col_offset += cols;
+    }
+
+    // mark end of task queue
+    queue[tasks - 1].next = NULL;
+
+    // synchronously execute task queue
+    cblas_execute(tasks, queue);
+}
+
+//------------------------------------------------------
 // level 2 dispatch - partitions rows across threads
 //------------------------------------------------------
 void cblas_level2_exec(CBLAS_INDEX element_size, kernel_function kernel, cblas_level2_partition_t part_mode,
@@ -745,6 +799,14 @@ void cblas_level2_exec(CBLAS_INDEX element_size, kernel_function kernel, cblas_l
     cblas_args_t args[MAX_THREADS];
 
     CBLAS_INDEX thread_count = CLAMP(cblas_get_num_threads(), 1, MAX_THREADS);
+
+    if (part_mode == CBLAS_PART_COLS)
+    {
+        cblas_level2_exec_cols(element_size, kernel, thread_count, m, n, a, lda,
+                               x, incx, y, incy, alpha, beta, op_name);
+        return;
+    }
+
     CBLAS_INDEX rows_remaining = m;
     CBLAS_INDEX row_offset = 0;
 

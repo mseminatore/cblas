@@ -315,6 +315,8 @@ static void init_blas_kernels(void)
 	blas_kernels.dger_k = dger_k_base;
 	blas_kernels.sgemv_k = sgemv_k_base;
 	blas_kernels.dgemv_k = dgemv_k_base;
+	blas_kernels.sgemv_t_k = sgemv_t_k_base;
+	blas_kernels.dgemv_t_k = dgemv_t_k_base;
 
 	// Initialize Level-3 kernel function pointers (base versions)
 	blas_kernels.sgemm_k = sgemm_k_base;
@@ -352,6 +354,16 @@ static void init_blas_kernels(void)
 		blas_kernels.sgemm_k = sgemm_k_sse;
 		blas_kernels.dgemm_k = dgemm_k_sse;
 
+		// GEMV kernels only need 256-bit float ops, so unlike the other AVX
+		// kernels they are built with -mavx and usable on Sandy/Ivy Bridge
+		if (cpu_features & CPU_AVX)
+		{
+			blas_kernels.sgemv_k = sgemv_k_avx;
+			blas_kernels.dgemv_k = dgemv_k_avx;
+			blas_kernels.sgemv_t_k = sgemv_t_k_avx;
+			blas_kernels.dgemv_t_k = dgemv_t_k_avx;
+		}
+
 		// AVX/AVX2 kernels - require AVX2 because the build system compiles
 		// all AVX kernels with -mavx2 flag, which allows the compiler to
 		// auto-generate AVX2 instructions even in "AVX-only" source code.
@@ -382,8 +394,6 @@ static void init_blas_kernels(void)
 			// Level-2 AVX kernels (also require AVX2 due to _mm256_broadcast_ss)
 			blas_kernels.sger_k = sger_k_avx;
 			blas_kernels.dger_k = dger_k_avx;
-			blas_kernels.sgemv_k = sgemv_k_avx;
-			blas_kernels.dgemv_k = dgemv_k_avx;
 
 			// Level-3 AVX kernels (256-bit)
 			blas_kernels.sgemm_k = sgemm_k_avx;
@@ -395,6 +405,8 @@ static void init_blas_kernels(void)
 		{
 			blas_kernels.sgemv_k = sgemv_k_fma;
 			blas_kernels.dgemv_k = dgemv_k_fma;
+			blas_kernels.sgemv_t_k = sgemv_t_k_fma;
+			blas_kernels.dgemv_t_k = dgemv_t_k_fma;
 
 			// Upgrade other kernels to FMA versions
 			blas_kernels.sdot_k_noinc = cblas_sdot_k_noinc_fma;

@@ -156,6 +156,13 @@ openblas_dgemm: benchmarks/openblas_dgemm_perf.c
 .PHONY: gemm_compare
 gemm_compare: sgemm_bench dgemm_bench openblas_gemm openblas_dgemm
 
+# Side-by-side SGEMV: run ./gemv_compare [threads] and ./openblas_gemv [threads]
+gemv_compare: $(LIBNAME) benchmarks/gemv_compare.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
+openblas_gemv: benchmarks/gemv_compare.c
+	$(CC) -O3 -DUSE_OPENBLAS -I$(OPENBLAS_DIR)/include -o $@ $< -L$(OPENBLAS_DIR)/lib -lopenblas -lm
+
 # Per-file SIMD compile flags for x86-64 kernels
 # Only apply on x86-64, not on ARM64
 ifeq ($(ARCH), x86_64)
@@ -177,6 +184,13 @@ kernels/%_fma.o: kernels/%_fma.c $(DEPS)
 # (matches the per-file flags in CMakeLists.txt).
 kernels/%_avx512.o: kernels/%_avx512.c $(DEPS)
 	$(CC) -c $(CFLAGS) -mavx512f -mfma $(CPPFLAGS) $< -o $@
+
+# GEMV AVX kernel only needs 256-bit float ops, so it targets AVX (Sandy Bridge+)
+kernels/gemv_k_avx.o: kernels/gemv_k_avx.c kernels/gemv_k_x86.h $(DEPS)
+	$(CC) -c $(CFLAGS) -mavx $(CPPFLAGS) $< -o $@
+
+kernels/gemv_k_fma.o: kernels/gemv_k_fma.c kernels/gemv_k_x86.h $(DEPS)
+	$(CC) -c $(CFLAGS) -mavx2 -mfma $(CPPFLAGS) $< -o $@
 
 # Mixed-SIMD kernels (contain both SSE and AVX code, need AVX2 for 256-bit)
 kernels/ger_k.o: kernels/ger_k.c $(DEPS)
@@ -210,5 +224,5 @@ clean:
 	rm -f tests/*.o benchmarks/*.o
 	rm -f blas_test blas_stress test_strided test_stats test_overhead test_threshold
 	rm -f test_dot_threshold test_concurrent test_mt_debug test_level2_mt test_autotune test_gemm_accuracy
-	rm -f gemm_perf dgemm_perf ger_perf dger_perf dot_perf axpy_perf copy_perf gemv_perf mem_perf
+	rm -f gemm_perf dgemm_perf ger_perf dger_perf dot_perf axpy_perf copy_perf gemv_perf gemv_compare openblas_gemv mem_perf
 	rm -f dot_threshold_tuning dot_threshold_tuning_large nrm2_asum_rot_perf

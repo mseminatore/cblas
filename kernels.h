@@ -157,6 +157,14 @@ void sgemv_k_fma(cblas_args_t* args);
 void dgemv_k_fma(cblas_args_t* args);
 void sgemv_k_neon(cblas_args_t* args);
 void dgemv_k_neon(cblas_args_t* args);
+void sgemv_t_k_base(cblas_args_t* args);
+void dgemv_t_k_base(cblas_args_t* args);
+void sgemv_t_k_avx(cblas_args_t* args);
+void dgemv_t_k_avx(cblas_args_t* args);
+void sgemv_t_k_fma(cblas_args_t* args);
+void dgemv_t_k_fma(cblas_args_t* args);
+void sgemv_t_k_neon(cblas_args_t* args);
+void dgemv_t_k_neon(cblas_args_t* args);
 
 // Level-3 kernel function declarations
 void sgemm_k(cblas_args_t* args);

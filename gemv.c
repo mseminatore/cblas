@@ -12,6 +12,10 @@
 #	include <alloca.h>
 #endif
 
+// minimum stored-matrix width before the transposed (axpy form) GEMV is
+// split across threads by columns
+#define CBLAS_GEMV_T_MT_MIN_COLS 512
+
 //------------------------------------------------------
 // Level-2 single-precision matrix-vector multiply
 // y = alpha * A * x + beta * y
@@ -56,62 +60,41 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 
     CBLAS_STATS_START();
 
+	// A row-major A^T*x is a column-major A*x and vice versa, so only two
+	// kernels are needed: dot form (walks rows of the stored matrix) and
+	// axpy form (accumulates rows of the stored matrix into y)
+	int dot_form = (trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor);
+	kernel_function kernel = dot_form ? blas_kernels.sgemv_k : blas_kernels.sgemv_t_k;
+
+	// rows/cols of the stored (row-major view of the) matrix
+	CBLAS_INDEX rows = (layout == CblasRowMajor) ? m : n;
+	CBLAS_INDEX cols = (layout == CblasRowMajor) ? n : m;
+
 #if defined(MT_ENABLED)
-    int mt_used = (m * n > CBLAS_MT_GEMV && cblas_get_num_threads() > 1) ? 1 : 0;
-    
-    // Multi-threaded path for NoTrans case with RowMajor or Trans case with ColMajor
-    if (mt_used && ((trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor)) && blas_kernels.sgemv_k != NULL)
+    // axpy form splits columns, so it needs enough of them that each thread
+    // still streams contiguous runs of A
+    int mt_used = (m * n > CBLAS_MT_GEMV && cblas_get_num_threads() > 1 &&
+                   (dot_form || cols >= CBLAS_GEMV_T_MT_MIN_COLS)) ? 1 : 0;
+
+    if (mt_used)
     {
-        cblas_level2_exec(sizeof(float), blas_kernels.sgemv_k, CBLAS_PART_Y,
-                          m, n, a, lda, x, incx, y, incy, &alpha, &beta, "SGEMV");
+        // dot form splits rows (and y); axpy form splits columns (and y)
+        cblas_level2_exec(sizeof(float), kernel, dot_form ? CBLAS_PART_Y : CBLAS_PART_COLS,
+                          rows, cols, a, lda, x, incx, y, incy, &alpha, &beta, "SGEMV");
     }
     else
 #else
     int mt_used = 0;
 #endif
     {
-        // Single-threaded fallback path
-	if ((trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor))
-	{
-		// Use dispatched kernel (ISA-specific, selected at init time)
 		cblas_args_t args = {
 			.x = x, .y = y, .a = a,
-			.m = m, .n = n,
+			.m = rows, .n = cols,
 			.incx = incx, .incy = incy,
 			.lda = lda,
 			.alpha = &alpha, .beta = &beta
 		};
-		blas_kernels.sgemv_k(&args);
-	}
-	else
-	{
-		// Transpose case: column-wise access
-		float sum;
-		if (incx == 1 && incy == 1)
-		{
-			for (CBLAS_INDEX col = 0; col < n; col++)
-			{
-				sum = 0.0f;
-				for (CBLAS_INDEX row = 0; row < m; row++)
-				{
-					sum += a[row * lda + col] * x[row];
-				}
-				y[col] = beta * y[col] + alpha * sum;
-			}
-		}
-		else
-		{
-			for (CBLAS_INDEX col = 0; col < n; col++)
-			{
-				sum = 0.0f;
-				for (CBLAS_INDEX row = 0; row < m; row++)
-				{
-					sum += a[row * lda + col] * x[row * incx];
-				}
-				y[col * incy] = beta * y[col * incy] + alpha * sum;
-			}
-		}
-	}
+		kernel(&args);
     }
 
     CBLAS_STATS_END("sgemv", m * n, mt_used);
@@ -161,62 +144,41 @@ void cblas_dgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, CBLAS_INDEX m, CBLA
 
     CBLAS_STATS_START();
 
+	// A row-major A^T*x is a column-major A*x and vice versa, so only two
+	// kernels are needed: dot form (walks rows of the stored matrix) and
+	// axpy form (accumulates rows of the stored matrix into y)
+	int dot_form = (trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor);
+	kernel_function kernel = dot_form ? blas_kernels.dgemv_k : blas_kernels.dgemv_t_k;
+
+	// rows/cols of the stored (row-major view of the) matrix
+	CBLAS_INDEX rows = (layout == CblasRowMajor) ? m : n;
+	CBLAS_INDEX cols = (layout == CblasRowMajor) ? n : m;
+
 #if defined(MT_ENABLED)
-    int mt_used = (m * n > CBLAS_MT_GEMV && cblas_get_num_threads() > 1) ? 1 : 0;
-    
-    // Multi-threaded path for NoTrans case with RowMajor or Trans case with ColMajor
-    if (mt_used && ((trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor)) && blas_kernels.dgemv_k != NULL)
+    // axpy form splits columns, so it needs enough of them that each thread
+    // still streams contiguous runs of A
+    int mt_used = (m * n > CBLAS_MT_GEMV && cblas_get_num_threads() > 1 &&
+                   (dot_form || cols >= CBLAS_GEMV_T_MT_MIN_COLS)) ? 1 : 0;
+
+    if (mt_used)
     {
-        cblas_level2_exec(sizeof(double), blas_kernels.dgemv_k, CBLAS_PART_Y,
-                          m, n, a, lda, x, incx, y, incy, &alpha, &beta, "DGEMV");
+        // dot form splits rows (and y); axpy form splits columns (and y)
+        cblas_level2_exec(sizeof(double), kernel, dot_form ? CBLAS_PART_Y : CBLAS_PART_COLS,
+                          rows, cols, a, lda, x, incx, y, incy, &alpha, &beta, "DGEMV");
     }
     else
 #else
     int mt_used = 0;
 #endif
     {
-        // Single-threaded fallback path
-	if ((trans == CblasNoTrans && layout == CblasRowMajor) || (trans == CblasTrans && layout == CblasColMajor))
-	{
-		// Use dispatched kernel (ISA-specific, selected at init time)
 		cblas_args_t args = {
 			.x = x, .y = y, .a = a,
-			.m = m, .n = n,
+			.m = rows, .n = cols,
 			.incx = incx, .incy = incy,
 			.lda = lda,
 			.alpha = &alpha, .beta = &beta
 		};
-		blas_kernels.dgemv_k(&args);
-	}
-	else
-	{
-		// Transpose case: column-wise access
-		double sum;
-		if (incx == 1 && incy == 1)
-		{
-			for (CBLAS_INDEX col = 0; col < n; col++)
-			{
-				sum = 0.0;
-				for (CBLAS_INDEX row = 0; row < m; row++)
-				{
-					sum += a[row * lda + col] * x[row];
-				}
-				y[col] = beta * y[col] + alpha * sum;
-			}
-		}
-		else
-		{
-			for (CBLAS_INDEX col = 0; col < n; col++)
-			{
-				sum = 0.0;
-				for (CBLAS_INDEX row = 0; row < m; row++)
-				{
-					sum += a[row * lda + col] * x[row * incx];
-				}
-				y[col * incy] = beta * y[col * incy] + alpha * sum;
-			}
-		}
-	}
+		kernel(&args);
     }
 
     CBLAS_STATS_END("dgemv", m * n, mt_used);

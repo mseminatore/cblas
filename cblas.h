@@ -588,6 +588,8 @@ typedef struct
     kernel_function dger_k;         // double-precision rank-1 update
     kernel_function sgemv_k;        // single-precision general matrix-vector multiply
     kernel_function dgemv_k;        // double-precision general matrix-vector multiply
+    kernel_function sgemv_t_k;      // single-precision transposed matrix-vector multiply
+    kernel_function dgemv_t_k;      // double-precision transposed matrix-vector multiply
 } kernels_t;
 
 #define CBLAS_DEFAULT_THREADS -1
@@ -1117,7 +1119,8 @@ void cblas_level1_exec_result(CBLAS_INDEX byte_stride, kernel_function kernel, C
  */
 typedef enum {
     CBLAS_PART_X,     // Partition X with rows (GER: x is row-indexed)
-    CBLAS_PART_Y      // Partition Y with rows (GEMV: y is output)
+    CBLAS_PART_Y,     // Partition Y with rows (GEMV: y is output)
+    CBLAS_PART_COLS   // Partition columns of A and Y (transposed GEMV: y is column-indexed)
 } cblas_level2_partition_t;
 
 /**
