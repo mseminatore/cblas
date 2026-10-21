@@ -441,9 +441,10 @@ static void init_blas_kernels(void)
 			blas_kernels.sger_k = sger_k_avx512;
 			blas_kernels.dger_k = dger_k_avx512;
 
-			// Level-3 AVX-512 kernels
-			blas_kernels.sgemm_k = sgemm_k_avx512;
-			blas_kernels.dgemm_k = dgemm_k_avx512;
+			// Level-3: sgemm_k_avx512/dgemm_k_avx512 still implement the old
+			// whole-matrix contract (args->alpha pointer, own beta scaling and
+			// blocking), not the slab contract gemm.c now uses (alpha_s, ib,
+			// pb, thread_id). Keep the FMA slab kernels until they are ported.
 		}
 	}
 }
