@@ -47,7 +47,7 @@ else
 	endif
 endif
 
-all: cblas_config.h $(LIBNAME) axpy_perf blas_stress blas_test test_strided test_stats test_threshold test_dot_threshold test_concurrent test_mt_debug test_level2_mt test_autotune test_gemm_accuracy gemm_perf dgemm_perf ger_perf dger_perf gemv_perf dot_perf dot_threshold_tuning nrm2_asum_rot_perf copy_perf
+all: cblas_config.h $(LIBNAME) axpy_perf blas_stress blas_test cblas_info test_strided test_stats test_threshold test_dot_threshold test_concurrent test_mt_debug test_level2_mt test_autotune test_gemm_accuracy gemm_perf dgemm_perf ger_perf dger_perf gemv_perf dot_perf dot_threshold_tuning nrm2_asum_rot_perf copy_perf
 
 # Generate cblas_config.h from configuration variables
 cblas_config.h: cblas_config.h.in Makefile
@@ -72,6 +72,9 @@ test_strided: $(LIBNAME) tests/test_main.o tests/test_strided.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 test_stats: $(LIBNAME) tests/test_stats.o
+	$(CC) -o $@ $^ $(LFLAGS)
+
+cblas_info: $(LIBNAME) tests/cblas_info.o
 	$(CC) -o $@ $^ $(LFLAGS)
 
 test_overhead: $(LIBNAME) tests/test_overhead.o
@@ -222,7 +225,7 @@ test: all
 clean:
 	rm -f $(TARGET) $(OBJS) $(LIBNAME) cblas_config.h
 	rm -f tests/*.o benchmarks/*.o
-	rm -f blas_test blas_stress test_strided test_stats test_overhead test_threshold
+	rm -f blas_test blas_stress cblas_info test_strided test_stats test_overhead test_threshold
 	rm -f test_dot_threshold test_concurrent test_mt_debug test_level2_mt test_autotune test_gemm_accuracy
 	rm -f gemm_perf dgemm_perf ger_perf dger_perf dot_perf axpy_perf copy_perf gemv_perf gemv_compare openblas_gemv mem_perf
 	rm -f dot_threshold_tuning dot_threshold_tuning_large nrm2_asum_rot_perf

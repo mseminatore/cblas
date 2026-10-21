@@ -22,6 +22,11 @@ on level-3 functions like GEMM, followed by level-2, etc.
 > (SSE, AVX, AVX2, NEON, FMA) with CPU feature identification and dynamic
 > kernel dispatch. If you encounter errors please report the issue.
 
+> **AVX-512 GEMM is currently disabled.** The `sgemm`/`dgemm` AVX-512 kernels
+> (`kernels/gemm_k_avx512.c`) have not yet been ported to the packed-slab
+> interface the GEMM driver now uses, so AVX-512 CPUs run the AVX2/FMA GEMM
+> kernels instead. AVX-512 is still used for `dot`, `axpy`, `scal` and `ger`.
+
 This project started as a basic implementation of the BLAS
 routines that were required for my [libann](https://www.github.com/mseminatore/ann) neural
 networking library. Curiosity about maximizing performance evolved this project

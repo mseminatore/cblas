@@ -227,6 +227,9 @@ target_link_libraries(test_strided cblas ${MATH_LIB})
 add_executable(test_stats tests/test_stats.c)
 target_link_libraries(test_stats cblas ${MATH_LIB})
 
+add_executable(cblas_info tests/cblas_info.c)
+target_link_libraries(cblas_info cblas ${MATH_LIB})
+
 add_executable(test_threshold tests/test_threshold.c)
 target_link_libraries(test_threshold cblas ${MATH_LIB})
 

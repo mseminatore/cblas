@@ -61,6 +61,8 @@ Use `dot.c` as the canonical reference for Level-1 implementation patterns.
 
 `util.c` populates a global `blas_kernels` struct at startup with the best kernel for the detected CPU. `cpuid_x64.c` / `cpuid_arm64.c` detect CPU features (SSE, AVX2, FMA, AVX-512, NEON). Kernels live in `kernels/` and follow the naming pattern `<op>_k.c`, `<op>_k_avx.c`, `<op>_k_fma.c`, `<op>_k_neon.c`, etc.
 
+`sgemm_k_avx512`/`dgemm_k_avx512` are intentionally **not** registered in `cpuid_x64.c`: they still use the old whole-matrix contract (`args->alpha` pointer, own beta scaling/blocking), while `gemm.c` calls kernels per packed slab (`alpha_s`, `ib`, `pb`, `thread_id`). Port them to that contract before re-enabling; they segfault otherwise.
+
 ### Threading
 
 - `server.c` (POSIX) and `server_win32.c` (Windows) manage a persistent worker thread pool
