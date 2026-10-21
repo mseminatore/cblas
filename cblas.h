@@ -467,19 +467,22 @@ static inline double mt_get_time_us(void) {
 #endif
 
 //------------------------------------------------------
-// enumeration for matrix layouts
+// enumeration for matrix layouts (standard CBLAS values)
 //------------------------------------------------------
 typedef enum CBLAS_LAYOUT {
-    CblasRowMajor,
-    CblasColMajor
+    CblasRowMajor = 101,
+    CblasColMajor = 102
 } CBLAS_LAYOUT;
 
 //------------------------------------------------------
-// enumeration for transposing matrices
+// enumeration for transposing matrices (standard CBLAS values)
+// CblasConjTrans (113) is omitted: there is no complex support, and leaving
+// it out makes code that uses it fail to compile rather than silently
+// being treated as CblasNoTrans
 //------------------------------------------------------
 typedef enum CBLAS_TRANSPOSE {
-    CblasTrans,
-    CblasNoTrans
+    CblasNoTrans = 111,
+    CblasTrans = 112
 } CBLAS_TRANSPOSE;
 
 //------------------------------------------------------
@@ -494,7 +497,7 @@ typedef enum CBLAS_TRANSPOSE {
 #define CPU_NEON        0x20
 #define CPU_NEON_FMA    0x40
 #define CPU_HYBRID      0x80        // Hybrid architecture (P-cores + E-cores)
-#define CPU_HTT         (1 << 7)    // Hyperthreading / SMT enabled
+#define CPU_HTT         0x100       // CPUID HTT flag (multiple logical CPUs per package)
 
 //------------------------------------------------------
 // arguments passed to kernel functions

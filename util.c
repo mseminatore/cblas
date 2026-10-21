@@ -489,6 +489,14 @@ const char *cblas_get_isa_features(void)
             first = 0;
         }
     }
+    if (cpu & CPU_AVX512) {
+        written = snprintf(pos, remaining, "%sAVX-512", first ? "" : ", ");
+        if (written > 0 && written < remaining) {
+            pos += written;
+            remaining -= written;
+            first = 0;
+        }
+    }
 #endif
 
     return buf;

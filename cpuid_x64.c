@@ -354,6 +354,12 @@ static void init_blas_kernels(void)
 		blas_kernels.sgemm_k = sgemm_k_sse;
 		blas_kernels.dgemm_k = dgemm_k_sse;
 
+		// Level-2 SSE GEMV kernels (for CPUs without AVX)
+		blas_kernels.sgemv_k = sgemv_k_sse;
+		blas_kernels.dgemv_k = dgemv_k_sse;
+		blas_kernels.sgemv_t_k = sgemv_t_k_sse;
+		blas_kernels.dgemv_t_k = dgemv_t_k_sse;
+
 		// GEMV kernels only need 256-bit float ops, so unlike the other AVX
 		// kernels they are built with -mavx and usable on Sandy/Ivy Bridge
 		if (cpu_features & CPU_AVX)
@@ -450,6 +456,41 @@ static void init_blas_kernels(void)
 }
 
 //------------------------------------------------------
+// XCR0 bits for the register state the OS saves on context switch
+//------------------------------------------------------
+#define XCR0_AVX_STATE      0x06    // XMM (bit 1) + YMM (bit 2)
+#define XCR0_AVX512_STATE   0xE6    // above + opmask, ZMM_Hi256, Hi16_ZMM (bits 5-7)
+
+//------------------------------------------------------
+// return XCR0, or 0 if the OS has not enabled XSAVE (CPUID.1:ECX.OSXSAVE)
+//
+// CPUID only says what the CPU implements. AVX and AVX-512 instructions
+// also need the OS to save the wider registers, otherwise they fault
+// (e.g. VMs that mask XSAVE, Windows "bcdedit /set xsavedisable 1",
+// Linux "noxsave").
+//------------------------------------------------------
+static unsigned long long cpu_get_xcr0(void)
+{
+#if defined(_MSC_VER)
+	int info[4];
+	__cpuid(info, 1);
+	if (!(info[ECX] & BIT(27)))
+		return 0;
+
+	return _xgetbv(0);
+#else
+	unsigned int eax, ebx, ecx, edx;
+	__cpuid(1, eax, ebx, ecx, edx);
+	if (!(ecx & BIT(27)))
+		return 0;
+
+	// inline asm: the _xgetbv intrinsic would need -mxsave on GCC/Clang
+	__asm__ volatile ("xgetbv" : "=a"(eax), "=d"(edx) : "c"(0));
+	return ((unsigned long long)edx << 32) | eax;
+#endif
+}
+
+//------------------------------------------------------
 // query for cpu features
 //------------------------------------------------------
 static unsigned int __cpu_get_features(void)
@@ -514,6 +555,15 @@ static unsigned int __cpu_get_features(void)
 	if (edx & (1 << 28))     // EDX bit 28 = HTT flag
 	    cpu_features |= CPU_HTT;
 #endif
+
+	// Drop ISA extensions whose register state the OS does not save
+	unsigned long long xcr0 = cpu_get_xcr0();
+
+	if ((xcr0 & XCR0_AVX_STATE) != XCR0_AVX_STATE)
+		cpu_features &= ~(CPU_AVX | CPU_AVX2 | CPU_x64_FMA3 | CPU_AVX512);
+
+	if ((xcr0 & XCR0_AVX512_STATE) != XCR0_AVX512_STATE)
+		cpu_features &= ~CPU_AVX512;
 
 	init_blas_kernels();
 
@@ -622,6 +672,12 @@ int cpu_get_core_count(void)
 		cores = (int)sysconf(_SC_NPROCESSORS_ONLN);  // logical fallback
 #endif
 
+	// CPUID reports per-package counts from the host, which hypervisors don't
+	// always adjust (e.g. a 4 vCPU VM reporting 16 cores), so never report
+	// more physical cores than the OS gives us logical processors
+	if (cores > cpu_get_logical_core_count())
+		cores = cpu_get_logical_core_count();
+
 	// never report fewer than 1
 	if (cores < 1)
 		cores = 1;
@@ -643,6 +699,14 @@ int cpu_get_logical_core_count(void)
 	SYSTEM_INFO si;
 	GetSystemInfo(&si);
 	logical = (int)si.dwNumberOfProcessors;
+#elif defined(__linux__)
+	// honour the affinity mask (taskset, container cpusets) when available
+	cpu_set_t set;
+	CPU_ZERO(&set);
+	if (sched_getaffinity(0, sizeof(set), &set) == 0)
+		logical = CPU_COUNT(&set);
+	else
+		logical = (int)sysconf(_SC_NPROCESSORS_ONLN);
 #else
 	logical = (int)sysconf(_SC_NPROCESSORS_ONLN);
 #endif

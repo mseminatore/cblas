@@ -118,7 +118,7 @@ add_library(cblas STATIC copy.c axpy.c dot.c swap.c scal.c axpby.c rot.c asum.c 
     kernels/axpy_k_sse.c kernels/axpy_k_avx.c kernels/axpy_k_fma.c kernels/axpy_k_avx512.c kernels/axpy_k_neon.c
     kernels/axpby_k_sse.c kernels/axpby_k_avx.c kernels/axpby_k_fma.c kernels/axpby_k_neon.c
     kernels/ger_k.c kernels/ger_k_neon.c kernels/ger_k_fma.c kernels/ger_k_avx512.c
-    kernels/gemv_k.c kernels/gemv_k_avx.c kernels/gemv_k_fma.c kernels/gemv_k_neon.c
+    kernels/gemv_k.c kernels/gemv_k_sse.c kernels/gemv_k_avx.c kernels/gemv_k_fma.c kernels/gemv_k_neon.c
     kernels/gemm_k.c kernels/gemm_k_sse.c kernels/gemm_k_avx.c kernels/gemm_k_fma.c kernels/gemm_k_avx512.c kernels/gemm_k_neon.c
     kernels/dgemm_k_sse.c kernels/dgemm_k_avx.c kernels/dgemm_k_fma.c kernels/dgemm_k_neon.c
     ${CPUID_FILE}
@@ -140,6 +140,7 @@ if ((CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "
             kernels/swap_k_sse.c kernels/setv_k_sse.c kernels/rot_k_sse.c
             kernels/nrm2_k_sse.c kernels/scal_k_sse.c kernels/axpy_k_sse.c
             kernels/axpby_k_sse.c kernels/gemm_k_sse.c kernels/dgemm_k_sse.c
+            kernels/gemv_k_sse.c
             PROPERTIES COMPILE_FLAGS "-msse4.1"
         )
         # AVX2 kernels - 256-bit, no FMA (Haswell+)
