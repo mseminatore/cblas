@@ -69,6 +69,7 @@ Use `dot.c` as the canonical reference for Level-1 implementation patterns.
 - Work is submitted via `work_queue_t` structs; parameters are bundled in `cblas_args_t`
 - Operations activate MT only above size thresholds; defaults are in `cblas.h` (e.g., `CBLAS_MT_DOT=500000`)
 - Initialize with `cblas_init(n)`, shut down with `cblas_shutdown()`
+- GEMM packing buffers: workers use pool slots 0..`cblas_max_threads`-2 and the thread running an MT batch slot `cblas_max_threads`-1 (batches are serialized by `execute_lock`). A GEMM that runs on the calling thread (the single-threaded path) claims a **caller slot** (`cblas_claim_gemm_buffer`/`cblas_release_gemm_buffer`, ids from `CBLAS_CALLER_SLOT_BASE`, `CBLAS_CALLER_SLOTS` of them, allocated on first use) so concurrent application threads never share buffers; with none free the kernels malloc their own. Never hard-code `thread_id = 0` outside a worker. `test_concurrent`'s "Concurrent GEMM results" suite checks this, and ThreadSanitizer finds the race if it comes back
 - `platform/threading.h` provides the cross-platform mutex/condvar abstraction
 
 ### Performance Techniques

@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "test.h"
 #include "cblas.h"
 
@@ -370,6 +371,121 @@ static void test_concurrent_matrix_operations(int num_threads)
 }
 
 //------------------------------------------------------
+// Concurrent GEMM results: every thread runs differently shaped sgemm and
+// dgemm calls (with transposes), small enough for the single-threaded path
+// and one large enough for the multi-threaded one, and checks each result
+// against a reference computed before the threads start. Calls racing for a
+// shared packing buffer would corrupt each other's results.
+//------------------------------------------------------
+#define GEMM_SHAPES 5
+static const int gemm_shapes[GEMM_SHAPES][5] = {    // M N K transA transB
+    { 32, 64, 64, 0, 1 }, { 64, 64, 32, 1, 0 }, { 16, 48, 40, 0, 0 },
+    { 40, 48, 6, 1, 1 }, { 192, 160, 128, 0, 0 } };
+
+typedef struct {
+    int shape;
+    float *a, *b, *c, *ref;
+    double *ad, *bd, *cd, *refd;
+    int errors;
+} gemm_case_t;
+
+static void gemm_run(const gemm_case_t *g, float *c, double *cd)
+{
+    const int *d = gemm_shapes[g->shape];
+    int m = d[0], n = d[1], k = d[2];
+    CBLAS_TRANSPOSE ta = d[3] ? CblasTrans : CblasNoTrans, tb = d[4] ? CblasTrans : CblasNoTrans;
+    cblas_sgemm(CblasRowMajor, ta, tb, m, n, k, 1.0f, g->a, d[3] ? m : k, g->b, d[4] ? k : n, 0.0f, c, n);
+    cblas_dgemm(CblasRowMajor, ta, tb, m, n, k, 1.0, g->ad, d[3] ? m : k, g->bd, d[4] ? k : n, 0.0, cd, n);
+}
+
+static int gemm_alloc(gemm_case_t *g, int shape, int seed)
+{
+    const int *d = gemm_shapes[shape];
+    size_t sa = (size_t)d[0] * d[2], sb = (size_t)d[2] * d[1], sc = (size_t)d[0] * d[1];
+    g->shape = shape;
+    g->errors = 0;
+    g->a = malloc(sa * sizeof(float)); g->b = malloc(sb * sizeof(float));
+    g->c = malloc(sc * sizeof(float)); g->ref = malloc(sc * sizeof(float));
+    g->ad = malloc(sa * sizeof(double)); g->bd = malloc(sb * sizeof(double));
+    g->cd = malloc(sc * sizeof(double)); g->refd = malloc(sc * sizeof(double));
+    if (!g->a || !g->b || !g->c || !g->ref || !g->ad || !g->bd || !g->cd || !g->refd)
+        return 0;
+    for (size_t i = 0; i < sa; i++) g->ad[i] = g->a[i] = (float)((int)((i * 7 + seed * 13) % 17) - 8) / 8.0f;
+    for (size_t i = 0; i < sb; i++) g->bd[i] = g->b[i] = (float)((int)((i * 5 + seed * 3) % 13) - 6) / 6.0f;
+    gemm_run(g, g->ref, g->refd);
+    return 1;
+}
+
+static void gemm_free(gemm_case_t *g)
+{
+    free(g->a); free(g->b); free(g->c); free(g->ref);
+    free(g->ad); free(g->bd); free(g->cd); free(g->refd);
+}
+
+THREAD_RETURN test_gemm_results_thread(void *arg)
+{
+    gemm_case_t *cases = (gemm_case_t *)arg;
+    for (int iter = 0; iter < 40; iter++)
+        for (int s = 0; s < GEMM_SHAPES; s++)
+        {
+            gemm_case_t *g = &cases[s];
+            const int *d = gemm_shapes[s];
+            gemm_run(g, g->c, g->cd);
+            for (int i = 0; i < d[0] * d[1]; i++)
+                if (fabsf(g->c[i] - g->ref[i]) > 1e-4f * (1.0f + fabsf(g->ref[i])) ||
+                    fabs(g->cd[i] - g->refd[i]) > 1e-9 * (1.0 + fabs(g->refd[i])))
+                {
+                    g->errors++;
+                    break;
+                }
+        }
+    return THREAD_RETURN_VALUE;
+}
+
+static int test_concurrent_gemm_results(int num_threads)
+{
+    gemm_case_t cases[8][GEMM_SHAPES];
+    thread_t threads[8];
+    int ok = 1, errors = 0;
+    if (num_threads > 8)
+        num_threads = 8;
+
+    for (int t = 0; t < num_threads; t++)
+        for (int s = 0; s < GEMM_SHAPES; s++)
+            ok &= gemm_alloc(&cases[t][s], s, t * GEMM_SHAPES + s);
+    if (!ok)
+        return 0;
+
+    for (int t = 0; t < num_threads; t++)
+    {
+#if defined(_WIN32) || defined(_WIN64)
+        threads[t] = CreateThread(NULL, 0, test_gemm_results_thread, cases[t], 0, NULL);
+#else
+        pthread_create(&threads[t], NULL, test_gemm_results_thread, cases[t]);
+#endif
+    }
+    for (int t = 0; t < num_threads; t++)
+    {
+#if defined(_WIN32) || defined(_WIN64)
+        WaitForSingleObject(threads[t], INFINITE);
+        CloseHandle(threads[t]);
+#else
+        pthread_join(threads[t], NULL);
+#endif
+    }
+
+    for (int t = 0; t < num_threads; t++)
+        for (int s = 0; s < GEMM_SHAPES; s++)
+        {
+            errors += cases[t][s].errors;
+            gemm_free(&cases[t][s]);
+        }
+    if (errors)
+        printf("    %s %d wrong results\n", X_MARK, errors);
+    return errors == 0;
+}
+
+//------------------------------------------------------
 // Test: Concurrent cblas_set_num_threads calls
 //------------------------------------------------------
 static void test_concurrent_set_num_threads(int num_threads)
@@ -501,6 +617,10 @@ int test_main(int argc, char *argv[])
     SUITE("Concurrent matrix operations");
     test_concurrent_matrix_operations(2);
     test_concurrent_matrix_operations(4);
+
+    SUITE("Concurrent GEMM results");
+    TESTEX("2 threads' sgemm/dgemm results match a serial run", test_concurrent_gemm_results(2));
+    TESTEX("4 threads' sgemm/dgemm results match a serial run", test_concurrent_gemm_results(4));
 
     // NOTE: cblas_set_num_threads() is a global control knob and, like in
     // OpenBLAS/MKL, is not guaranteed safe to call concurrently with other BLAS

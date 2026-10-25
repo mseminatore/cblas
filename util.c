@@ -44,26 +44,37 @@ static int gemm_buffers_initialized = 0;
 static int gemm_buffers_count = 0;   // number of slots [0, count) currently allocated
 
 //------------------------------------------------------
+// Caller slots: packing buffers for GEMMs that run on the calling thread (the
+// single-threaded path). Any number of application threads may call at once,
+// so each call claims a free slot for its duration (cblas_claim_gemm_buffer);
+// with none free it gets none, and the kernels allocate their own. Slots are
+// allocated on first use, for the block sizes current then.
+//------------------------------------------------------
+static cblas_gemm_buffer_t caller_buffer_pool[CBLAS_CALLER_SLOTS];
+static atomic_int caller_slot_busy[CBLAS_CALLER_SLOTS];
+static CBLAS_INDEX caller_slot_blocks[CBLAS_CALLER_SLOTS][3];   // mc, kc, nb it was sized for
+
+//------------------------------------------------------
 // Free the four packing buffers of one pool slot.
 //------------------------------------------------------
-static void cblas_free_gemm_buffer_slot(int i)
+static void cblas_free_gemm_buffer_slot(cblas_gemm_buffer_t *slot)
 {
 #ifdef _WIN32
-    if (gemm_buffer_pool[i].packedA_s) _aligned_free(gemm_buffer_pool[i].packedA_s);
-    if (gemm_buffer_pool[i].packedB_s) _aligned_free(gemm_buffer_pool[i].packedB_s);
-    if (gemm_buffer_pool[i].packedA_d) _aligned_free(gemm_buffer_pool[i].packedA_d);
-    if (gemm_buffer_pool[i].packedB_d) _aligned_free(gemm_buffer_pool[i].packedB_d);
+    if (slot->packedA_s) _aligned_free(slot->packedA_s);
+    if (slot->packedB_s) _aligned_free(slot->packedB_s);
+    if (slot->packedA_d) _aligned_free(slot->packedA_d);
+    if (slot->packedB_d) _aligned_free(slot->packedB_d);
 #else
-    free(gemm_buffer_pool[i].packedA_s);
-    free(gemm_buffer_pool[i].packedB_s);
-    free(gemm_buffer_pool[i].packedA_d);
-    free(gemm_buffer_pool[i].packedB_d);
+    free(slot->packedA_s);
+    free(slot->packedB_s);
+    free(slot->packedA_d);
+    free(slot->packedB_d);
 #endif
-    gemm_buffer_pool[i].packedA_s = NULL;
-    gemm_buffer_pool[i].packedB_s = NULL;
-    gemm_buffer_pool[i].packedA_d = NULL;
-    gemm_buffer_pool[i].packedB_d = NULL;
-    gemm_buffer_pool[i].allocated = 0;
+    slot->packedA_s = NULL;
+    slot->packedB_s = NULL;
+    slot->packedA_d = NULL;
+    slot->packedB_d = NULL;
+    slot->allocated = 0;
 }
 
 //------------------------------------------------------
@@ -71,7 +82,7 @@ static void cblas_free_gemm_buffer_slot(int i)
 // Non-fatal on failure: the slot is left unallocated and kernels fall back to
 // their own malloc (see cblas_get_gemm_buffer returning NULL).
 //------------------------------------------------------
-static void cblas_alloc_gemm_buffer_slot(int i)
+static void cblas_alloc_gemm_buffer_slot(cblas_gemm_buffer_t *slot)
 {
     size_t packedA_s_size = (size_t)cblas_gemm_mc * cblas_gemm_kc * sizeof(float);
     size_t packedB_s_size = (size_t)cblas_gemm_kc * cblas_gemm_nb * sizeof(float);
@@ -80,26 +91,25 @@ static void cblas_alloc_gemm_buffer_slot(int i)
 
     // 64-byte alignment for SIMD (incl. AVX-512)
 #ifdef _WIN32
-    gemm_buffer_pool[i].packedA_s = (float*)_aligned_malloc(packedA_s_size, 64);
-    gemm_buffer_pool[i].packedB_s = (float*)_aligned_malloc(packedB_s_size, 64);
-    gemm_buffer_pool[i].packedA_d = (double*)_aligned_malloc(packedA_d_size, 64);
-    gemm_buffer_pool[i].packedB_d = (double*)_aligned_malloc(packedB_d_size, 64);
+    slot->packedA_s = (float*)_aligned_malloc(packedA_s_size, 64);
+    slot->packedB_s = (float*)_aligned_malloc(packedB_s_size, 64);
+    slot->packedA_d = (double*)_aligned_malloc(packedA_d_size, 64);
+    slot->packedB_d = (double*)_aligned_malloc(packedB_d_size, 64);
 #else
-    if (posix_memalign((void**)&gemm_buffer_pool[i].packedA_s, 64, packedA_s_size) != 0)
-        gemm_buffer_pool[i].packedA_s = NULL;
-    if (posix_memalign((void**)&gemm_buffer_pool[i].packedB_s, 64, packedB_s_size) != 0)
-        gemm_buffer_pool[i].packedB_s = NULL;
-    if (posix_memalign((void**)&gemm_buffer_pool[i].packedA_d, 64, packedA_d_size) != 0)
-        gemm_buffer_pool[i].packedA_d = NULL;
-    if (posix_memalign((void**)&gemm_buffer_pool[i].packedB_d, 64, packedB_d_size) != 0)
-        gemm_buffer_pool[i].packedB_d = NULL;
+    if (posix_memalign((void**)&slot->packedA_s, 64, packedA_s_size) != 0)
+        slot->packedA_s = NULL;
+    if (posix_memalign((void**)&slot->packedB_s, 64, packedB_s_size) != 0)
+        slot->packedB_s = NULL;
+    if (posix_memalign((void**)&slot->packedA_d, 64, packedA_d_size) != 0)
+        slot->packedA_d = NULL;
+    if (posix_memalign((void**)&slot->packedB_d, 64, packedB_d_size) != 0)
+        slot->packedB_d = NULL;
 #endif
 
-    if (gemm_buffer_pool[i].packedA_s && gemm_buffer_pool[i].packedB_s &&
-        gemm_buffer_pool[i].packedA_d && gemm_buffer_pool[i].packedB_d)
-        gemm_buffer_pool[i].allocated = 1;
+    if (slot->packedA_s && slot->packedB_s && slot->packedA_d && slot->packedB_d)
+        slot->allocated = 1;
     else
-        cblas_free_gemm_buffer_slot(i);   // partial failure: roll back
+        cblas_free_gemm_buffer_slot(slot);   // partial failure: roll back
 }
 
 //------------------------------------------------------
@@ -121,7 +131,7 @@ void cblas_ensure_gemm_buffers(int nthreads)
     }
 
     for (int i = gemm_buffers_count; i < nthreads; i++)
-        cblas_alloc_gemm_buffer_slot(i);
+        cblas_alloc_gemm_buffer_slot(&gemm_buffer_pool[i]);
 
     if (nthreads > gemm_buffers_count)
         gemm_buffers_count = nthreads;
@@ -139,26 +149,93 @@ void cblas_init_gemm_buffers(void)
 }
 
 //------------------------------------------------------
-// Cleanup GEMM buffer pool
+// Cleanup GEMM buffer pool, and the caller slots no call holds
 //------------------------------------------------------
 void cblas_cleanup_gemm_buffers(void)
 {
+    for (int i = 0; i < CBLAS_CALLER_SLOTS; i++)
+    {
+        int expected = 0;
+        if (atomic_compare_exchange_strong(&caller_slot_busy[i], &expected, 1))
+        {
+            if (caller_buffer_pool[i].allocated)
+                cblas_free_gemm_buffer_slot(&caller_buffer_pool[i]);
+            atomic_store_explicit(&caller_slot_busy[i], 0, memory_order_release);
+        }
+    }
+
     if (!gemm_buffers_initialized)
         return;
 
     for (int i = 0; i < gemm_buffers_count; i++)
         if (gemm_buffer_pool[i].allocated)
-            cblas_free_gemm_buffer_slot(i);
+            cblas_free_gemm_buffer_slot(&gemm_buffer_pool[i]);
 
     gemm_buffers_count = 0;
     gemm_buffers_initialized = 0;
 }
 
 //------------------------------------------------------
-// Get GEMM buffer for a thread
+// Claim a caller slot for one GEMM on the calling thread: returns its buffer
+// id for cblas_args_t.thread_id (CBLAS_CALLER_SLOT_BASE + i), allocated for
+// the current block sizes, or -1 when every slot is busy or allocation failed
+// (the kernels then allocate their own buffers). Release it with
+// cblas_release_gemm_buffer when the GEMM is done.
+//------------------------------------------------------
+int cblas_claim_gemm_buffer(void)
+{
+    for (int i = 0; i < CBLAS_CALLER_SLOTS; i++)
+    {
+        int expected = 0;
+        if (atomic_load_explicit(&caller_slot_busy[i], memory_order_relaxed) ||
+            !atomic_compare_exchange_strong_explicit(&caller_slot_busy[i], &expected, 1,
+                                                     memory_order_acquire, memory_order_relaxed))
+            continue;
+
+        // the slot is ours alone: (re)size it for the block sizes in use now
+        cblas_gemm_buffer_t *slot = &caller_buffer_pool[i];
+        CBLAS_INDEX *blocks = caller_slot_blocks[i];
+        if (slot->allocated &&
+            (blocks[0] != cblas_gemm_mc || blocks[1] != cblas_gemm_kc || blocks[2] != cblas_gemm_nb))
+            cblas_free_gemm_buffer_slot(slot);
+        if (!slot->allocated)
+        {
+            cblas_alloc_gemm_buffer_slot(slot);
+            blocks[0] = cblas_gemm_mc;
+            blocks[1] = cblas_gemm_kc;
+            blocks[2] = cblas_gemm_nb;
+        }
+        if (slot->allocated)
+            return CBLAS_CALLER_SLOT_BASE + i;
+
+        atomic_store_explicit(&caller_slot_busy[i], 0, memory_order_release);
+        return -1;
+    }
+    return -1;
+}
+
+//------------------------------------------------------
+// Release a caller slot from cblas_claim_gemm_buffer (-1 is ignored)
+//------------------------------------------------------
+void cblas_release_gemm_buffer(int buffer_id)
+{
+    int i = buffer_id - CBLAS_CALLER_SLOT_BASE;
+    if (i >= 0 && i < CBLAS_CALLER_SLOTS)
+        atomic_store_explicit(&caller_slot_busy[i], 0, memory_order_release);
+}
+
+//------------------------------------------------------
+// Get GEMM buffer for a thread: a worker's slot (0 to MAX_THREADS-1), or a
+// caller slot claimed with cblas_claim_gemm_buffer
 //------------------------------------------------------
 cblas_gemm_buffer_t* cblas_get_gemm_buffer(int thread_id)
 {
+    if (thread_id >= CBLAS_CALLER_SLOT_BASE && thread_id < CBLAS_CALLER_SLOT_BASE + CBLAS_CALLER_SLOTS)
+    {
+        cblas_gemm_buffer_t *slot = &caller_buffer_pool[thread_id - CBLAS_CALLER_SLOT_BASE];
+        return slot->allocated ? slot : NULL;
+    }
+
     if (thread_id < 0 || thread_id >= MAX_THREADS)
         return NULL;
     
