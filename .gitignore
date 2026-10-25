@@ -1,4 +1,5 @@
 # Project files
+cblas_info
 sgemm_bench
 sgemm_bench_ob
 dgemm_bench

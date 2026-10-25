@@ -545,7 +545,8 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         st_args.beta_s = 1.0f;
         st_args.transa = transa_use;
         st_args.transb = transb_use;
-        st_args.thread_id = 0;
+        // a caller slot of its own: other application threads may be in a GEMM too
+        st_args.thread_id = cblas_claim_gemm_buffer();
         
         for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
         {
@@ -564,6 +565,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
                 blas_kernels.sgemm_k(&st_args);
             }
         }
+        cblas_release_gemm_buffer(st_args.thread_id);
     }
 
 #else
@@ -580,7 +582,8 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
     st_args.beta_s = 1.0f;
     st_args.transa = transa_use;
     st_args.transb = transb_use;
-    st_args.thread_id = 0;
+    // a caller slot of its own: other application threads may be in a GEMM too
+    st_args.thread_id = cblas_claim_gemm_buffer();
     
     for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
     {
@@ -598,6 +601,7 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
             blas_kernels.sgemm_k(&st_args);
         }
     }
+    cblas_release_gemm_buffer(st_args.thread_id);
 #endif
 
     CBLAS_STATS_END("sgemm", m * n * k, mt_used);
@@ -966,7 +970,8 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         st_args.beta_d = 1.0;
         st_args.transa = transa_use;
         st_args.transb = transb_use;
-        st_args.thread_id = 0;
+        // a caller slot of its own: other application threads may be in a GEMM too
+        st_args.thread_id = cblas_claim_gemm_buffer();
         
         for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
         {
@@ -984,6 +989,7 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
                 blas_kernels.dgemm_k(&st_args);
             }
         }
+        cblas_release_gemm_buffer(st_args.thread_id);
     }
 
 #else
@@ -997,7 +1003,8 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
         st_args.beta_d = 1.0;
         st_args.transa = transa_use;
         st_args.transb = transb_use;
-        st_args.thread_id = 0;
+        // a caller slot of its own: other application threads may be in a GEMM too
+        st_args.thread_id = cblas_claim_gemm_buffer();
         
         for (CBLAS_INDEX p = 0; p < k; p += cblas_gemm_kc) 
         {
@@ -1015,6 +1022,7 @@ void cblas_dgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa, CBLAS_TRANSPOSE tr
                 blas_kernels.dgemm_k(&st_args);
             }
         }
+        cblas_release_gemm_buffer(st_args.thread_id);
     }
 #endif
 

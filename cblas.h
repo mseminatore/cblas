@@ -1307,6 +1307,32 @@ typedef struct {
 cblas_gemm_buffer_t* cblas_get_gemm_buffer(int thread_id);
 
 /**
+ * @brief Packing buffers for GEMMs that run on the calling thread
+ * @note Any number of application threads may call cblas_sgemm/cblas_dgemm at
+ *       once. A call that runs on the calling thread (the single-threaded path)
+ *       claims one of CBLAS_CALLER_SLOTS caller slots for its duration, so
+ *       concurrent calls never share packing buffers; when all are busy the
+ *       kernels allocate their own. Caller slot ids start at
+ *       CBLAS_CALLER_SLOT_BASE, above every worker slot.
+ */
+#ifndef CBLAS_CALLER_SLOTS
+#   define CBLAS_CALLER_SLOTS 16
+#endif
+#define CBLAS_CALLER_SLOT_BASE MAX_THREADS
+
+/**
+ * @brief Claim a caller slot for one GEMM on the calling thread
+ * @return The slot's buffer id for cblas_args_t.thread_id, or -1 when none is free
+ * @note Pair with cblas_release_gemm_buffer. Slots are allocated on first use.
+ */
+int cblas_claim_gemm_buffer(void);
+
+/**
+ * @brief Release a caller slot from cblas_claim_gemm_buffer (-1 is ignored)
+ */
+void cblas_release_gemm_buffer(int buffer_id);
+
+/**
  * @brief Initialize GEMM buffer pool (called by cblas_init)
  * @note Allocates packing buffers for all threads based on cblas_gemm_mc/kc/nb
  */

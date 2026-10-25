@@ -188,6 +188,13 @@ The work queue uses platform-specific synchronization:
 Worker threads safely dequeue tasks and update completion flags using:
 - Mutex-protected queue operations
 - Volatile completion flags with busy-wait polling
+
+GEMM packing buffers are never shared by two calls at once. Each worker has
+its own pool slot, and a thread running a multi-threaded batch uses one more
+(batches run one at a time). A GEMM small enough to run on the calling thread
+claims one of `CBLAS_CALLER_SLOTS` (16) caller slots for the length of the
+call, so any number of application threads can run GEMMs concurrently, as in
+the example above; if every slot is busy the call allocates its own buffers.
 - Memory barriers (implicit in synchronization primitives)
 
 ## Disabling Multi-Threading
