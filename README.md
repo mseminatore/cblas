@@ -251,9 +251,9 @@ Function | Description
 cblas_sasum | sum of absolute value of vector elements
 cblas_saxpy | computes $\vec{y} = \alpha * \vec{x} + \vec{y}$
 cblas_saxpby | computes $\vec{y} = \alpha * \vec{x} + \beta * \vec{y}$
-cblas_scopy | copy one vector to another $\vec{y} = \vec{x}$ 
-cblas_sdot | computes dot product of two vectors: $result  = \vec{x} \cdot \vec{y}$
-cblas_snrm2 | euclidean norm of a vector: $result = \| \vec{x} \|$
+cblas_scopy | copy one vector to another: $\vec{y} = \vec{x}$ 
+cblas_sdot | computes dot product of two vectors: $\vec{x} \cdot \vec{y}$
+cblas_snrm2 | euclidean norm of a vector: $\| \vec{x} \|$
 cblas_srotg | generate a plane rotation
 cblas_srot | apply plane rotation
 cblas_ssetv | set vector elements to a value
@@ -264,14 +264,14 @@ cblas_isamax | index of max absolute value of a vector
 
 Function | Description
 -------- | -----------
-cblas_sger | rank-1 update $\mathbf{A} = \alpha * \vec{x} * \vec{y}^\top + \mathbf{A}$
-cblas_sgemv | matrix-vector multiply **C** = alpha * **A** * **x** + beta * **y**
+cblas_sger | rank-1 update: $\mathbf{A} = \alpha * \vec{x} * \vec{y}^\top + \mathbf{A}$
+cblas_sgemv | matrix-vector multiply: $\mathbf{C} = \alpha * \mathbf{A} * \vec{x} + \beta * \vec{y}$
 
 ## Level 3 BLAS functions: matrix-matrix ops
 
 function | Description
 -------- | -----------
-cblas_sgemm | general matrix multiply **C** = alpha * **A** * **B** + beta * **C**
+cblas_sgemm | general matrix multiply: $\mathbf{C} = \alpha * \mathbf{A} * \mathbf{B} + \beta * \mathbf{C}$
 
 # Documentation
 
