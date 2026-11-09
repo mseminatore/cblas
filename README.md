@@ -257,7 +257,7 @@ cblas_snrm2 | euclidean norm of a vector
 cblas_srotg | generate a plane rotation
 cblas_srot | apply plane rotation
 cblas_ssetv | set vector elements to a value
-cblas_sswap | swap two vectors **x** and **y**
+cblas_sswap | swap two vectors $'\vec{x} and \vec{y}'$
 cblas_isamax | index of max absolute value of a vector
 
 ## Level 2 BLAS functions: matrix-vector ops
