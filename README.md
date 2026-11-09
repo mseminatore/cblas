@@ -252,7 +252,7 @@ cblas_sasum | sum of absolute value of vector elements
 cblas_saxpy | computes **y** = alpha * **x** + **y**
 cblas_saxpby | computes **y** = alpha * **x** + beta * **y**
 cblas_scopy | copy one vector to another **y** = **x** 
-cblas_sdot | computes dot product of two vectors **y** = **x** dot **y**
+cblas_sdot | computes dot product of two vectors $result  = \vec{x} \cdot \vec{y}$
 cblas_snrm2 | euclidean norm of a vector
 cblas_srotg | generate a plane rotation
 cblas_srot | apply plane rotation
