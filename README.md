@@ -249,15 +249,15 @@ BLAS functions.
 Function | Description
 -------- | -----------
 cblas_sasum | sum of absolute value of vector elements
-cblas_saxpy | computes **y** = alpha * **x** + **y**
-cblas_saxpby | computes **y** = alpha * **x** + beta * **y**
-cblas_scopy | copy one vector to another **y** = **x** 
-cblas_sdot | computes dot product of two vectors $result  = \vec{x} \cdot \vec{y}$
-cblas_snrm2 | euclidean norm of a vector
+cblas_saxpy | computes $\vec{y} = \alpha * \vec{x} + \vec{y}$
+cblas_saxpby | computes $\vec{y} = \alpha * \vec{x} + \beta * \vec{y}$
+cblas_scopy | copy one vector to another $\vec{y} = \vec{x}$ 
+cblas_sdot | computes dot product of two vectors: $result  = \vec{x} \cdot \vec{y}$
+cblas_snrm2 | euclidean norm of a vector: $result = \| \vec{x} \|$
 cblas_srotg | generate a plane rotation
 cblas_srot | apply plane rotation
 cblas_ssetv | set vector elements to a value
-cblas_sswap | swap two vectors $'\vec{x} and \vec{y}'$
+cblas_sswap | swap two vectors $\vec{x} and \vec{y}$
 cblas_isamax | index of max absolute value of a vector
 
 ## Level 2 BLAS functions: matrix-vector ops
