@@ -275,6 +275,6 @@ cblas_sgemm | general matrix multiply: $\mathbf{C} = \alpha * \mathbf{A} * \math
 
 # Documentation
 
-- [Threading Architecture](docs/THREADING.md) - Comprehensive guide to CBLAS multi-threading system
+- [Threading Architecture](docs/THREADING.md) - A guide to multi-threading in CBLAS
 
 
