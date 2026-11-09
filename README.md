@@ -264,7 +264,7 @@ cblas_isamax | index of max absolute value of a vector
 
 Function | Description
 -------- | -----------
-cblas_sger | rank-1 update **A** = alpha * **x** * **y'** + **A**
+cblas_sger | rank-1 update $\mathbf{A} = \alpha * \vec{x} * \vec{y}^\top + \mathbf{A}$
 cblas_sgemv | matrix-vector multiply **C** = alpha * **A** * **x** + beta * **y**
 
 ## Level 3 BLAS functions: matrix-matrix ops
